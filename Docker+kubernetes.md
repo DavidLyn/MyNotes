@@ -1,8 +1,10 @@
+---
 # Docker&Docker Compose&Docker Swarm&k8s
 + Docker是容器技术的核心、基础
 + Docker Compose是一个基于Docker的单主机容器编排工具
 + Docker Swarm和Kubernetes是基于Dcoker的跨主机的容器管理平台
 
+---
 # Docker安装
 
 ## [Docker官网](https://www.docker.com/products/developer-tools)
@@ -48,10 +50,17 @@
 
 > 关闭脚本：/Users/lvweiwei/docker/stopsocat
 
+---
 # Docker使用
+## 基本命令
 + 查看版本：docker version
 + 查看本地镜像：docker images
 + 查看信息：docker info
 
+## 与动态配置相关
+### SpringBoot应用动态配置
++ [Docker 如何动态给SpringBoot项目传参](https://www.cnblogs.com/coding1024/p/10839833.html)
+
+---
 # kubernetes
 
