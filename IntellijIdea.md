@@ -47,6 +47,17 @@
 + 第五个按钮：Revert 还原当前被修改的文件到未被修改的版本状态下
 
 ---
+# 配置Maven
++ **注意：需针对每个项目设置Maven参数**
++ 主菜单[Inellij IDEA] -> Preferences... -> Build,Execution,Deployment -> Build Tools -> Maven 设置：
+
+> Maven home dictionary:
+> 
+> User settings file:
+> 
+> Local Repository:
+
+---
 # 参考资料
 [IntelliJ-IDEA和Git、GitHub、Gitlab的使用](https://blog.csdn.net/milsevol/article/details/72792468)
 

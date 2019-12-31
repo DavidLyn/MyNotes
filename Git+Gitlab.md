@@ -107,6 +107,8 @@
 + 第一次推送master分支的所有内容: git push -u origin master
 + 推送最新修改: git push origin master
 
++ **[git仓库关联多个远程仓库](https://blog.csdn.net/Chenftli/article/details/83584111)**
+
 ### 从远程库克隆
 
 > 最好的方式是先创建远程库，然后，从远程库克隆
