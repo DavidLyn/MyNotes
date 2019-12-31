@@ -45,8 +45,7 @@
 + 在/Users/lvweiwei/gitlabtest执行：git clone git@localhost:root/test.git
 + 
 
----
-# 网上资料
+## Gitlab网上资料
 + [gitlab-ce in docker hub](https://hub.docker.com/r/gitlab/gitlab-ce/)
 + [docker安装配置gitlab详细过程](https://www.cnblogs.com/zuxing/articles/9329152.html)
 + [docker 安装 gitlab](https://www.cnblogs.com/panjunbai/p/11477197.html)
@@ -154,5 +153,7 @@
 > 
 > 在master分支上修复的bug，想要合并到当前dev分支，可以用git cherry-pick <commit>命令，把bug提交的修改“复制”到当前分支，避免重复劳动
 
-# Git网上资料
+## Git网上资料
 + [Git教程-廖雪峰](https://www.liaoxuefeng.com/wiki/896043488029600)
+
+> **非常好的教程**
