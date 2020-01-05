@@ -46,6 +46,16 @@
 
 > 在Extensions中搜索Flutter并下载
 
+# flutter操作
+## 查看Flutter SDK分支
++ flutter channel
++ flutter packages get获取项目所有的依赖包
++ flutter packages upgrade 获取项目所有依赖包的最新版本
+
+
+## 升级Flutter SDK和依赖包
++ flutter upgrade
+
 # 网上资源
 + [Flutter 官网](https://flutter.dev)
 + [Flutter 中文网](https://flutterchina.club)
@@ -53,5 +63,67 @@
 
 # 填坑记录
 ## 第一次运行flutter命令（如flutter doctor）时，它会下载它自己的依赖项并自行编译。以后再运行就会快得多
+
+## [在Android下运行flutter 卡在Running Gradle task 'assembleDebug'...](https://www.cnblogs.com/wupeng88/p/11455874.html)
++ 修改项目中`android/build.gradle`文件
+
+```
+buildscript {
+    repositories {
+        //修改的地方
+        //google()
+        //jcenter()
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.2.1'
+    }
+}
+
+allprojects {
+    repositories {
+        //修改的地方
+        //google()
+        //jcenter()
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+```
+
++ 修改Flutter的配置文件, 该文件在`Flutter安装目录/packages/flutter_tools/gradle/flutter.gradle`
+
+```
+buildscript {
+    repositories {
+        //修改的地方
+        //google()
+        //jcenter()
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.2.1'
+    }
+}
+```
+
 ## 在Idea中dart运行出现：Setting VM flags failed: Unrecognized flags: checked
 - Run -> Edit Configurations...中去掉Checked Mode
