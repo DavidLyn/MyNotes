@@ -1,13 +1,4 @@
-# Dart
-+ [A tour of the Dart language](https://dart.dev/guides/language/language-tour)
-
-## Dart SDK安装
-- brew tap dart-lang/dart
-- brew install dart
-- brew info dart
-
-## [mac 上配置flutter开发环境](https://www.jianshu.com/p/eb782589be82)
-
+---
 # 安装flutter
 ## 安装flutter SDK
 + 步骤一: [下载](https://flutter.dev/docs/get-started/install/macos)
@@ -127,3 +118,100 @@ buildscript {
 
 ## 在Idea中dart运行出现：Setting VM flags failed: Unrecognized flags: checked
 - Run -> Edit Configurations...中去掉Checked Mode
+
+---
+# Dart
++ [A tour of the Dart language](https://dart.dev/guides/language/language-tour)
+
+## 语法要点
+### 类和对象
++ 在Dart2里面创建对象时可以省略new关键字
+
++ Dart具有语法糖，可以将构造函数参数赋值给实例变量
+
+```
+class Test {
+  num x, y;
+  
+  // 构造函数运行之前设置x和y
+  Test(this.x, this.y);
+}
+```
+
++ 命名构造函数
+
+> Java可以做到方法重载（也就是：多个同名不同参数构造函数），但是Dart不可以这么做。Dart提供了命名构造。使用命名构造函数为类实现多个构造函数或提供更多的解释说明
+
+```
+class Test{
+  num x, y;
+
+  // 命名构造
+  Test.help() {
+    x = 5;
+    y = 10;
+    print('x=${x}, y = ${y}');
+  }
+}
+void main(){
+  Test.help();// 调用命名构造函数
+}
+```
+
++ 初始化列表
+
+> 可以在构造函数体运行之前初始化实例变量，用逗号分隔初始化
+
+```
+class Test1 {
+  var x, y;
+  Test1(var x, var y)
+      : x = x,
+        y = y {
+    print('Test1 有参构造初始化');
+  }
+}
+```
+> 命名构造函数的初始化列表
+
+```
+class Test2{
+  var x,y;
+  Test2.from(Map<String, num> json)
+      : x = json['x'],
+       y = json['y'] {
+    print('Test2.from(): ($x, $y)');
+  }
+}
+```
+
+> 可以使用assert在初始化列表用来校验输入参数
+
+```
+class Test1 {
+  var x, y;
+
+  Test1(var x, var y) : assert(x >= 0) {
+    print('Test1(): ($x, $y)');
+  }
+
+}
+```
+
+### 函数
++ 返回值为void时，可以省略void关键字
+
+### 其他
++ 字符串插值
+
+> $variableName (or ${expression})
+
++ dynamic 关键字
+
+> dynamic不是实际的type，而是类型检查开关。一个变量被dynamic修饰，相当于告诉static type 系统“相信我，我知道我自己在做什么”
+
+## Dart SDK安装
+- brew tap dart-lang/dart
+- brew install dart
+- brew info dart
+
