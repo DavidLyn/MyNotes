@@ -53,6 +53,8 @@
 + localhost:8081
 + 初始账号admin的密码位置：/nexus-data/admin.password
 
+> 此处 `nexus-data` 为 `/Users/lvweiwei/docker/nexus`
+
 ### 停止、删除容器
 + docker container stop nexus3
 + docker container rm nexus3
@@ -61,12 +63,28 @@
 + 启动脚本：/Users/lvweiwei/docker/startnexus
 + 关闭脚本：/Users/lvweiwei/docker/stopnexus
 
-## 与使用相关
+### 与配置相关
 + Nexus默认的端口是8081，可以在/nexus-data/etc/nexus.properties配置中修改
 
+> 此处 `nexus-data` 为 `/Users/lvweiwei/docker/nexus`
+
+## Nexus使用
+### 仓库格式(format)
++ maven2 : Java仓库
++ nuget : .net仓库
+
+### 仓库类型(type)
++ proxy 代理仓库，如果自己私有库没有对应的资源(jar等)，就会到这里去找
++ hosted 宿主仓库，是自己的私有库地址。有release和snapshots两种类型，在创建jar包的时候需要指定，是正式发布(release)，还是发布开发版(snapshots)
++ group 管理组，组是Nexus一个强大的特性，它允许你在一个单独的URL中组合多个仓库，比如默认组合：maven-central、maven-release和maven-snapshots
 
 # 网上资料
 + [Docker主页](https://hub.docker.com/r/sonatype/nexus3/)
+
 + [Nexus3 Docker安装部署使用](https://www.jianshu.com/p/ba054bc4f76a)
+
 + [搭建Nexus私库&使用](https://blog.csdn.net/luozhonghua2014/article/details/81583510)
+
 + [linux下安装nexus repository及Intellij Idea集成私有maven](https://www.cnblogs.com/iamsach/p/9199602.html)
+
++ [nexus仓库的基本用法](https://www.cnblogs.com/NYfor2018/p/9079629.html)
