@@ -1,8 +1,10 @@
+---
 # Maven
-## 下载解压到下述目录
+## 安装
+### 下载解压到下述目录
 - /Users/lvweiwei/Applications/apache-maven-3.6.0
 
-## 配置环境变量
+### 配置环境变量
 + 编辑.bash_profile文件
 
 > vi ~/.bash_profile
@@ -17,7 +19,7 @@
 > 
 > source ~/.bash_profile
 
-## 设置本地仓库
+### 设置本地仓库
 + 创建本地仓库目录： /Users/lvweiwei/Applications/mvnrepository
 + 修改文件：/Users/lvweiwei/Applications/apache-maven-3.6.0/conf/settings.xml
 
@@ -25,6 +27,91 @@
 
 - /Users/lvweiwei/Applications/mvnrepository
 
+## 快照与版本
++ 在使用版本（Release）时，如果 Maven 下载所提到的版本为 data-service:1.0，那么它永远不会尝试在库中下载已经更新的版本1.0。要下载更新的代码，data-service的版本必须要升级到1.1
+
++ 在使用快照（SNAPSHOT）时，Maven会在每次建立自己的项目时自动获取最新的快照（data-service:1.0-SNAPSHOT
+
+## 私有maven库发布及使用流程
+### 环境配置
+- idea环境下，如果使用内置maven，需要手动生成settings.xml，并关联。
+- 操作如下
+- 生成settings.xml 右键pom.xml-Maven-create settings.xml
+- File-settings-Maven关联配置
+- 勾选 User settings file Override
+- 勾选 Local repository Override
+- Eclipse环境，生成的settings文件路径C:\Users\用户\.m2\settings.xml
+
+### 在Nexus上创建Repository
+- 需要管理用户登录
+
+- 创建Repository
+
+- create Repository 
+- maven2(hosted) 
+- insert repository name
+- allow redepoly
+- create
+
+- 编辑本地maven配置文件(<servers>标签下增加如下内容,username及password填上自己的用户名密码即可)
+
+```xml
+<server>
+	<id>nexus-snapshot</id>
+	<username></username>
+	<password></password>
+</server>
+<server>
+	<id>nexus-release</id>
+	<username></username>
+	<password></password>
+</server>
+```
+
+- 在待deploy项目中的pom.xml文件中增加如下内容,host及port替换为仓库地址和端口
+
+```xml
+<distributionManagement>
+	<repository>
+		<id>nexus-release</id>
+		<name>Nexus Release Repository</name>
+		<url>http://{host}:{port}/repository/maven-releases/</url>
+	</repository>
+
+	<snapshotRepository>
+		<id>nexus-snapshot</id>
+		<name>Nexus snapshots Repository</name>
+		<url>http://{host}:{port}/repository/maven-snapshots/</url>
+	</snapshotRepository>
+</distributionManagement>
+```
+
+#### 使用
+
+在项目pom.xml文件中添加repository信息
+
+```xml
+<repositories>
+	<repository>
+		<id>blablabla</id>
+		<url>http://{host}:{port}/repository/{xxxx}/</url>
+	</repository>
+</repositories>
+```
+
+然后就可以像引用其他公共仓库中依赖一样引用我们自己发布的依赖了，例如:
+
+```xml
+<dependencies>	
+	<dependency>
+		<groupId>com.huilianjk</groupId>
+		<artifactId>utils</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</dependency>
+</dependencies>
+```
+
+---
 # Nexus
 ## 安装及初始化
 ### 安装镜像
@@ -79,7 +166,11 @@
 + group 管理组，组是Nexus一个强大的特性，它允许你在一个单独的URL中组合多个仓库，比如默认组合：maven-central、maven-release和maven-snapshots
 
 # 网上资料
-+ [Docker主页](https://hub.docker.com/r/sonatype/nexus3/)
++ [Maven官方教程](http://maven.apache.org/guides/getting-started/index.html)
+
++ [Maven教程](https://www.yiibai.com/maven)
+
++ [Nexus Docker主页](https://hub.docker.com/r/sonatype/nexus3/)
 
 + [Nexus3 Docker安装部署使用](https://www.jianshu.com/p/ba054bc4f76a)
 
