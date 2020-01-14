@@ -50,6 +50,7 @@
 + [Flutter 官网 Docs](https://flutter.dev/docs)
 + [Flutter 中文网](https://flutterchina.club)
 + [书: Flutter实战](https://book.flutterchina.club)
++ [Flutter gallery](https://github.com/flutter/flutter/tree/master/examples/flutter_gallery)
 
 # [Flutter 官网 Docs 笔记](https://flutter.dev/docs)
 
@@ -96,6 +97,106 @@
 > 只能包含一个子widget，但这个子widget可以是Row或者Column，也可以是一个widget树的根
 
 + GridView
+
+> GridView提供了两个预先制作的列表，也可以构建自己的自定义网格
+> 
+> 当GridView检测到其内容太长而无法容纳呈现框时，它会自动滚动
+
++ ListView
+
+> 可水平或垂直布置
+> 
+> 可配置性低于Column，但更易于使用且支持滚动
+> 
+> 使用`ListTile`构造`ListView `
+> 
+> 使用`Divider `进行分割
+
++ Stack
+
+> 用于一个widget叠加在另一个widget上
+> 
+> children列表中第一个元素是基础widget，第二个元素是覆盖在第一个元素上的widget
+>
+> Stack的内容不能滚动
+
++ Card
+
+> 实现了Material card
+> 
+> 用于展现相关的信息块
+> 
+> 接受单子widget，但这个子widget可以是Row，Column，或其他由一系列widget构成的widget
+> 
+> 用圆角和阴影显示
+> 
+> Card的内容不能滚动
+
++ ListTile
+
+> 包含最多3行文本和可选图标的定制Row
+> 
+> 可配置性不及Row，但易于使用
+
+## [Building layouts](https://flutter.dev/docs/development/ui/layout/tutorial)
+
++ Step 0 : 创建 app 的基础代码
+
++ Step 1 : Diagram the layout
+
+> 将布局分解为基础元素
+> 
+> 识别 Row 和 Column
+> 
+> 布局包含grid吗？
+> 
+> 存在覆盖元素吗？
+> 
+> UI需要tab吗？
+> 
+> 识别需要 `alignment` `padding` `border` 的区域
+
++ Step 2 : Implement the title row
+
++ Step 3: Implement the button row
+
++ Step 4: Implement the text section
+
++ Step 5: Implement the image section
+
++ Step 6: Final touch
+
+## *[Creating responsive apps](https://flutter.dev/docs/development/ui/layout/responsive) ???*
+
+
+## *[Dealing with box constraints](https://flutter.dev/docs/development/ui/layout/box-constraints)???*
+
+## [Adding interactivity to your Flutter app](https://flutter.dev/docs/development/ui/interactive)
+
++ Stateful and stateless widgets
+
+> Stateful widgets subclass StatefulWidget
+> 
+> widget的状态保存在 `State` 对象中，使状态和展现分离。当widget的状态变化时，`State`对象调用`setState()`，通知框架重绘widget
+
++ 管理状态
+
+> 三种方式：
+>
+> 1、widget自行管理状态
+> 
+> 2、由父widget管理
+> 
+> 3、A mix-and-match approach 混搭法
+> 
+
++ Other interactive widgets
+
+> 可以使用GestureDetector创建自定义的widget的互动性
+
+## [Adding assets and images](https://flutter.dev/docs/development/ui/assets-and-images)
+
+## [Navigation and routing](https://flutter.dev/docs/development/ui/navigation)
 
 # 填坑记录
 ## 第一次运行flutter命令（如flutter doctor）时，它会下载它自己的依赖项并自行编译。以后再运行就会快得多
