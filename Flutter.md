@@ -196,7 +196,372 @@
 
 ## [Adding assets and images](https://flutter.dev/docs/development/ui/assets-and-images)
 
++ asset 类型
+
+> 包括：静态数据（比如json文件）、配置文件、icon、图片（JPEG, WebP, GIF, animated WebP/GIF, PNG, BMP, and WBMP）
+
++ 指定 asset
+
+> Flutter 使用项目根目录下的 pubspec.yaml 定义app中用到的 asset
+
+```
+flutter:
+  assets:
+    - assets/my_icon.png
+    - assets/background.png
+```
+
+> 为了包含一个目录下的所有asset，可以使用目录名 + /
+
+```
+flutter:
+  assets:
+    - assets/
+```
+
+> 注意，上述只包含当前目录下的asset，子目录下的asset需要单独声明
+
++ Asset bundling
+
+> 在构建过程中，Flutter将asset放入一个称为`asset bundle`的特殊归档中，应用程序可以在运行时从中读取这些asset
+
++ Asset variants
+
+> 构建过程支持所谓的 asset variants 概念：可能在不同上下文中显示的资源的不同版本
+> 
+> 当在pubspec.yaml的assets段设置一个asset的路径后，构建过程会在相邻的子目录中查找同名的任何文件，这些文件也将关联到这个asset上，并被包含在asset bundle中
+> 
+> 举例：假设应用目录下有下述文件：
+
+```
+  .../pubspec.yaml
+  .../graphics/my_icon.png
+  .../graphics/background.png
+  .../graphics/dark/background.png
+  ...etc.
+```
+
+> 并且 pubspec.yaml包含下述内容：
+
+```
+flutter:
+  assets:
+    - graphics/background.png
+```
+
+> 于是`graphics/background.png` 和 `graphics/dark/background.png`都将被包含在 asset bundle中，其中，前者作为主asset，后者作为 variant
+
+> Flutter在选择分辨率合适的图像时使用asset variant
+
++ Loading assets
+
+> AssetImage了解如何将请求的逻辑asset映射到与当前设备像素比率最接近的asset上。为了使此映射正常工作，应根据特定的目录结构安排asset：
+
+```
+  .../image.png
+  .../Mx/image.png
+  .../Nx/image.png
+  ...etc.
+```
+
+> Where M and N are numeric identifiers that correspond to the nominal resolution of the images contained within. In other words, they specify the device pixel ratio that the images are intended for.
+
+> 要加载图像，请在widget的构建方法中使用AssetImage类
+
+> 为了从依赖包中加载图像，需要为 AssetImage 提供 package 参数
+
+```
+AssetImage('icons/heart.png', package: 'my_icons')
+```
+
+> Package 可以选择将asset放在 lib/ 目录下，而不是在 pubspec.yaml 中定义。在此情况下，对于那些需要打包的图像文件，需要在 pubspec.yaml 中定义。假设一个名为 fancy_backgrounds 的Package有下述文件：
+
+```
+  .../lib/backgrounds/background1.png
+  .../lib/backgrounds/background2.png
+  .../lib/backgrounds/background3.png
+```
+
+> 为了包含的一个文件， pubspec.yaml 中需做下述定义：
+
+```
+flutter:
+  assets:
+    - packages/fancy_backgrounds/backgrounds/background1.png
+```
+
++ Loading Flutter assets in Android
+
+> 对于Flutter中的assets，Android 的 plugin 可通过下述代码访问：
+
+```
+AssetManager assetManager = registrar.context().getAssets();
+String key = registrar.lookupKeyForAsset("icons/heart.png");
+AssetFileDescriptor fd = assetManager.openFd(key);
+```
+
++ Loading Flutter assets in iOS
+
+> 对于Flutter中的assets，IOS 的 OC plugin 可通过下述代码访问：
+
+```
+NSString* key = [registrar lookupKeyForAsset:@"icons/heart.png"];
+NSString* path = [[NSBundle mainBundle] pathForResource:key ofType:nil];
+```
+
++ Updating the app icon
+
+> Android : 由Flutter的根目录进入 `.../android/app/src/main/res` ，替换各资源文件夹下面的`ic_launcher.png`
+
+> IOS : 由Flutter的根目录进入 `.../ios/Runner/Assets.xcassets/AppIcon.appiconset`，替换各个 png 文件
+
++ Updating the launch screen
+
+> Flutter 使用原生平台的机制来显示launch screen，launch screen 将持续显示直至Flutter渲染出应用的第一帧画面
+
+> Android : 切换到`.../android/app/src/main`目录下，通过修改`res/drawable/launch_background.xml`来修改launch screen。可参见[Adding a splash screen and launch screen to an Android app](https://flutter.dev/docs/development/add-to-app/android/add-splash-screen)
+
+> IOS : 切换到`.../ios/Runner`，修改 `Assets.xcassets/LaunchImage.imageset`
+
 ## [Navigation and routing](https://flutter.dev/docs/development/ui/navigation)
+
+### [Navigate to a new screen and back](https://flutter.dev/docs/cookbook/navigation/navigation-basics)
+
++ 在Flutter中，Screen 和 page 被称为 route。在android中，route 相当于 activity，在IOS中，route相当于ViewController。在Flutter中，route只是一个widget
+
++ 在Flutter中使用 Navigator 切换 route。切换到下一个界面使用 `Navigator.push()`，切换回前一界面使用 `Navigator.pop()`
+
+> FirstRoute 的 build() 方法的 onPressed()：
+
+```
+// Within the `FirstRoute` widget
+onPressed: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => SecondRoute()),
+  );
+}
+```
+
+> SecondRoute 的 onPressed()：
+
+```
+// Within the SecondRoute widget
+onPressed: () {
+  Navigator.pop(context);
+}
+```
+
+### [Navigate with named routes](https://flutter.dev/docs/cookbook/navigation/named-routes)
+
++ 在 `MaterialApp` 的构造方法中定义 `initialRoute`(起始route) 和 `routes`(route对照表)。*注意，当 `MaterialApp`  使用 `initialRoute` 时，不要使用 `home` 属性*
+
+```
+MaterialApp(
+  // Start the app with the "/" named route. In this case, the app starts
+  // on the FirstScreen widget.
+  initialRoute: '/',
+  routes: {
+    // When navigating to the "/" route, build the FirstScreen widget.
+    '/': (context) => FirstScreen(),
+    // When navigating to the "/second" route, build the SecondScreen widget.
+    '/second': (context) => SecondScreen(),
+  },
+);
+```
+
++ 在 `FirstScreen` 的 `onPressed()` 切换到 SecondScreen：
+
+```
+// Within the `FirstScreen` widget
+onPressed: () {
+  // Navigate to the second screen using a named route.
+  Navigator.pushNamed(context, '/second');
+}
+```
+
++ 在 `SecondScreen` 的 `onPressed()` 返回 FirstScreen：
+
+```
+// Within the SecondScreen widget
+onPressed: () {
+  // Navigate back to the first screen by popping the current route
+  // off the stack.
+  Navigator.pop(context);
+}
+```
+
+### [Send data to a new screen](https://flutter.dev/docs/cookbook/navigation/passing-data)
+
++ 先定义被打开的页面（DetailScreen），重点关注：保存主页面传递过来的数据的属性 todo，以及构造方法可接收主页面传递过来的数据
+
+```
+class DetailScreen extends StatelessWidget {
+  // Declare a field that holds the Todo.
+  final Todo todo;
+
+  // In the constructor, require a Todo.
+  DetailScreen({Key key, @required this.todo}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Use the Todo to create the UI.
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(todo.title),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text(todo.description),
+      ),
+    );
+  }
+}
+```
+
++ 主页面在定义 `ListView` 的 `ListTile` 的 `onTap()` 时，创建 `DetailScreen` ，并传递Todo数据： 
+
+```
+ListView.builder(
+  itemCount: todos.length,
+  itemBuilder: (context, index) {
+    return ListTile(
+      title: Text(todos[index].title),
+      // When a user taps the ListTile, navigate to the DetailScreen.
+      // Notice that you're not only creating a DetailScreen, you're
+      // also passing the current todo to it.
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailScreen(todo: todos[index]),
+          ),
+        );
+      },
+    );
+  },
+);
+```
+
+### [Pass arguments to a named route](https://flutter.dev/docs/cookbook/navigation/navigate-with-arguments)
+
++ 定义需要传递的参数类
+
+```
+// You can pass any object to the arguments parameter.
+// In this example, create a class that contains a customizable
+// title and message.
+class ScreenArguments {
+  final String title;
+  final String message;
+
+  ScreenArguments(this.title, this.message);
+}
+```
+
++ 创建接收参数的 widget，使用 ` ModalRoute.of()` 抽取参数
+
+```
+// A widget that extracts the necessary arguments from the ModalRoute.
+class ExtractArgumentsScreen extends StatelessWidget {
+  static const routeName = '/extractArguments';
+
+  @override
+  Widget build(BuildContext context) {
+    // Extract the arguments from the current ModalRoute settings and cast
+    // them as ScreenArguments.
+    final ScreenArguments args = ModalRoute.of(context).settings.arguments;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(args.title),
+      ),
+      body: Center(
+        child: Text(args.message),
+      ),
+    );
+  }
+}
+```
+
++ 在 MaterialApp widget 上注册 route 表
+
+```
+MaterialApp(
+  routes: {
+    ExtractArgumentsScreen.routeName: (context) => ExtractArgumentsScreen(),
+  },
+);
+```
+
++ 在主页面 widget 上通过 `Navigator.pushNamed` 传递参数的方式切换到前述 widget
+
+```
+// A button that navigates to a named route. The named route
+// extracts the arguments by itself.
+RaisedButton(                                                   
+  child: Text("Navigate to screen that extracts arguments"),    
+  onPressed: () {                                               
+    // When the user taps the button, navigate to a named route 
+    // and provide the arguments as an optional parameter.      
+    Navigator.pushNamed(                                        
+      context,                                                  
+      ExtractArgumentsScreen.routeName,                         
+      arguments: ScreenArguments(                               
+        'Extract Arguments Screen',                              
+        'This message is extracted in the build method.',       
+      ),                                                                                                                 
+    );                                                          
+  },                                                            
+),      
+```
+
+### [Return data from a screen](https://flutter.dev/docs/cookbook/navigation/returning-data)
+
++ 在主页面放置后续定义选择按钮，点击后打开次级页面，同时等待次级页面的返回值，最后将返回值显示在 `SnackBar` 上
+
+```
+class SelectionButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return RaisedButton(
+      onPressed: () {
+        _navigateAndDisplaySelection(context);
+      },
+      child: Text('Pick an option, any option!'),
+    );
+  }
+
+  // A method that launches the SelectionScreen and awaits the
+  // result from Navigator.pop.
+  _navigateAndDisplaySelection(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => SelectionScreen()),
+    );
+
+    // After the Selection Screen returns a result, hide any previous   snackbars
+    // and show the new result.
+    Scaffold.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text("$result")));
+  }
+}
+```
+
++ 在次级页面上使用 `Navigator.pop()` 加参数返回，举例如下：
+
+```
+RaisedButton(
+  onPressed: () {
+    // The Yep button returns "Yep!" as the result.
+    Navigator.pop(context, 'Yep!');
+  },
+  child: Text('Yep!'),
+);
+```
+
+### [Animating a widget across screens](https://flutter.dev/docs/cookbook/navigation/hero-animations)
 
 # 填坑记录
 ## 第一次运行flutter命令（如flutter doctor）时，它会下载它自己的依赖项并自行编译。以后再运行就会快得多
@@ -267,7 +632,7 @@ buildscript {
 
 ---
 # Dart
-+ [A tour of the Dart language](https://dart.dev/guides/language/language-tour)
++ [Dart 官方 Docs](https://dart.dev/guides)
 
 ## 语法要点
 ### 基本数据类型
