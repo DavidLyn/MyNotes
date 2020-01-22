@@ -171,6 +171,8 @@
 
 ## *[Dealing with box constraints](https://flutter.dev/docs/development/ui/layout/box-constraints)???*
 
++ 在Flutter中，widget 由它们的底层RenderBox对象呈现。RenderBox由其父级给定约束，并在这些约束内调整自身大小。约束包括最小和最大宽度和高度；尺寸由特定宽度和高度组成
+
 ## [Adding interactivity to your Flutter app](https://flutter.dev/docs/development/ui/interactive)
 
 + Stateful and stateless widgets
@@ -562,6 +564,87 @@ RaisedButton(
 ```
 
 ### [Animating a widget across screens](https://flutter.dev/docs/cookbook/navigation/hero-animations)
+
++ 主页面和次级页面中要实现Hero动画的image都要由Hero包裹，且 tag 必须一致
+
+```
+Hero(
+  tag: 'imageHero',
+  child: Image.network(
+    'https://picsum.photos/250?image=9',
+  ),
+);
+```
+
++ 参见[Flutter Hero动画](https://flutterchina.club/animations/hero-animations/)
+
+## Animations
+
+### [Animations - Introduction](https://flutter.dev/docs/development/ui/animations)
+
++ Flutter 支持多种动画类型
++ 很多 widget，特别是  Material widgets 自带标准的动画效果，也可以自行修改这些效果
+
++ 动画类型
+
+> 补间动画（Tween animation）：在补间动画中，定义了开始点和结束点，以及时间线和定义了转换时间和速度的曲线。框架计算如何从起点过渡到终点。
+> 
+> 基于物理的动画（Physics-based animation）：该种动画模仿真实世界的行为。例如，当你投掷一个球时，它落在哪里和何时取决于它被投掷的速度和离地面的距离。
+
+### [Animations overview](https://flutter.dev/docs/development/ui/animations/overview)
+
++ 大部分 widget 通过接收一个 Animation 类型的对象实现动画效果，并从这个对象读取动画的当前值，以及监听这个对象获取变化的值
+
++ 每当动画的值发生更改时，动画将通知所有使用addListener添加的侦听器。通常，侦听动画的状态对象将在其侦听器回调中调用自身的setState，以通知widget系统它需要用动画的新值重建
+
++ 有两个小部件可以在动画更改值时帮助小部件重建：AnimatedWidget和AnimatedBuilder。第一个是AnimatedWidget，对于无状态的动画widget最有用。要使用AnimatedWidget，只需将其子类化并实现构建函数。第二个是AnimatedBuilder，对于希望将动画作为更大构建函数的一部分包含在内的更复杂的小部件非常有用。要使用AnimatedBuilder，只需构造小部件并向其传递一个builder函数
+
++ 要创建动画，请首先创建AnimationController。除了作为动画本身之外，AnimationController还允许您控制动画。例如，可以告诉控制器向前播放动画或停止动画。还可以投掷动画，该动画使用物理模拟（例如弹簧）来驱动动画
+
++ 创建动画控制器后，可以开始基于它构建其他动画。例如，可以创建一个反向动画，该反向动画镜像原始动画，但运行方向相反（例如，从1.0到0.0）。类似地，可以创建一个曲线动画，其值由曲线调整
+
+### [Animations tutorial](https://flutter.dev/docs/development/ui/animations/tutorial)
+
+### [Implicit Animations](https://flutter.dev/docs/development/ui/animations/implicit-animations)
+
+### [Hero Animations](https://flutter.dev/docs/development/ui/animations/hero-animations)
+
+### [Staggered Animations](https://flutter.dev/docs/development/ui/animations/staggered-animations)
+
+## Stage managenment
+
+### [Start thinking declaratively](https://flutter.dev/docs/development/data-and-backend/state-mgmt/declarative)
+
++ 在Flutter中，可以从头开始重建部分UI，而不是修改它
++ Flutter是陈述性的(declarative)。这意味着Flutter将构建其用户界面来反映应用程序的当前状态
++ 当应用程序的状态更改时（例如，用户在设置屏幕中翻转一个开关），您将更改状态，这将触发用户界面的重画。用户界面本身（如widget.setText）没有必要改变——你改变了状态，用户界面就从头开始重建
+
+### [区分短暂状态和应用程序状态](https://flutter.dev/docs/development/data-and-backend/state-mgmt/ephemeral-vs-app)
+
++ 广义上讲，app状态包括app运行时内存中所有的信息。但有些状态又框架帮助处理，不需自己处理
+
++ 状态可以理解为 ： 为了在任何时候重建UI而需要的任何数据
+
++ 短暂状态（Ephemeral state）
+
+> 短暂状态的例子 ： PageView 的当前页，BottomNavigationBar 的当前选中页
+> 
+> widget树的其他部分不需要访问这些状态，也不需要持久化
+
++ 应用程序状态（App state）
+
+> 在应用的多个部分之间共享的状态，也称为共享状态
+> 
+> 举例：用户首选项、注册信息、社交应用中的通知、电商app中的购物车、新闻app中的文章已读、未读标志
+> 
+> 没有明确的通用规则来区分特定变量是短暂的还是应用程序状态。有时候，你得把一个重构成另一个。例如，您将从一些明显短暂的状态开始，但是随着应用程序功能的增长，它将需要移动到应用程序状态
+> 
+
+### [Simple app state management](https://flutter.dev/docs/development/data-and-backend/state-mgmt/simple)
+
++ 使用 Redux, Rx, hooks, provider 都可以实现状态管理
+
+### [List of state management approaches](https://flutter.dev/docs/development/data-and-backend/state-mgmt/options)
 
 # 填坑记录
 ## 第一次运行flutter命令（如flutter doctor）时，它会下载它自己的依赖项并自行编译。以后再运行就会快得多
