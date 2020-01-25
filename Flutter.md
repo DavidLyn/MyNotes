@@ -196,6 +196,12 @@
 
 > 可以使用GestureDetector创建自定义的widget的互动性
 
++ 在定义API时，对于必须的参数考虑使用 @required 注解。为使用 @required ，需要导入 foundation library ：
+
+```
+import 'package:flutter/foundation.dart';
+```
+
 ## [Adding assets and images](https://flutter.dev/docs/development/ui/assets-and-images)
 
 + asset 类型
@@ -611,6 +617,110 @@ Hero(
 
 ### [Staggered Animations](https://flutter.dev/docs/development/ui/animations/staggered-animations)
 
+## Advanced UI
+
+### [Slivers](https://flutter.dev/docs/development/ui/advanced/slivers)
+
++ *nothing to note*
+
+### [Gestures](https://flutter.dev/docs/development/ui/advanced/gestures)
+
++ Flutter 的手势系统包含两个层面：
+
+> 第一层有原始指针事件，用于描述指针（例如触摸、鼠标和样式）在屏幕上的位置和移动
+> 
+> 第二层有描述由一个或多个指针动作组成的语义动作的手势
+
++ Pointers
+
+> 指针表示用户与设备屏幕交互的原始数据。指针事件有四种类型:
+> 
+> PointerDownEvent : 指针已在特定位置与屏幕接触
+> 
+> PointerMoveEvent : 指针已从屏幕上的一个位置移动到另一个位置
+> 
+> PointerUpEvent : 指针已停止接触屏幕
+> 
+> PointerCancelEvent : 此指针的输入不再指向此应用程序
+> 
+> 在指针按下时，框架对应用程序进行命中测试，以确定指针在屏幕上接触的位置存在哪个widget
+> 
+> 然后，指针向下事件（以及该指针的后续事件）被调度到命中测试找到的最里面的widget
+> 
+> 从那里，事件在树上冒泡，并被分派到从最里面的widget到树根路径上的所有widget
+> 
+> 没有取消或停止进一步调度指针事件的机制
+> 
+> 要直接从widgets层监听指针事件，请使用Listener widget。不过，一般来说，可以考虑使用手势
+
++ Gestures
+
+> 手势表示从多个单独指针事件（甚至可能是多个单独指针）识别的语义操作（例如，点击、拖动和缩放）。手势可以分派多个事件，对应于手势的生命周期（例如，拖动开始、拖动更新和拖动结束）
+> 
+> *Tap*
+> 
+> onTapDown : 可能导致点击的指针已在特定位置与屏幕接触
+> 
+> onTapUp : 触发点击的指针已在特定位置停止与屏幕接触
+> 
+> onTap : 先前触发onTapDown的指针也触发了onTapUp，最后导致了一个tap
+> 
+> onTapCancel : 先前触发onTapDown的指针不会导致点击
+> 
+> *Double tap*
+> 
+> onDoubleTap : 用户连续两次快速点击同一位置的屏幕
+> 
+> *Long press*
+> 
+> onLongPress : 指针在同一位置与屏幕保持长时间接触
+> 
+> *Vertical drag*
+> 
+> onVerticalDragStart : 指针已与屏幕接触，可能开始垂直移动
+> 
+> onVerticalDragUpdate : 与屏幕接触并垂直移动的指针已沿垂直方向移动
+> 
+> onVerticalDragEnd : 以前与屏幕接触并垂直移动的指针不再与屏幕接触，并在停止与屏幕接触时以特定速度移动
+> 
+> *Horizontal drag*
+> 
+> onHorizontalDragStart : 指针接触到屏幕，可能开始水平移动
+> 
+> onHorizontalDragUpdate : 与屏幕接触并水平移动的指针已在水平方向上移动
+> 
+> onHorizontalDragEnd : 以前与屏幕接触并水平移动的指针不再与屏幕接触，并在停止与屏幕接触时以特定速度移动
+> 
+> *Pan*
+> 
+> onPanStart : 指针已与屏幕接触，可能开始水平或垂直移动。如果设置了onHorizontalDragStart或onVerticalDragStart，则此回调将导致崩溃
+> 
+> onPanUpdate : 与屏幕接触并在垂直或水平方向上移动的指针。如果设置了onHorizontalDragUpdate或onVerticalDragUpdate，则此回调将导致崩溃
+> 
+> onPanEnd : 以前与屏幕接触的指针不再与屏幕接触，并且在停止与屏幕接触时以特定速度移动。如果设置了onHorizontalDragEnd或onVerticalDragEnd，则此回调将导致崩溃
+> 
+
++ Adding gesture detection to widgets
+
+> 使用 GestureDetector 来监听手势
+> 
+> Material 组件已能响应手势
+> 
+
++ Gesture disambiguation(手势消歧)
+
+> 在屏幕上的给定位置，可能有多个手势检测器。所有这些手势检测器都会在指针事件经过并试图识别特定的手势时监听指针事件流。GestureDetector widget根据其回调的非空性决定尝试识别哪些手势
+> 
+> 当屏幕上给定指针有多个手势识别器时，框架通过让每个识别器加入手势竞技场来消除用户想要的手势的歧义。手势竞技场使用以下规则确定哪个手势获胜：
+> 
+> *任何时候，识别器都可以宣布失败并离开竞技场。如果竞技场上只剩下一个识别器，那个识别器就是赢家*
+> 
+> *在任何时候，识别器都可以宣布胜利，这将导致它获胜，而其余的识别器都将失败*
+> 
+> 例如，当消除水平和垂直拖动的歧义时，两个识别器在收到指针向下事件时都会进入竞技场。识别器观察指针移动事件。如果用户水平移动指针超过一定数量的逻辑像素，水平识别器将宣布胜利，手势将解释为水平拖动。类似地，如果用户垂直移动超过一定数量的逻辑像素，则垂直识别器宣布胜利
+> 
+> 当只有水平（或垂直）拖动识别器时，手势竞技场是有益的。在这种情况下，竞技场中只有一个识别器，水平拖动被立即识别，这意味着水平移动的第一个像素可以被视为拖动，用户不需要等待进一步的手势消歧
+
 ## Stage managenment
 
 ### [Start thinking declaratively](https://flutter.dev/docs/development/data-and-backend/state-mgmt/declarative)
@@ -643,8 +753,355 @@ Hero(
 ### [Simple app state management](https://flutter.dev/docs/development/data-and-backend/state-mgmt/simple)
 
 + 使用 Redux, Rx, hooks, provider 都可以实现状态管理
++ 在Flutter中，将状态保持在使用它的widget之上是有意义的
++ 当状态改变，相关的widget会消失并被新的widget替换，这就是所说的widget是不变的
+
++ ChangeNotifier
+
+> ChangeNotifier向它的监听者提供notification
+> 
+> 对于 ChangeNotifier ，唯一特殊的是调用 notifyListeners()
+> 
+> 在模型更改时调用此方法，可能会更改应用程序的UI
+
++ ChangeNotifierProvider
+
+> ChangeNotifierProvider 向它的后台提供 ChangeNotifier 实例
+> 
+> 如下，为App下级widget提供CartModel状态模型：
+
+```
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => CartModel(),
+      child: MyApp(),
+    ),
+  );
+}
+```
+
+> 可以使用 MultiProvider 提供多个状态对象
+
+```
+void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => CartModel()),
+        Provider(create: (context) => SomeOtherClass()),
+      ],
+      child: MyApp(),
+    ),
+  );
+}
+```
+
++ Consumer
+
+> 可以通过 Consumer widget 使用上述定义的 CartModel
+
+```
+return Consumer<CartModel>(
+  builder: (context, cart, child) {
+    return Text("Total price: ${cart.totalPrice}");
+  },
+);
+```
+
+> Consumer 必须使用泛型来定义状态模型
+> 
+> Consumer widget 构造方法的唯一参数是 builder，builder 是一个函数，每当 ChangeNotifier 变换时将被调用
+> 
+> builder 有三个参数， context ： 每个builder参数都有； ChangeNotifier ：ChangeNotifier的实例；child ： 第三个参数是child，用于优化。如果您的使用者下面有一个大的widget子树，当模型改变时它不会改变，那么您可以构造它一次并通过构建器获得它 
+> 
+> 最好的做法是将消费者widget尽可能深入到树中。你不想仅仅因为某个地方的一些细节改变就重建大部分UI
+
++ Provider.of
+
+```
+Provider.of<CartModel>(context, listen: false).add(item);
+```
+
+> 在build方法中使用上述行不会导致调用notifyListeners时重新生成此widget
+
++ 为了使用provider，在 pubspec.yaml 中增加依赖 provider: ^3.0.0 ；这样在可以 import 'package:provider/provider.dart'
 
 ### [List of state management approaches](https://flutter.dev/docs/development/data-and-backend/state-mgmt/options)
+
+## [Networking & http](https://flutter.dev/docs/development/data-and-backend/networking)
+
++ http包提供了发出http请求的最简单方法。这个包在Android、iOS和web上都支持
+
++ Android应用程序必须在Android清单（Android manifest.xml）中声明其对互联网的使用
+
+```
+<manifest xlmns:android...>
+ ...
+ <uses-permission android:name="android.permission.INTERNET" />
+ <application ...
+</manifest>
+```
+
+### [Fetch data from the internet](https://flutter.dev/docs/cookbook/networking/fetch-data)
+
++ Add the http package
+
+> 要安装http包，将其添加到pubspec.yaml的dependencies部分
+
+```
+dependencies:
+  http: <latest_version>
+```
+
++ 导入http包
+
+```
+import 'package:http/http.dart' as http;
+```
+
++ Make a network request
+
+> 在本例中，使用http.get（）方法从JSONPlaceholder中获取一个示例帖子
+
+```
+Future<http.Response> fetchPost() {
+  return http.get('https://jsonplaceholder.typicode.com/posts/1');
+}
+```
+
+> Future是处理异步操作的核心Dart类。Future对象表示将来某个时间可用的潜在值或错误
+> 
+> http.Response类包含从成功的http调用接收的数据
+
++ Convert the response into a custom Dart object
+
+> 使用原始 Future<http.Response> 不是很方便。为了简便，将http.Response转换为一个Dart对象
+> 
+> *Create a Post class*
+> 
+> 首先，创建一个Post类，其中包含来自网络请求的数据。它包括一个工厂构造函数，它从JSON创建Post
+
+```
+class Post {
+  final int userId;
+  final int id;
+  final String title;
+  final String body;
+
+  Post({this.userId, this.id, this.title, this.body});
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      userId: json['userId'],
+      id: json['id'],
+      title: json['title'],
+      body: json['body'],
+    );
+  }
+}
+```
+
+> *Convert the http.Response to a Post*
+> 
+> 使用dart:Convert包将响应体转换为JSON映射
+> 
+> 如果服务器返回状态代码为200的“OK”响应，则使用fromJson（）factory方法将JSON映射转换为Post
+> 
+> 如果服务器返回意外响应，则抛出错误
+> 
+
+```
+Future<Post> fetchPost() async {
+  final response =
+      await http.get('https://jsonplaceholder.typicode.com/posts/1');
+
+  if (response.statusCode == 200) {
+    // If server returns an OK response, parse the JSON.
+    return Post.fromJson(json.decode(response.body));
+  } else {
+    // If that response was not OK, throw an error.
+    throw Exception('Failed to load post');
+  }
+}
+```
+
++ Fetch the data
+
+> 在initState（）或didChangeDependencies（）方法中调用fetch方法
+> 
+> initState（）方法只调用一次，然后再也不调用
+> 
+> 如果您想选择重新加载API以响应 InheritedWidget 的更改，请将调用放入didChangeDependencies（）方法
+
+```
+class _MyAppState extends State<MyApp> {
+  Future<Post> post;
+
+  @override
+  void initState() {
+    super.initState();
+    post = fetchPost();
+  }
+```
+
++ Display the data
+
+> 要在屏幕上显示数据，请使用 FutureBuilder widget
+> 
+> FutureBuilder 使使用异步数据源变得容易
+
+```
+FutureBuilder<Post>(
+  future: post,
+  builder: (context, snapshot) {
+    if (snapshot.hasData) {
+      return Text(snapshot.data.title);
+    } else if (snapshot.hasError) {
+      return Text("${snapshot.error}");
+    }
+
+    // By default, show a loading spinner.
+    return CircularProgressIndicator();
+  },
+);
+```
+
++ 完整例子
+
+```
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+Future<Post> fetchPost() async {
+  final response =
+      await http.get('https://jsonplaceholder.typicode.com/posts/1');
+
+  if (response.statusCode == 200) {
+    // If the call to the server was successful, parse the JSON.
+    return Post.fromJson(json.decode(response.body));
+  } else {
+    // If that call was not successful, throw an error.
+    throw Exception('Failed to load post');
+  }
+}
+
+class Post {
+  final int userId;
+  final int id;
+  final String title;
+  final String body;
+
+  Post({this.userId, this.id, this.title, this.body});
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      userId: json['userId'],
+      id: json['id'],
+      title: json['title'],
+      body: json['body'],
+    );
+  }
+}
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatefulWidget {
+  MyApp({Key key}) : super(key: key);
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+Future<Post> post;
+
+  @override
+  void initState() {
+    super.initState();
+    post = fetchPost();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Fetch Data Example',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Fetch Data Example'),
+        ),
+        body: Center(
+          child: FutureBuilder<Post>(
+            future: post,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Text(snapshot.data.title);
+              } else if (snapshot.hasError) {
+                return Text("${snapshot.error}");
+              }
+
+              // By default, show a loading spinner.
+              return CircularProgressIndicator();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+### [Make authenticated requests](https://flutter.dev/docs/cookbook/networking/authenticated-requests)
+
++ http包提供了一种向请求添加头的方便方法。或者，使用dart:io库中的HttpHeaders类
+
+```
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+
+Future<Post> fetchPost() async {
+  final response = await http.get(
+    'https://jsonplaceholder.typicode.com/posts/1',
+    headers: {HttpHeaders.authorizationHeader: "Basic your_api_token_here"},
+  );
+  final responseJson = json.decode(response.body);
+
+  return Post.fromJson(responseJson);
+}
+
+class Post {
+  final int userId;
+  final int id;
+  final String title;
+  final String body;
+
+  Post({this.userId, this.id, this.title, this.body});
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      userId: json['userId'],
+      id: json['id'],
+      title: json['title'],
+      body: json['body'],
+    );
+  }
+}
+```
+
+### [Work with WebSockets](https://flutter.dev/docs/cookbook/networking/web-sockets)
+
+## Persistence
+
+### [Persist data with SQLite](https://flutter.dev/docs/cookbook/persistence/sqlite)
 
 # 填坑记录
 ## 第一次运行flutter命令（如flutter doctor）时，它会下载它自己的依赖项并自行编译。以后再运行就会快得多
@@ -716,6 +1173,7 @@ buildscript {
 ---
 # Dart
 + [Dart 官方 Docs](https://dart.dev/guides)
++ [Dart语法学习 -- *good 值得再学习*](https://www.jianshu.com/p/9e5f4c81cc7d)
 
 ## 语法要点
 ### 基本数据类型
