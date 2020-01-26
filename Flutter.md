@@ -54,6 +54,8 @@
 
 # [Flutter 官网 Docs 笔记](https://flutter.dev/docs)
 
+# *Development*
+
 ## [Layouts in Flutter](https://flutter.dev/docs/development/ui/layout)
 
 ### Widget 对齐（Aligning widgets）
@@ -1099,9 +1101,864 @@ class Post {
 
 ### [Work with WebSockets](https://flutter.dev/docs/cookbook/networking/web-sockets)
 
+
+## [JSON and serialization](https://flutter.dev/docs/development/data-and-backend/json)
+
++ 两种使用JSON的策略
+
+> 手动序列化
+> 
+> 使用代码生成的自动序列化
+> 
+> 不同的项目具有不同的复杂性和用例。对于较小的概念验证项目或快速原型，使用代码生成器可能会过分。对于具有更复杂的JSON模型的应用程序，手工编码可以很快变得冗长乏味、重复性很强，并且可以应用于许多小错误
+
++ 对较小的项目使用手动序列化
+
+> 手动JSON解码是指在dart:convert中使用内置的JSON解码器。它涉及到将原始JSON字符串传递给jsonDecode（）函数，然后在结果 Map<string，dynamic> 中查找所需的值。它没有外部依赖项或特定的设置过程，对于概念的快速验证很有帮助
+> 
+> 当项目变大时，手动解码的性能不好。手工编写解码逻辑会变得很难管理并且容易出错。如果在访问不存在的JSON字段时键入了一个键值，则在运行时，代码会引发错误
+
++ 对大中型项目使用代码生成
+
+> JSON序列化和代码生成意味着有一个外部库为您生成编码模板。在一些初始设置之后，运行一个从模型类生成代码的文件观察程序。例如，json_serializable 和 built_value 就是这类库
+> 
+> 这种方法对一个更大的项目很适用。不需要手工编写样板文件，在编译时会捕获访问JSON字段时的输入错误。代码生成的缺点是它需要一些初始设置。此外，生成的源文件可能会在项目导航器中产生视觉混乱
+
++ Flutter 中没有类似 GSON/Jackson/Moshi 的类库
+
+> GSON/Jackson/Moshi 需要使用反射。由于反射使默认情况下所有代码都隐式使用，因此很难 tree shaking。这些工具无法知道运行时哪些部分未使用，因此冗余代码很难去除。使用反射时无法轻松优化应用程序大小
+> 
+
++ Serializing JSON manually using dart:convert
+
+> 调用 dart:convert 中的 jsonDecode() 解码JSON
+
+```
+Map<String, dynamic> user = jsonDecode(jsonString);
+
+print('Howdy, ${user['name']}!');
+print('We sent the verification link to ${user['email']}.');
+```
+> jsonDecode（）返回一个Map<String，dynamic>，这意味着直到运行时才知道值的类型。使用这种方法，将失去大多数静态类型语言特性：类型安全性、自动完成以及最重要的编译时异常。代码将立即变得更容易出错
+
++ Serializing JSON using code generation libraries
+
+> 尽管还有其他可用的库，但本指南使用json_serializable，这是一个自动的源代码生成器，可以为您生成json序列化样板文件
+> 
+> 如何选择JSON_serializable和build_value ： json_serializable包允许您使用注解使常规类可序列化，而built_value包提供了一种更高级的方法来定义也可以序列化为json的不可变值类
+> 
+> *Setting up json_serializable in a project*
+> 
+> 要在项目中包含json_serializable，需要一个常规依赖项和两个dev依赖项。简言之，dev依赖项是应用程序源代码中未包含的依赖项，它们仅在开发环境中使用
+> 
+> pubspec.yaml 示例如下：
+
+```
+dependencies:
+  # Your other regular dependencies here
+  json_annotation: <latest_version>
+
+dev_dependencies:
+  # Your other dev_dependencies here
+  build_runner: <latest_version>
+  json_serializable: <latest_version>
+```
+
+> 在项目根文件夹中运行flutter pub get（或在编辑器中单击packages get），使这些新的依赖项在项目中可用
+> 
+> *Creating model classes the json_serializable way*
+> 
+> 下面演示如何将用户类转换为json_serializable类
+> 
+
+```
+import 'package:json_annotation/json_annotation.dart';
+
+/// This allows the `User` class to access private members in
+/// the generated file. The value for this is *.g.dart, where
+/// the star denotes the source file name.
+part 'user.g.dart';
+
+/// An annotation for the code generator to know that this class needs the
+/// JSON serialization logic to be generated.
+@JsonSerializable()
+
+class User {
+  User(this.name, this.email);
+
+  String name;
+  String email;
+
+  /// A necessary factory constructor for creating a new User instance
+  /// from a map. Pass the map to the generated `_$UserFromJson()` constructor.
+  /// The constructor is named after the source class, in this case, User.
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+
+  /// `toJson` is the convention for a class to declare support for serialization
+  /// to JSON. The implementation simply calls the private, generated
+  /// helper method `_$UserToJson`.
+  Map<String, dynamic> toJson() => _$UserToJson(this);
+}
+```
+
+> 通过此设置，源代码生成器生成用于从JSON编码和解码name和email字段的代码
+> 
+> 如果需要，定制命名策略也很容易。例如，如果API返回带有snake_case的对象，并且希望在模型中使用lowerCamelCase，则可以使用带有name参数的@JsonKey注解
+
+```
+/// Tell json_serializable that "registration_date_millis" should be
+/// mapped to this property.
+@JsonKey(name: 'registration_date_millis')
+final int registrationDateMillis;
+```
+
+> *Running the code generation utility*
+> 
+> 当第一次创建 json_serializable 类时，将得到类似的错误 : "Target of URI hasn't been generated:'u.g.dart'"
+> 
+> 这些错误完全正常，只是因为模型类生成的代码还不存在。要解决这个问题，请运行生成序列化样板的代码生成器
+> 
+> *One-time code generation*
+> 
+> 通过在项目根目录中运行 `flutter pub run build_runner build`，可以在需要时为模型生成JSON序列化代码。这将触发一次性生成，该生成将遍历源文件，选择相关的源文件，并为它们生成必要的序列化代码
+> 
+> *Generating code continuously*
+> 
+> 观察器使我们的源代码生成过程更加方便。它监视项目文件中的更改，并在需要时自动生成必要的文件。在项目根目录中运行 `flutter pub run build_runner watch` 启动观察程序
+> 
+> 可以安全地启动一次watcher并让它在后台运行
+
++ Consuming json_serializable models
+
+> 要以 json_serializable 的方式解码JSON字符串，实际上不需要对前面的代码做任何更改
+
+```
+Map userMap = jsonDecode(jsonString);
+var user = User.fromJson(userMap);
+```
+
+> 编码也是如此。调用API与以前相同
+
+```
+String json = jsonEncode(user);
+```
+
+> 使用json_serializable，您可以忘记用户类中的任何手动json序列化。源代码生成器创建一个名为user.g.dart的文件，该文件具有所有必要的序列化逻辑。您不再需要编写自动测试来确保序列化工作，现在库的职责是确保序列化工作正常
+
++ Generating code for nested classes
+
+> Address 类定义如下：
+
+```
+import 'package:json_annotation/json_annotation.dart';
+part 'address.g.dart';
+
+@JsonSerializable()
+class Address {
+  String street;
+  String city;
+
+  Address(this.street, this.city);
+
+  factory Address.fromJson(Map<String, dynamic> json) => _$AddressFromJson(json);
+  Map<String, dynamic> toJson() => _$AddressToJson(this);
+}
+```
+
+> 为了使 User 类能正常的嵌套 Address 类，为 User 的  @JsonSerializable() 传递 explicitToJson: true
+
+```
+import 'address.dart';
+import 'package:json_annotation/json_annotation.dart';
+part 'user.g.dart';
+
+@JsonSerializable(explicitToJson: true)
+class User {
+  String firstName;
+  Address address;
+
+  User(this.firstName, this.address);
+
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+  Map<String, dynamic> toJson() => _$UserToJson(this);
+}
+```
+
+## Accessibility & Internation­alizing
+
+### [Accessibility](https://flutter.dev/docs/development/accessibility-and-localization/accessibility)
+
+### [Internation­alizing Flutter apps](https://flutter.dev/docs/development/accessibility-and-localization/internationalization)
+
+---
+# [*Cookbook*](https://flutter.dev/docs/cookbook)
+
 ## Persistence
 
 ### [Persist data with SQLite](https://flutter.dev/docs/cookbook/persistence/sqlite)
+
++ Flutter 通过 sqflite 使用 SQLite
+
++ sqflite包提供与SQLite数据库交互的类和函数；path包提供了定义将数据库存储在磁盘上的位置的函数
+
+```
+dependencies:
+  flutter:
+    sdk: flutter
+  sqflite:
+  path:
+```
+
+```
+import 'dart:async';
+
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+```
+
++ Define the Dog data model
+
+```
+class Dog {
+  final int id;
+  final String name;
+  final int age;
+
+  Dog({this.id, this.name, this.age});
+}
+```
+
++ Open the database
+
+```
+// Open the database and store the reference.
+final Future<Database> database = openDatabase(
+  // Set the path to the database. Note: Using the `join` function from the
+  // `path` package is best practice to ensure the path is correctly
+  // constructed for each platform.
+  join(await getDatabasesPath(), 'doggie_database.db'),
+);
+```
+
++ Create the dogs table
+
+```
+final Future<Database> database = openDatabase(
+  // Set the path to the database.
+  join(await getDatabasesPath(), 'doggie_database.db'),
+  // When the database is first created, create a table to store dogs.
+  onCreate: (db, version) {
+    // Run the CREATE TABLE statement on the database.
+    return db.execute(
+      "CREATE TABLE dogs(id INTEGER PRIMARY KEY, name TEXT, age INTEGER)",
+    );
+  },
+  // Set the version. This executes the onCreate function and provides a
+  // path to perform database upgrades and downgrades.
+  version: 1,
+);
+```
+
++ Insert a Dog into the database
+
+```
+// Update the Dog class to include a `toMap` method.
+class Dog {
+  final int id;
+  final String name;
+  final int age;
+
+  Dog({this.id, this.name, this.age});
+
+  // Convert a Dog into a Map. The keys must correspond to the names of the
+  // columns in the database.
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'age': age,
+    };
+  }
+}
+
+// Define a function that inserts dogs into the database
+Future<void> insertDog(Dog dog) async {
+  // Get a reference to the database.
+  final Database db = await database;
+
+  // Insert the Dog into the correct table. You might also specify the
+  // `conflictAlgorithm` to use in case the same dog is inserted twice.
+  //
+  // In this case, replace any previous data.
+  await db.insert(
+    'dogs',
+    dog.toMap(),
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
+
+// Create a Dog and add it to the dogs table.
+final fido = Dog(
+  id: 0,
+  name: 'Fido',
+  age: 35,
+);
+
+await insertDog(fido);
+```
+
++ Retrieve the list of Dogs
+
+```
+// A method that retrieves all the dogs from the dogs table.
+Future<List<Dog>> dogs() async {
+  // Get a reference to the database.
+  final Database db = await database;
+
+  // Query the table for all The Dogs.
+  final List<Map<String, dynamic>> maps = await db.query('dogs');
+
+  // Convert the List<Map<String, dynamic> into a List<Dog>.
+  return List.generate(maps.length, (i) {
+    return Dog(
+      id: maps[i]['id'],
+      name: maps[i]['name'],
+      age: maps[i]['age'],
+    );
+  });
+}
+
+// Now, use the method above to retrieve all the dogs.
+print(await dogs()); // Prints a list that include Fido.
+```
+
++ Update a Dog in the database
+
+```
+Future<void> updateDog(Dog dog) async {
+  // Get a reference to the database.
+  final db = await database;
+
+  // Update the given Dog.
+  await db.update(
+    'dogs',
+    dog.toMap(),
+    // Ensure that the Dog has a matching id.
+    where: "id = ?",
+    // Pass the Dog's id as a whereArg to prevent SQL injection.
+    whereArgs: [dog.id],
+  );
+}
+
+// Update Fido's age.
+await updateDog(Dog(
+  id: 0,
+  name: 'Fido',
+  age: 42,
+));
+
+// Print the updated results.
+print(await dogs()); // Prints Fido with age 42.
+```
+
++ Delete a Dog from the database
+
+```
+Future<void> deleteDog(int id) async {
+  // Get a reference to the database.
+  final db = await database;
+
+  // Remove the Dog from the Database.
+  await db.delete(
+    'dogs',
+    // Use a `where` clause to delete a specific dog.
+    where: "id = ?",
+    // Pass the Dog's id as a whereArg to prevent SQL injection.
+    whereArgs: [id],
+  );
+}
+```
+
++ 完整例子
+
+```
+import 'dart:async';
+
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+
+void main() async {
+  final database = openDatabase(
+    // Set the path to the database. Note: Using the `join` function from the
+    // `path` package is best practice to ensure the path is correctly
+    // constructed for each platform.
+    join(await getDatabasesPath(), 'doggie_database.db'),
+    // When the database is first created, create a table to store dogs.
+    onCreate: (db, version) {
+      return db.execute(
+        "CREATE TABLE dogs(id INTEGER PRIMARY KEY, name TEXT, age INTEGER)",
+      );
+    },
+    // Set the version. This executes the onCreate function and provides a
+    // path to perform database upgrades and downgrades.
+    version: 1,
+  );
+
+  Future<void> insertDog(Dog dog) async {
+    // Get a reference to the database.
+    final Database db = await database;
+
+    // Insert the Dog into the correct table. Also specify the
+    // `conflictAlgorithm`. In this case, if the same dog is inserted
+    // multiple times, it replaces the previous data.
+    await db.insert(
+      'dogs',
+      dog.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Dog>> dogs() async {
+    // Get a reference to the database.
+    final Database db = await database;
+
+    // Query the table for all The Dogs.
+    final List<Map<String, dynamic>> maps = await db.query('dogs');
+
+    // Convert the List<Map<String, dynamic> into a List<Dog>.
+    return List.generate(maps.length, (i) {
+      return Dog(
+        id: maps[i]['id'],
+        name: maps[i]['name'],
+        age: maps[i]['age'],
+      );
+    });
+  }
+
+  Future<void> updateDog(Dog dog) async {
+    // Get a reference to the database.
+    final db = await database;
+
+    // Update the given Dog.
+    await db.update(
+      'dogs',
+      dog.toMap(),
+      // Ensure that the Dog has a matching id.
+      where: "id = ?",
+      // Pass the Dog's id as a whereArg to prevent SQL injection.
+      whereArgs: [dog.id],
+    );
+  }
+
+  Future<void> deleteDog(int id) async {
+    // Get a reference to the database.
+    final db = await database;
+
+    // Remove the Dog from the database.
+    await db.delete(
+      'dogs',
+      // Use a `where` clause to delete a specific dog.
+      where: "id = ?",
+      // Pass the Dog's id as a whereArg to prevent SQL injection.
+      whereArgs: [id],
+    );
+  }
+
+  var fido = Dog(
+    id: 0,
+    name: 'Fido',
+    age: 35,
+  );
+
+  // Insert a dog into the database.
+  await insertDog(fido);
+
+  // Print the list of dogs (only Fido for now).
+  print(await dogs());
+
+  // Update Fido's age and save it to the database.
+  fido = Dog(
+    id: fido.id,
+    name: fido.name,
+    age: fido.age + 7,
+  );
+  await updateDog(fido);
+
+  // Print Fido's updated information.
+  print(await dogs());
+
+  // Delete Fido from the database.
+  await deleteDog(fido.id);
+
+  // Print the list of dogs (empty).
+  print(await dogs());
+}
+
+class Dog {
+  final int id;
+  final String name;
+  final int age;
+
+  Dog({this.id, this.name, this.age});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'age': age,
+    };
+  }
+
+  // Implement toString to make it easier to see information about
+  // each dog when using the print statement.
+  @override
+  String toString() {
+    return 'Dog{id: $id, name: $name, age: $age}';
+  }
+}
+```
+
+### [Read and write files](https://flutter.dev/docs/cookbook/persistence/reading-writing-files)
+
++ Find the correct local path
+
+> path_provider插件提供了一种与平台无关的方式来访问设备文件系统中常用的位置。支持访问两种文件系统
+> 
+> *Temporary directory:* 系统可以随时清除的临时目录（缓存）。在iOS上，这对应于NSCachesDirectory。在Android上，这是getCacheDir（）返回的值
+> 
+> *Documents directory:* 应用程序存储只有它才能访问的文件的目录。只有删除应用程序时，系统才会清除目录。在iOS上，这对应于NSDocumentDirectory。在Android上，这是AppData目录
+> 
+> 可以找到文档目录的路径，如下所示:
+
+```
+Future<String> get _localPath async {
+  final directory = await getApplicationDocumentsDirectory();
+
+  return directory.path;
+}
+```
+
++ Create a reference to the file location
+
+> 创建 dart:io 中的 File 对象：
+
+```
+Future<File> get _localFile async {
+  final path = await _localPath;
+  return File('$path/counter.txt');
+}
+```
+
++ Write data to the file
+
+```
+Future<File> writeCounter(int counter) async {
+  final file = await _localFile;
+
+  // Write the file.
+  return file.writeAsString('$counter');
+}
+```
+
++ Read data from the file
+
+```
+Future<int> readCounter() async {
+  try {
+    final file = await _localFile;
+
+    // Read the file.
+    String contents = await file.readAsString();
+
+    return int.parse(contents);
+  } catch (e) {
+    // If encountering an error, return 0.
+    return 0;
+  }
+}
+```
+
++ Testing
+
+> 要测试与文件交互的代码，需要模拟对MethodChannel（与宿主平台通信的类）的调用。出于安全原因，您不能直接与设备上的文件系统交互，因此您可以与测试环境的文件系统交互
+> 
+> 要模拟方法调用，请在测试文件中提供setupAll（）函数。此函数在执行测试之前运行
+
+```
+setUpAll(() async {
+  // Create a temporary directory.
+  final directory = await Directory.systemTemp.createTemp();
+
+  // Mock out the MethodChannel for the path_provider plugin.
+  const MethodChannel('plugins.flutter.io/path_provider')
+      .setMockMethodCallHandler((MethodCall methodCall) async {
+    // If you're getting the apps documents directory, return the path to the
+    // temp directory on the test environment instead.
+    if (methodCall.method == 'getApplicationDocumentsDirectory') {
+      return directory.path;
+    }
+    return null;
+  });
+});
+```
+
++ 完整例子
+
+```
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+
+void main() {
+  runApp(
+    MaterialApp(
+      title: 'Reading and Writing Files',
+      home: FlutterDemo(storage: CounterStorage()),
+    ),
+  );
+}
+
+class CounterStorage {
+  Future<String> get _localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+
+    return directory.path;
+  }
+
+  Future<File> get _localFile async {
+    final path = await _localPath;
+    return File('$path/counter.txt');
+  }
+
+  Future<int> readCounter() async {
+    try {
+      final file = await _localFile;
+
+      // Read the file
+      String contents = await file.readAsString();
+
+      return int.parse(contents);
+    } catch (e) {
+      // If encountering an error, return 0
+      return 0;
+    }
+  }
+
+  Future<File> writeCounter(int counter) async {
+    final file = await _localFile;
+
+    // Write the file
+    return file.writeAsString('$counter');
+  }
+}
+
+class FlutterDemo extends StatefulWidget {
+  final CounterStorage storage;
+
+  FlutterDemo({Key key, @required this.storage}) : super(key: key);
+
+  @override
+  _FlutterDemoState createState() => _FlutterDemoState();
+}
+
+class _FlutterDemoState extends State<FlutterDemo> {
+  int _counter;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.storage.readCounter().then((int value) {
+      setState(() {
+        _counter = value;
+      });
+    });
+  }
+
+  Future<File> _incrementCounter() {
+    setState(() {
+      _counter++;
+    });
+
+    // Write the variable as a string to the file.
+    return widget.storage.writeCounter(_counter);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Reading and Writing Files')),
+      body: Center(
+        child: Text(
+          'Button tapped $_counter time${_counter == 1 ? '' : 's'}.',
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+```
+
+### [Store key-value data on disk](https://flutter.dev/docs/cookbook/persistence/key-value)
+
++ 使用 shared_preferences 插件保存少量 key-values
+
+> 通常，您必须编写本地平台集成，以便在iOS和Android上存储数据。幸运的是，shared_preferences插件可以用来在磁盘上保存键值数据。shared preferences插件在iOS上包装NSUserDefaults，在Android上包装SharedPreferences，为简单的数据提供持久的存储
+
++ Add the dependency
+
+```
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: "<newest version>"
+```
+
++ Save data
+
+> 要持久化数据，请使用SharedPreferences类提供的setter方法。Setter方法可用于各种原语类型，如setInt、setBool和setString
+> 
+> Setter方法做两件事：第一，同步更新内存中的键值对。然后，将数据持久化到磁盘
+> 
+
+```
+// obtain shared preferences
+final prefs = await SharedPreferences.getInstance();
+
+// set value
+prefs.setInt('counter', counter);
+```
+
++ Read data
+
+> 要读取数据，请使用SharedPreferences类提供的适当getter方法。每个setter都有一个对应的getter。例如，可以使用getInt、getBool和getString方法
+
+```
+final prefs = await SharedPreferences.getInstance();
+
+// Try reading data from the counter key. If it doesn't exist, return 0.
+final counter = prefs.getInt('counter') ?? 0;
+```
+
++ Remove data
+
+```
+final prefs = await SharedPreferences.getInstance();
+
+prefs.remove('counter');
+```
+
++ shared preferences 的限制
+
+> 只能使用基本类型：int、double、bool、string和stringList
+> 
+> 它不是用来存储大量数据的
+
++ Testing support
+
+> 使用共 shared_preferences 测试持久化数据的代码是一个好主意。您可以通过模拟 shared_preferences 库使用的MethodChannel来完成此操作
+
+```
+const MethodChannel('plugins.flutter.io/shared_preferences')
+  .setMockMethodCallHandler((MethodCall methodCall) async {
+    if (methodCall.method == 'getAll') {
+      return <String, dynamic>{}; // set initial values here if desired
+    }
+    return null;
+  });
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  // This widget is the root of the application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Shared preferences demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MyHomePage(title: 'Shared preferences demo'),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  MyHomePage({Key key, this.title}) : super(key: key);
+  final String title;
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCounter();
+  }
+
+  //Loading counter value on start
+  _loadCounter() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _counter = (prefs.getInt('counter') ?? 0);
+    });
+  }
+
+  //Incrementing counter after click
+  _incrementCounter() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _counter = (prefs.getInt('counter') ?? 0) + 1;
+      prefs.setInt('counter', _counter);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.display1,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+```
 
 # 填坑记录
 ## 第一次运行flutter命令（如flutter doctor）时，它会下载它自己的依赖项并自行编译。以后再运行就会快得多
