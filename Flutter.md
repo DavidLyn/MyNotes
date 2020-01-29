@@ -1444,6 +1444,363 @@ Locale myLocale = Localizations.localeOf(context);
 
 ### [Writing custom platform-specific code](https://flutter.dev/docs/development/platform-integration/platform-channels)
 
++ Flutter 使用一个灵活的系统，允许在 Android 平台上使用 Java 或 Kotlin 代码调用平台特定API，或者在 Objective-C 或 Swift 代码上调用 iOS
+
++ Flutter 平台特定的API支持不依赖于代码生成，而是依赖于灵活的消息传递方式
+
+> 应用程序的 Flutter 部分通过 platform channel 向其主机（应用程序的iOS或Android部分）发送消息
+> 
+> 主机监听 platform channel，并接收消息。然后，它使用原生编程语言调用特定于平台的api，并将响应发送回客户端，即应用程序的Flutter部分
+
++ Architectural overview: platform channels
+
+> 消息通过 platform channel 在客户端（UI）和主机（平台）之间传递。消息和响应是异步传递的，以确保用户界面保持响应
+> 
+> 在客户端，MethodChannel（API）支持发送与方法调用相对应的消息。在平台方面，Android上的MethodChannel（API）和iOS上的FlutterMethodChannel（API）支持接收方法调用和发送结果。这些类允许你用很少的“样板”代码开发一个平台插件
+> 
+> 如果需要，方法调用也可以反向发送，平台充当在Dart中实现的方法的客户端
+
++ Platform channel data types support and codecs
+
+> 标准 platform channel 使用标准消息编解码器，该编解码器支持简单的类JSON值（如布尔值、数字、字符串、字节缓冲区、列表和映射）的高效二进制序列化。当发送和接收值时，将自动对这些值进行序列化和反序列化
+
++ Example: Calling platform-specific iOS and Android code using platform channels
+
+> 下面的代码演示如何调用特定于平台的API来检索和显示当前电池电量。它使用Android BatteryManager API和iOS device.batteryLevel API，通过一条平台消息getBatteryLevel（）
+> 
+> 该示例将特定于平台的代码添加到主应用程序本身中。如果您希望为多个应用程序重用特定于平台的代码，则项目创建步骤略有不同，但平台通道代码仍以相同的方式编写
+> 
+> *Step 1: Create a new app project*
+> 
+> 在终端运行 ： flutter create batterylevel
+> 
+> 默认情况下，我们的模板支持使用Kotlin编写Android代码，或者使用Swift编写iOS代码。要使用Java或Objective-C，请使用-i和/或-a标志：
+
+```
+flutter create -i objc -a java batterylevel
+```
+
+> *Step 2: Create the Flutter platform client*
+> 
+> 应用程序的State类保存当前的应用程序状态。将其扩展以保持当前电池状态
+> 
+> 首先，构建 channel。使用MethodChannel和返回电池电量的单平台方法
+> 
+> 通道的客户端和主机端通过通道构造函数中传递的通道名称进行连接。单个应用程序中使用的所有通道名称都必须是唯一的；在通道名称前面加上唯一的“域前缀”，例如：samples.flutter.dev/battery
+
+```
+// main.dart
+
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+...
+class _MyHomePageState extends State<MyHomePage> {
+  static const platform = const MethodChannel('samples.flutter.dev/battery');
+
+  // Get battery level.
+}
+```
+
+> 接下来，在 method channel 上调用一个方法，通过字符串标识符getBatteryLevel指定要调用的具体方法。例如，如果平台不支持平台API（例如在模拟器中运行时），则调用可能会失败，因此将invokeMethod调用包装在try catch语句中
+
+```
+// main.dart
+
+// Get battery level.
+String _batteryLevel = 'Unknown battery level.';
+
+Future<void> _getBatteryLevel() async {
+  String batteryLevel;
+  try {
+    final int result = await platform.invokeMethod('getBatteryLevel');
+    batteryLevel = 'Battery level at $result % .';
+  } on PlatformException catch (e) {
+    batteryLevel = "Failed to get battery level: '${e.message}'.";
+  }
+
+  setState(() {
+    _batteryLevel = batteryLevel;
+  });
+}
+```
+
+> 最后，将模板中的build方法替换为包含一个小用户界面，该界面以字符串形式显示电池状态，并包含一个刷新按钮
+
+```
+// main.dart
+
+@override
+Widget build(BuildContext context) {
+  return Material(
+    child: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          RaisedButton(
+            child: Text('Get Battery Level'),
+            onPressed: _getBatteryLevel,
+          ),
+          Text(_batteryLevel),
+        ],
+      ),
+    ),
+  );
+}
+```
+
+> *Step 3: Add an Android platform-specific implementation*
+> 
+> 首先在Android Studio中打开Flutter应用程序的Android主机部分：
+> 
+> 1.打开 Android Studio
+> 
+> 2.选择菜单 File > Open…
+> 
+> 3.导航到保存Flutter应用程序的目录，并选择其中的android文件夹。单击“OK”
+> 
+> 4.在项目视图中打开java文件夹中的MainActivity.java文件
+> 
+> 接下来，创建MethodChannel并在configureFlutterEngine()方法内设置MethodCallHandler。确保使用与 Flutter 客户端相同的通道名称
+
+```
+// MainActivity.java
+
+import androidx.annotation.NonNull;
+import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugins.GeneratedPluginRegistrant;
+
+public class MainActivity extends FlutterActivity {
+  private static final String CHANNEL = "samples.flutter.dev/battery";
+
+  @Override
+  public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    GeneratedPluginRegistrant.registerWith(flutterEngine);
+    new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
+        .setMethodCallHandler(
+          (call, result) -> {
+            // Note: this method is invoked on the main thread.
+            // TODO
+          }
+        );
+  }
+}
+```
+
+> 添加使用Android电池api检索电池电量的Android Java代码。这段代码与在原生Android应用程序中编写的代码完全相同
+> 
+> 首先，在文件顶部添加所需的导入：
+
+```
+// MainActivity.java
+
+import android.content.ContextWrapper;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
+import android.os.Bundle;
+```
+
+> 然后在activity类的configureFlatterEngine（）方法下面添加以下作为新方法：
+
+```
+// MainActivity.java
+
+private int getBatteryLevel() {
+  int batteryLevel = -1;
+  if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
+    BatteryManager batteryManager = (BatteryManager) getSystemService(BATTERY_SERVICE);
+    batteryLevel = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+  } else {
+    Intent intent = new ContextWrapper(getApplicationContext()).
+        registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+    batteryLevel = (intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) * 100) /
+        intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+  }
+
+  return batteryLevel;
+}
+```
+
+> 最后，完成前面添加的setMethodCallHandler（）方法。需要处理一个平台方法getBatteryLevel（），所以在call参数中测试它。这个平台方法的实现调用前一步编写的Android代码，并使用result参数返回成功和错误情况的响应。如果调用了未知方法，报告该方法
+> 
+> 删除以下代码：
+
+```
+// MainActivity.java
+
+(call, result) -> {
+  // Note: this method is invoked on the main thread.
+  // TODO
+}
+```
+
+> 并替换为以下内容：
+
+```
+// MainActivity.java
+
+(call, result) -> {
+  // Note: this method is invoked on the main thread.
+  if (call.method.equals("getBatteryLevel")) {
+    int batteryLevel = getBatteryLevel();
+
+    if (batteryLevel != -1) {
+      result.success(batteryLevel);
+    } else {
+      result.error("UNAVAILABLE", "Battery level not available.", null);
+    }
+  } else {
+    result.notImplemented();
+  }
+}
+```
+
+> 现在应该可以在Android上运行这个应用了。如果使用Android模拟器，请在可从工具栏中的…按钮访问的扩展控制面板中设置电池电量
+
++ Step 4: Add an iOS platform-specific implementation
+
+> 首先在Xcode中打开Flutter应用程序的iOS主机部分：
+> 
+> 1.打开 Xcode
+> 
+> 2.选择菜单项 File > Open…
+> 
+> 3.导航到保存Flutter应用程序的目录，并选择其中的ios文件夹。单击“OK”
+> 
+> 4.确保Xcode项目生成时没有错误
+> 
+> 5.打开文件AppDelegate.m，位于项目导航器的Runner>Runner下
+> 
+> 创建一个 FlutterMethodChannel 并在应用程序 didFinishLaunchingWithOptions: 方法中添加一个处理程序。确保使用与 Flutter 客户端相同的通道名称
+
+```
+// AppDelegate.m
+
+#import <Flutter/Flutter.h>
+#import "GeneratedPluginRegistrant.h"
+
+@implementation AppDelegate
+- (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
+  FlutterViewController* controller = (FlutterViewController*)self.window.rootViewController;
+
+  FlutterMethodChannel* batteryChannel = [FlutterMethodChannel
+                                          methodChannelWithName:@"samples.flutter.dev/battery"
+                                          binaryMessenger:controller];
+
+  [batteryChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    // Note: this method is invoked on the UI thread.
+    // TODO
+  }];
+
+  [GeneratedPluginRegistrant registerWithRegistry:self];
+  return [super application:application didFinishLaunchingWithOptions:launchOptions];
+}
+```
+
+> 接下来，添加iOS ObjectiveC代码，该代码使用iOS电池api来检索电池电量。此代码与原生iOS应用程序中编写的代码完全相同
+> 
+> 在AppDelegate类中的@end之前添加以下方法：
+
+```
+// AppDelegate.m
+
+- (int)getBatteryLevel {
+  UIDevice* device = UIDevice.currentDevice;
+  device.batteryMonitoringEnabled = YES;
+  if (device.batteryState == UIDeviceBatteryStateUnknown) {
+    return -1;
+  } else {
+    return (int)(device.batteryLevel * 100);
+  }
+}
+```
+
+> 最后，完成前面添加的setMethodCallHandler（）方法。需要处理一个平台方法getBatteryLevel（），所以在call参数中测试它。此平台方法的实现调用在上一步中编写的iOS代码，并使用result参数返回成功和错误情况的响应。如果调用了未知方法，报告该方法
+
+```
+// AppDelegate.m
+
+__weak typeof(self) weakSelf = self;
+[batteryChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+  // Note: this method is invoked on the UI thread.
+  if ([@"getBatteryLevel" isEqualToString:call.method]) {
+    int batteryLevel = [weakSelf getBatteryLevel];
+
+    if (batteryLevel == -1) {
+      result([FlutterError errorWithCode:@"UNAVAILABLE"
+                                 message:@"Battery info unavailable"
+                                 details:nil]);
+    } else {
+      result(@(batteryLevel));
+    }
+  } else {
+    result(FlutterMethodNotImplemented);
+  }
+}];
+```
+
+> 现在应该可以在iOS上运行这个应用了。如果使用iOS模拟器，请注意它不支持电池API，并且应用程序显示“电池信息不可用”
+
++ Separate platform-specific code from UI code
+
+> 如果您希望在多个Flutter应用程序中使用特定于平台的代码，那么将代码分离到位于主应用程序外部目录中的平台插件中会很有用
+
++ Custom channels and codecs
+
+> 除了上面提到的MethodChannel之外，您还可以使用更基本的BasicMessageChannel，它支持使用自定义消息编解码器的基本异步消息传递。您还可以使用专门的BinaryCodec、StringCodec和JSONMessageCodec类，或者创建自己的编解码器
+
++ Channels and Platform Threading
+
+> 在编写平台端代码时，在平台主线程上调用所有的通道方法。在Android上，这个线程有时被称为“main thread”，但它在技术上被定义为 UI thread。用@UI thread注释需要在UI线程上运行的方法。在iOS上，这个线程被正式称为 main thread
+> 
+> *Jumping to the UI thread in Android*
+> 
+> 为了满足通道的UI线程需求，可能需要从后台线程跳到Android的UI线程来执行通道方法。在Android中，这是通过post（）对Android的UI线程循环器执行Runnable来实现的，这将导致Runnable在下一次机会时在主线程上执行
+> 
+> In Java:
+
+```
+new Handler(Looper.getMainLooper()).post(new Runnable() {
+  @Override
+  public void run() {
+    // Call the desired channel message here.
+  }
+});
+```
+
+> In Kotlin:
+
+```
+Handler(Looper.getMainLooper()).post {
+  // Call the desired channel message here.
+}
+```
+
+> *Jumping to the main thread in iOS*
+> 
+> 为了满足通道的主线程需求，可能需要从后台线程跳到iOS的主线程来执行通道方法。在iOS中，这是通过在主调度队列上执行一个块来完成的：
+> 
+> In Objective-C:
+
+```
+dispatch_async(dispatch_get_main_queue(), ^{
+  // Call the desired channel message here.
+});
+```
+
+> In Swift:
+
+```
+DispatchQueue.main.async {
+  // Call the desired channel message here.
+}
+```
 
 ## Packages & plugins
 
