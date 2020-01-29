@@ -1288,7 +1288,727 @@ class User {
 
 ### [Accessibility](https://flutter.dev/docs/development/accessibility-and-localization/accessibility)
 
++ flutter致力于支持那些想让他们的应用程序更容易访问的开发者：尽可能多的人可以使用，包括那些有残疾的人，比如失明或运动障碍的人
+
++ flutter 有三个组件支持易访问性
+
+> Large fonts : 使用用户指定的字体大小呈现文本小部件
+> 
+> Screen readers : 交流有关UI内容的口头反馈
+> 
+> Sufficient contrast : 使用具有足够对比度的颜色呈现小部件
+
++ Inspecting Accessibility support
+
+> *Android*
+> 
+> Install the Accessibility Scanner for Android
+> 
+> Enable the Accessibility Scanner from Android Settings > Accessibility > Accessibility Scanner > On
+> 
+> Navigate to the Accessibility Scanner ‘checkbox’ icon button to initiate a scan
+> 
+> *iOS*
+> Open the iOS folder of your Flutter app in Xcode
+> 
+> Select a Simulator as the target, and click Run button
+> 
+> In Xcode, select Xcode > Open Developer Tools > Accessibility Inspector
+> 
+> In the Accessibility Inspector, select Inspection > Enable Point to Inspect, and then select the various user interface elements in running Flutter app to inspect their accessibility attributes
+> 
+> 
+> In the Accessibility Inspector, select Audit in the toolbar, and then select Run Audio to get a report of potential issues
+
++ Large fonts
+
+> Android和iOS都包含系统设置，用于配置应用程序使用的所需字体大小。在确定字体大小时，Flutter文本小部件会遵守此操作系统设置
+> 
+> 字体大小是根据操作系统设置通过Flutter自动计算的。但是，作为开发人员，您应该确保您的布局有足够的空间在字体大小增加时呈现其所有内容。例如，您可以在配置为使用最大字体设置的小屏幕设备上测试应用程序的所有部分
+
++ Screen readers
+
+> 屏幕阅读器（TalkBack, VoiceOver 对讲、画外音）使视障用户能够获得关于屏幕内容的语音反馈
+> 
+> 打开设备上的VoiceOver或TalkBack并在应用程序中导航。如果遇到任何问题，请使用语义小部件自定义应用程序的可访问性体验
+
++ Sufficient contrast
+
+> 充足的颜色对比度使文本和图像更易于阅读。在极端光线条件下（如在阳光直射下或在亮度较低的显示器上）观看设备上的界面时，充分的颜色对比度有助于帮助有各种视觉障碍的用户受益
+> 
+> 确保包含的任何图像具有足够的对比度
+> 
+> 在小部件上指定颜色时，请确保在前景和背景颜色选择之间使用足够的对比度
+
 ### [Internation­alizing Flutter apps](https://flutter.dev/docs/development/accessibility-and-localization/internationalization)
+
++ [Flutter-国际化适配终结者 - 好像不太管用](https://juejin.im/post/5c701379f265da2d9b5e196a#heading-1)
+
++ 建立一个国际化的应用程序：flutter_localizations 包
+
+> 默认情况下，Flutter只提供英语本地化。要添加对其他语言的支持，应用程序必须指定其他MaterialApp属性，并包含一个名为flutter_localizations的单独包。截至2019年4月，该软件包支持大约52种语言。如果你想让你的应用在iOS上顺利运行，那么你还必须添加“flutter_cupertino_localizations”包
+> 
+> 要使用 flutter_localizations，请将包作为依赖项添加到pubspec.yaml文件中：
+
+```
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_cupertino_localizations: ^1.0.1
+```
+
+> 接下来，导入 flutter_localizations 库并为MaterialApp指定本地化 delegates 和 supportedLocales 属性：
+
+```
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_cupertino_localizations/flutter_cupertino_localizations.dart';
+
+MaterialApp(
+ localizationsDelegates: [
+   // ... app-specific localization delegate[s] here
+   GlobalMaterialLocalizations.delegate,
+   GlobalWidgetsLocalizations.delegate,
+   GlobalCupertinoLocalizations.delegate,
+ ],
+ supportedLocales: [
+    const Locale('en'), // English
+    const Locale('he'), // Hebrew
+    const Locale.fromSubtags(languageCode: 'zh'), // Chinese *See Advanced Locales below*
+    // ... other locales the app supports
+  ],
+  // ...
+)
+```
+
+> 基于WidgetsApp的应用程序类似，只是不需要GlobalMaterialLocalizations.delegate
+> 
+> 首选完整的Locale.fromSubtags构造函数，因为它支持脚本代码，尽管区域设置默认构造函数仍然完全有效
+> 
+> GlobalMaterialLocalizations.delegate 为 Material 组件库提供本地化字符串和其他值
+> 
+> GlobalWidgetsLocalizations.delegate 定义 widget 库的默认文字方向，或自左至右，或自右至左
+
++ Advanced locale definition
+
+> 有些具有多个变体的语言需要一个以上的语言代码才能正确区分
+> 
+> 例如，完全区分中文的所有变体需要指定语言代码、脚本代码和国家代码。这是因为存在简化的和传统的脚本，以及在相同的脚本类型中写入字符的区域差异
+> 
+> 为了充分表达国家代码CN、TW和HK的所有中文变体，支持的地区列表应包括：
+
+```
+// Full Chinese support for CN, TW, and HK
+supportedLocales: [
+  const Locale.fromSubtags(languageCode: 'zh'), // generic Chinese 'zh'
+  const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'), // generic simplified Chinese 'zh_Hans'
+  const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'), // generic traditional Chinese 'zh_Hant'
+  const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN'), // 'zh_Hans_CN'
+  const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant', countryCode: 'TW'), // 'zh_Hant_TW'
+  const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant', countryCode: 'HK'), // 'zh_Hant_HK'
+],
+```
+
+> 关于 zh_Hans 等参见 [HTML5中的lang属性，zh-CN还是zh-Hans？](https://www.cnblogs.com/cndavidwang/p/11790153.html)
+> 
+> 此明确的完整定义将确保您的应用程序能够区分并为这些国家/地区代码的所有组合提供完全细微差别的本地化内容
+> 
+> 如果未指定用户的首选区域设置，则将使用最接近的匹配，这可能包含与用户期望的不同
+> 
+> Flutter 只解析 supportedLocales 中定义的区域
+> 
+> Flutter为常用语言提供脚本代码区分的本地化内容
+
++ 跟踪区域设置 ： Locale 类和 Localizations widget
+
+> Locale类用于标识用户的语言。移动设备支持为所有应用程序设置区域设置，通常通过系统设置菜单。国际化应用程序通过显示特定于区域设置的值来响应。例如，如果用户将设备的语言环境从英语切换到法语，则显示“Hello World”的文本小部件将用“Bonjour le monde”重新构建
+> 
+> Localizations widget 定义其子级的区域设置和子级所依赖的本地化资源。WidgetsApp小部件创建本地化小部件，并在系统的区域设置更改时重建它
+> 
+> 始终可以使用Localizations.localeOf（）查找应用程序的当前区域设置：
+
+```
+Locale myLocale = Localizations.localeOf(context);
+```
+
++ Localizations widget 加载和检索本地化值集合的对象
+
+> 用于加载和查找包含本地化值集合的对象
+> 
+> Apps使用 Localizations.of(context,type) 引用这些对象
+> 
+> 如果设备的区域设置发生更改，Localizations widget 会自动加载新区域设置的值，然后重新生成使用它的 widget。这是因为 Localizations 类似于 InheritedWidget
+
+## Platform integation
+
+### [Writing custom platform-specific code](https://flutter.dev/docs/development/platform-integration/platform-channels)
+
+
+## Packages & plugins
+
+### [Using packages](https://flutter.dev/docs/development/packages-and-plugins/using-packages)
+
++ 一些第三方Packages
+
+> [自定义导航/路由处理（FLURO）](https://pub.dev/packages/fluro)
+> 
+> [url_launcher](https://pub.dev/packages/url_launcher)
+> 
+> [battery](https://pub.dev/packages/battery)
+
++ 搜索 Packages
+
+> 在 [pub.dev](pub.dev) 上搜索
+
++ 为 app 添加包依赖
+
+> *以向 app 中添加 css_colors 包为例：*
+> 
+> 1、添加依赖：在 pubspec.yaml 中添加对 css_colors 的依赖
+> 
+> 2、安装：
+> 
+> 		终端 ： 运行 flutter pub get
+> 
+> 		Android Studio/IntelliJ：在pubspec.yaml顶部的操作功能区中单击Packages get
+> 
+> 		VS Code：单击位于pubspec.yaml顶部操作功能区右侧的“Get Packages”
+> 
+> 3、导入：在 Dart 代码中加入合适的 import 语句
+> 
+> 4、如果必要停止或重启 app ：如果包中包含特定于平台的代码（Android版的Java/Kotlin，iOS版的Swift/Objective-C），则必须将该代码内置到应用程序中。热重新加载和热重新启动只更新Dart代码，因此可能需要完全重新启动应用程序以避免在使用包时出现诸如MissingPluginException之类的错误
+> 
+> *可以在pub.dev上的任何包页面上找到Installing选项卡，它是这些步骤的方便参考*
+
++ 冲突解决
+
+> 假设你想在一个应用程序中使用 some_package 和 another_package ，这两个包都依赖于 url_launcher ，但版本不同。这会引起潜在的冲突。避免这种情况的最佳方法是，包作者在指定依赖项时使用版本范围而不是特定版本
+
+```
+dependencies:
+  url_launcher: ^0.4.2    # Good, any 0.4.x version where x >= 2 works.
+  image_picker: '0.1.1'   # Not so good, only version 0.1.1 works.
+```
+
+> 如果 some_package 声明了上述依赖项，而 another_package 声明了兼容的 url_launcher 依赖项，如“0.4.5”或^0.4.0，则Pub会自动解决此问题。平台对Gradle模块和/或CocoaPods的依赖性以类似的方式解决
+> 
+> 即使 some_package 和 another_package 声明了 url_launcher 的不兼容版本，它们也可能以兼容的方式实际使用 url_launcher。在这种情况下，可以通过向应用程序的pubspec.yaml文件添加依赖项重写声明来解决冲突，强制使用特定版本
+
+```
+dependencies:
+  some_package:
+  another_package:
+dependency_overrides:
+  url_launcher: '0.4.3'
+```
+
+> 如果冲突的依赖项本身不是一个包，而是一个特定于Android的库（如guava），那么必须将依赖项重写声明添加到Gradle构建逻辑中
+> 
+> 要强制使用 guava v23.0，请对应用程序的android/build.gradle文件进行以下更改：
+
+```
+configurations.all {
+    resolutionStrategy {
+        force 'com.google.guava:guava:23.0-android'
+    }
+}
+```
+
+> CocoaPods目前不提供依赖覆盖功能
+
++ Package versions
+
+> 所有包都有一个版本号，在包的pubspec.yaml文件中指定。包的当前版本显示在其名称旁边
+> 
+> 当一个包被添加到pubspec.yaml中时，缩写形式 `plugin1：` 意味着可以使用plugin1包的任何版本。要确保更新包时应用程序不会中断，请使用以下格式之一指定版本范围：
+> 
+> *范围限制：指定最小和最大版本*
+
+```
+dependencies:
+  url_launcher: '>=0.1.2 <0.2.0'
+```
+
+> *使用 caret syntax 的范围限制*
+> 
+> 参见 [Package versioning](https://dart.dev/tools/pub/versioning)
+> 
+> 遵循语义版本 [Semantic Versioning 2.0.0-rc.1](https://semver.org/spec/v2.0.0-rc.1.html)
+
+```
+dependencies:
+  collection: '^0.1.2'
+```
+
++ 更新包依赖
+
+> 添加包后首次运行 flutter pub get（Packages get in IntelliJ）时，flutter 将在 pubspec.lock Lockfile 中保存具体包版本。如果您或您团队中的其他开发人员运行flutter pub get，这将确保再次获得相同的版本
+> 
+> 要升级到包的新版本，例如使用包中的新功能，请运行flutter pub upgrade（IntelliJ中的 Upgrade dependencies ），以检索pubspec.yaml中指定的版本约束所允许的包的最高可用版本
+> 
+> *Lockfile*
+> 
+> 一个名为pubspec.lock的文件，指定包所依赖的每个即时和可传递依赖项的具体版本和其他标识信息
+> 
+> 与pubspec不同，pubspec只列出直接依赖项并允许版本范围，Lockfile 全面地将整个依赖关系图固定到包的特定版本。Lockfile 确保您可以重新创建应用程序使用的包的精确配置
+> 
+> 当您运行pub get、pub upgrade或pub degrade时，pub会自动为您生成 Lockfile。如果您的包是应用程序包，则通常会将其签入源代码管理。对于库包，通常不会
+
++ Dependencies on unpublished packages
+
+> 即使没有在pub.dev上发布包，也可以使用包。对于私有插件或未准备好发布的包，可以使用其他依赖项选项
+> 
+> *Path dependency*
+> 
+> Flutter应用程序可以通过文件系统路径依赖插件。路径可以是相对路径，也可以是绝对路径。例如，要依赖位于应用程序同级应用目录中的插件 plugin1，请使用以下语法:
+
+```
+dependencies:
+  plugin1:
+    path: ../plugin1/
+```
+
+> *Git dependency*
+> 
+> 您还可以依赖于Git存储库中存储的包。如果包位于repo的根目录下，请使用以下语法:
+
+```
+dependencies:
+  plugin1:
+    git:
+      url: git://github.com/flutter/plugin1.git
+```
+
+> *Git dependency on a package in a folder*
+> 
+> Pub假定包位于Git存储库的根目录中；如果不是这样，请使用path参数指定位置
+
+```
+dependencies:
+  package1:
+    git:
+      url: git://github.com/flutter/packages.git
+      path: packages/package1
+```
+
+> 最后，使用ref参数将依赖项固定到特定的git提交、分支或标记。更多细节，参见 [Package dependencies](https://dart.dev/tools/pub/dependencies)
+
++ 例子
+
+> *Using the css_colors package*
+> 
+> css_colors 包为css颜色定义了颜色常量，因此在 flutter 框架需要颜色类型的地方使用这些常量
+> 
+> 1.创建新项目 cssdemo
+> 
+> 2.打开 pubspec.yaml，增加对 css-colors 的依赖：
+
+```
+dependencies:
+  flutter:
+    sdk: flutter
+  css_colors: ^1.0.0
+```
+
+> 3.在终端运行 flutter pub get，或在 IntelliJ 点击 Packages get
+> 
+> 4.打开 lib/main.dart，按如下修改：
+
+```
+ import 'package:css_colors/css_colors.dart';
+ import 'package:flutter/material.dart';
+
+ void main() {
+   runApp(MyApp());
+ }
+
+ class MyApp extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+     return MaterialApp(
+       home: DemoPage(),
+     );
+   }
+ }
+
+ class DemoPage extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(body: Container(color: CSSColors.orange));
+   }
+ }
+```
+
+> 5.运行app，应用背景变为橘黄色
+> 
+> *Using the url_launcher package to launch the browser*
+> 
+> url_launcher插件包允许在移动平台上打开默认浏览器以显示给定的url，并且在Android和iOS上都被支持。该包演示了包可以包含特定于平台的代码，这些代码通常称为插件
+> 
+> 1.创建新项目 launchdemo
+> 
+> 2.打开 pubspec.yaml，添加对 url_launcher 的依赖：
+
+```
+dependencies:
+  flutter:
+    sdk: flutter
+  url_launcher: ^0.4.1
+```
+
+> 3.在终端运行 flutter pub get，或在 IntelliJ 点击 Packages get
+> 
+> 4.打开 lib/main.dart，按如下修改：
+
+```
+ import 'package:flutter/material.dart';
+ import 'package:url_launcher/url_launcher.dart';
+
+ void main() {
+   runApp(MyApp());
+ }
+
+ class MyApp extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+     return MaterialApp(
+       home: DemoPage(),
+     );
+   }
+ }
+
+ class DemoPage extends StatelessWidget {
+   launchURL() {
+     launch('https://flutter.dev');
+   }
+
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+       body: Center(
+         child: RaisedButton(
+           onPressed: launchURL,
+           child: Text('Show Flutter homepage'),
+         ),
+       ),
+     );
+   }
+ }
+```
+
+> 运行应用程序（或者停止并重新启动它，如果它在添加插件之前已经在运行）。点击显示 Flutter 主页。您应该会看到设备上打开的默认浏览器，显示了 Flutter 主页
+
+### [Developing packages & plugins](https://flutter.dev/docs/development/packages-and-plugins/developing-packages)
+
++ Package introduction
+
+> Package 包允许创建模块化代码，这些代码可以很容易地共享
+> 
+> *最小的 Package 包括:*
+> 
+> pubspec.yaml文件：声明包名称、版本、作者等的元数据文件
+> 
+> 一个lib目录，包含包中的公共代码，至少是一个<package name>.dart文件
+
++ Package types
+
+> *Dart packages*
+> 
+> 用Dart编写的通用包，例如path包。其中一些可能包含特定于 Flutter 的功能，因此依赖于 Flutter 框架，将其仅限于 Flutter 使用，例如fluro包
+> 
+> *Plugin packages*
+> 
+> 一个专门的Dart包，其中包含一个用Dart代码编写的API，该API与Android（使用Java或Kotlin）和/或iOS（使用ObjC或Swift）的特定平台实现相结合。一个具体的例子是 battery 插件包
+
++ Developing Dart packages
+
+> *Step 1: Create the package*
+
+```
+flutter create --template=package hello
+```
+
+> 这将在hello/文件夹中创建包含以下专门内容的包项目：
+> 
+> `lib/hello.dart` : 包的 Dart 代码
+> 
+> `test/hello_test.dart` : 包的单元测试
+> 
+> *Step 2: Implement the package*
+> 
+> 对于纯Dart包，只需在主lib/<package name>.Dart文件或lib目录中的几个文件中添加功能即可
+> 
+> 要测试包，请在测试目录中添加单元测试
+
++ Developing plugin packages
+
+> 如果要开发调用平台特定api的包，则需要开发插件包。插件包是Dart包的一个专门版本，除了上面描述的内容外，它还包含为Android（Java或Kotlin代码）、iOS（Objective-C或Swift代码）或两者编写的特定于平台的实现。API使用 platform channels 连接到特定于平台的实现
+> 
+> *Step 1: Create the package*
+
+```
+flutter create --org com.example --template=plugin hello
+```
+
+> 这将在hello/文件夹中创建一个插件项目，其中包含以下特定内容:
+> 
+> `lib/hello.dart` : 插件的 Dart API
+> 
+> `android/src/main/java/com/example/​hello/HelloPlugin.kt` : 插件API的 Android 实现
+> 
+> `ios/Classes/HelloPlugin.m` : 插件API的 IOS 实现
+> 
+> `example/` : 一个依赖于本插件的Flutter应用程序，演示了如何使用它
+> 
+> 默认情况下，插件项目对iOS代码使用Swift，对Android代码使用Kotlin。如果您喜欢Objective-C或Java，可以使用-i指定iOS语言和/或使用-a指定Android语言
+
+```
+flutter create --template=plugin -i objc -a java hello
+```
+
+> *Step 2: Implement the package*
+> 
+> 由于插件包包含用多种编程语言编写的多个平台的代码，因此需要一些特定的步骤来确保流畅的体验
+> 
+> *Step 2a: Define the package API (.dart)*
+> 
+> 插件包的API在Dart代码中定义。在你最喜欢的 Flutter 编辑器中打开主hello/文件夹。找到文件lib/hello.dart
+> 
+> *Step 2b: Add Android platform code (.java/.kt)*
+> 
+> 推荐使用 Android Studio 编辑 Android 代码
+> 
+> 在Android Studio中编辑Android平台代码之前，首先确保代码至少已经编译过一次（换句话说，从IDE/编辑器运行示例应用程序，或者在终端中执行cd hello/example；flutter build apk)
+> 
+> 下一步：
+> 
+> 1.打开 Android Studio
+> 
+> 2.在 ‘Welcome to Android Studio’ 对话框选择 ‘Import project’，或者打开菜单 ‘File > New > Import Project…’，选择 hello/example/android/build.gradle
+> 
+> 3.在 ‘Gradle Sync’ 对话框，选择  ‘OK’
+> 
+> 4.在 ‘Android Gradle Plugin Update’ 对话框，选择 ‘Don’t remind me again for this project’
+> 
+> 插件的Android平台代码位于hello/java/com.example.hello/hello plugin
+> 
+> 可以通过按  ▶  按钮从Android Studio运行示例应用程序
+> 
+> *Step 2c: Add iOS platform code (.h+.m/.swift)*
+> 
+> 推荐使用 Xcode 编辑 IOS 代码
+> 
+> 在Xcode中编辑iOS平台代码之前，首先确保代码至少已生成一次（即，从IDE/编辑器运行示例应用程序，或在终端中执行cd hello/example；flutter build ios --no-codesign）
+> 
+> 下一步：
+> 
+> 1.打开 Xcode
+> 
+> 2.打开 ‘File > Open’，选择 hello/example/ios/Runner.xcworkspace
+> 
+> 插件的iOS平台代码位于Pods/Development Pods/hello/Classes/项目导航器中
+> 
+> 可以通过按  ▶  按钮运行
+> 
+> *Step 2d: Connect the API and the platform code*
+> 
+> 最后，您需要将用Dart代码编写的API与特定于平台的实现连接起来。这是通过 platform channels 完成的。参见 [Writing custom platform-specific code](https://flutter.dev/docs/development/platform-integration/platform-channels)
+
++ Specifying a plugin’s supported platforms
+
+> 在flutter 1.10及更高版本中，插件可以通过在pubspec.yaml文件的 platforms map 中添加 key 来指定它们支持的平台。例如，下面是“hello”插件的flutter:map
+
+```
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.example.hello
+        pluginClass: HelloPlugin
+      ios:
+        pluginClass: HelloPlugin
+
+environment:
+  sdk: ">=2.1.0 <3.0.0"
+  # Flutter versions prior to 1.10 did not support the flutter.plugin.platforms map.
+  flutter: ">=1.10.0 <2.0.0"
+```
+
+> 当为更多平台添加插件实现时，platforms map 应相应更新，例如支持Android、iOS、macOS和Flutter Web的hello插件的 platforms map 如下：
+
+```
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.example.hello
+        pluginClass: HelloPlugin
+      ios:
+        pluginClass: HelloPlugin
+      macos:
+        pluginClass: HelloPlugin
+      web:
+        pluginClass: HelloPlugin
+        fileName: hello_web.dart
+
+environment:
+  sdk: ">=2.1.0 <3.0.0"
+  # Flutter versions prior to 1.10 did not support the flutter.plugin.platforms map.
+  flutter: ">=1.10.0 <2.0.0"
+```
+
++ Adding documentation
+
+> 建议在所有软件包中添加以下文档：
+> 
+> 1.介绍包的README.md文件
+> 
+> 2.记录每个版本中更改的CHANGELOG.md文件
+> 
+> 3.包含软件包授权条款的许可文件
+> 
+> 4.所有公共API的API文档
+
++ API documentation
+
+> 发布包时，API文档将自动生成并发布到dartdocs.org
+> 
+> 如果希望在本地生成API文档，请使用以下命令：
+> 
+> 1.将目录更改为包的位置：
+> 
+> cd ~/dev/mypackage
+> 
+> 2.告诉文档工具Flutter SDK的位置（更改以反映您放置它的位置）：
+> 
+> export FLUTTER_ROOT=~/dev/flutter (on macOS or Linux)
+> 
+> set FLUTTER_ROOT=~/dev/flutter (on Windows)
+> 
+> 3.运行dartdoc工具（作为Flutter SDK的一部分提供）：
+> 
+> $FLUTTER_ROOT/bin/cache/dart-sdk/bin/dartdoc (on macOS or Linux)
+> 
+> %FLUTTER_ROOT%\bin\cache\dart-sdk\bin\dartdoc (on Windows)
+
++ Adding licenses to the LICENSE file
+
+> 每个许可证文件中的单个许可证应在一行上单独用80个连字符分隔
+> 
+> 如果许可证文件包含多个组件许可证，则每个组件许可证必须以组件许可证适用的包的名称开头，每个包的名称在其自己的行上，并且包名称列表与实际许可证文本之间用空行分隔。（包不需要与发布包的名称匹配。例如，一个包本身可能包含来自多个第三方源的代码，并且可能需要为每个源包含一个许可证。）
+> 
+> 正确做法：
+
+```
+package_1
+
+<some license text>
+
+--------------------------------------------------------------------------------
+package_2
+
+<some license text>
+```
+
+> 正确做法：
+
+```
+package_1
+
+<some license text>
+
+--------------------------------------------------------------------------------
+package_1
+package_2
+
+<some license text>
+```
+
+> 错误做法：
+
+```
+<some license text>
+
+--------------------------------------------------------------------------------
+<some license text>
+```
+
+> 错误做法：
+
+```
+package_1
+
+<some license text>
+--------------------------------------------------------------------------------
+<some license text>
+```
+
++ Publishing packages
+
+> 一旦实现了一个包，就可以在pub.dev上发布它，这样其他开发人员就可以轻松地使用它
+> 
+> 发布之前，请确保查看pubspec.yaml、README.md和CHANGELOG.md文件，以确保其内容完整且正确。另外，为了提高您的软件包的质量和可用性，请考虑包含以下项目
+> 
+> 不同的代码使用示例
+> 
+> 屏幕截图、动画gif或视频
+> 
+> 指向相应代码库的链接
+> 
+> 接下来，运行dry run命令，查看是否所有内容都通过了分析：
+
+```
+flutter pub publish --dry-run
+```
+
+> 最后，运行实际的发布命令：
+
+```
+flutter pub publish
+```
+
++ Handling package interdependencies
+
+> 如果开发的包hello依赖于另一个包公开的Dart API，则需要将该包添加到pubspec.yaml文件的依赖项部分。下面的代码使url_launcher插件的Dart API对hello可用(在hello/pubspec.yaml里)
+
+```
+dependencies:
+  url_launcher: ^0.4.2
+```
+
+> 现在可以导入'package:url_launcher/url_launcher.dart'并在hello的dart代码中launch（someUrl）,这与在Flutter应用程序或任何其他Dart项目中包含包的方式没有区别
+> 
+> 但是，如果hello碰巧是一个插件包，其平台特定的代码需要访问由 url_launcher 公开的平台特定的api，则还需要向平台特定的构建文件添加适当的依赖关系声明
+> 
+> *Android* 修改 hello/android/build.gradle
+
+```
+android {
+    // lines skipped
+    dependencies {
+        provided rootProject.findProject(":url_launcher")
+    }
+}
+```
+
+> 现在可以导入io.flutter.plugins.urllauncher.UrlLauncherPlugin并访问源代码hello/android/src中的UrlLauncherPlugin类
+> 
+> *iOS* 修改 hello/ios/hello.podspec
+
+```
+Pod::Spec.new do |s|
+  # lines skipped
+  s.dependency 'url_launcher'
+```
+
+> 现在可以导入“UrlLauncherPlugin.h”并访问源代码hello/ios/Classes中的UrlLauncherPlugin类
+
+### [Flutter Favorite program](https://flutter.dev/docs/development/packages-and-plugins/favorites)
+
+### [Background processes](https://flutter.dev/docs/development/packages-and-plugins/background-processes)
+
+### [Supporting the new Android plugins APIs](https://flutter.dev/docs/development/packages-and-plugins/plugin-api-migration)
 
 ---
 # [*Cookbook*](https://flutter.dev/docs/cookbook)
