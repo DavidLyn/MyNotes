@@ -37,6 +37,7 @@
 
 > 在Extensions中搜索Flutter并下载
 
+---
 # flutter操作
 ## 查看Flutter SDK分支
 + flutter channel
@@ -46,12 +47,14 @@
 ## 升级Flutter SDK和依赖包
 + flutter upgrade
 
+---
 # 网上资源
 + [Flutter 官网 Docs](https://flutter.dev/docs)
 + [Flutter 中文网](https://flutterchina.club)
 + [书: Flutter实战](https://book.flutterchina.club)
 + [Flutter gallery](https://github.com/flutter/flutter/tree/master/examples/flutter_gallery)
 
+---
 # [Flutter 官网 Docs 笔记](https://flutter.dev/docs)
 
 # *Development*
@@ -2363,9 +2366,196 @@ Pod::Spec.new do |s|
 
 ### [Flutter Favorite program](https://flutter.dev/docs/development/packages-and-plugins/favorites)
 
++ Flutter Favorite 程序的目标是识别在构建应用程序时应该首先考虑的包和插件。这并不能保证质量或适合您的特定情况，您应该始终为您的项目执行您自己的包和插件评估
+
++ Metrics
+
+> Flutter Favorite 软件包已经通过了高质量标准，使用以下指标:
+> 
+> [Overall package score](https://pub.dev/help)
+> 
+> 许可证，包括（但不限于）Apache、art、BSD、CC BY、MIT、MS-PL和W3C
+> 
+> GitHub version标记与pub.dev中的当前版本匹配，因此您可以确切地看到包中的源码
+> 
+> 功能完整且未标记为不完整（例如，带有“beta”或“正在构建”等标签）
+> 
+> Verified publisher
+> 
+> 在概述、文档、示例/示例代码和API质量方面的一般可用性
+> 
+> 在CPU和内存使用方面的良好运行时行为
+> 
+> 高质量依赖项
+
++ Flutter 生态委员会
+
+> Flutter 生态系统委员会（FEC）由 Flutter 团队成员和遍布其生态系统的社区成员组成。他们的工作之一是决定一个包什么时候符合质量标准，成为 Flutter Favorite
+> 
+> 如果你想推荐一个软件包或插件作为未来 Flutter Favorite ，或者想引起委员会的注意，给委员会主席发一封邮件
+
++ Flutter Favorite usage guidelines
+
+> Flutter Favorite 软件包将由Flutter团队在pub.dev上贴上这样的标签。如果您拥有一个已被指定为Flutter Favorite 的软件包，则必须遵守以下准则：
+> 
+> Flutter Favorite包的作者可以将 Flutter Favorite 徽标放在包的GitHub自述文件、包的pub.dev Overview选项卡和与该包相关的帖子相关的社交媒体上
+> 
+> 我们鼓励您在社交媒体中使用 `#FlutterFavorite` 标签
+> 
+> 当使用 Flutter Favorite 标志时，作者必须链接到 Flutter Favorite 的登录页，以提供指定的上下文
+> 
+> 如果一个Flutter Favorite包丢失了Flutter Favorite状态，将通知作者，此时作者必须立即从受影响的包中删除“Flutter Favorite”和Flutter Favorite徽标的所有用途
+> 
+> 不要以任何方式更改、扭曲或修改 Flutter Favorite 徽标，包括显示带有颜色变化或未经批准的视觉元素的徽标
+> 
+> 不要以误导、不公平、诽谤、侵权、诽谤、诋毁、淫秽或其他对谷歌不利的方式显示 Flutter Favorite 徽标
+
++ What’s next
+
+> 你应该期待 Flutter Favorite 软件包列表会随着生态系统的不断发展而不断增长和变化。委员会将继续与软件包作者合作，以提高质量，并考虑生态系统中其他可能从 Flutter Favorite 程序中受益的领域，如工具、咨询公司和大量Flutter贡献者
+> 
+> 随着Flutter生态系统的发展，我们将着眼于扩展指标集，其中可能包括以下内容：
+> 
+> 使用新的pubspec.yaml格式，明确指出支持哪些平台
+> 
+> 支持最新稳定版本的 Flutter
+> 
+> 支持AndroidX
+> 
+> 支持多种平台，如web、macOS、Windows、Linux等
+> 
+> 集成和单元测试覆盖
+
++ Flutter Favorites
+
+> [可以在pub.dev上看到 Flutter Favorites 完整列表](https://pub.dev/flutter/favorites)
+
 ### [Background processes](https://flutter.dev/docs/development/packages-and-plugins/background-processes)
 
+> 即使您的应用程序不是当前活动的应用程序，您是否希望在后台执行Dart代码？也许你想实现一个监视时间或捕捉相机运动的过程。在Flutter中，可以在后台执行Dart代码
+> 
+> 此功能的机制包括设置 isolate。isolate 是Dart的多线程模型，尽管 isolate 不同于传统线程，因为它不与主程序共享内存。您将使用回调和回调分派器为后台执行设置 isolate
+> 
+> 有关更多信息和使用Dart代码后台执行的地理围栏示例，请参阅Flutter插件和地理围栏在后台执行Dart，这是Flutter发布在Medium上的一篇文章。在本文的最后，您将找到示例代码的链接，以及Dart、iOS和Android的相关文档
+
 ### [Supporting the new Android plugins APIs](https://flutter.dev/docs/development/packages-and-plugins/plugin-api-migration)
+
+## Add Flutter to existing app
+
+### [Add Flutter to existing app Introduction](https://flutter.dev/docs/development/add-to-app)
+
+### Adding to an Android app
+
+#### [Integrate a Flutter module into your Android project](https://flutter.dev/docs/development/add-to-app/android/project-setup)
+
+#### [Adding a Flutter screen to an Android app](https://flutter.dev/docs/development/add-to-app/android/add-flutter-screen)
+
+#### [Adding a Flutter Fragment to an Android app](https://flutter.dev/docs/development/add-to-app/android/add-flutter-fragment)
+
+### Adding to an IOS app
+
+#### [Integrate a Flutter module into your iOS project](https://flutter.dev/docs/development/add-to-app/ios/project-setup)
+
+#### [Adding a Flutter screen to an iOS app](https://flutter.dev/docs/development/add-to-app/ios/add-flutter-screen)
+
+### [Running, debugging, and hot reload](https://flutter.dev/docs/development/add-to-app/debugging)
+
+### [Load sequence, performance, and memory](https://flutter.dev/docs/development/add-to-app/performance)
+
+## Tools & techniques
+
+### [Android Studio and IntelliJ](https://flutter.dev/docs/development/tools/android-studio)
+
+### [Visual Studio Code](https://flutter.dev/docs/development/tools/vs-code)
+
+### DevTools
+
+#### [DevTools Overviews](https://flutter.dev/docs/development/tools/devtools/overview)
+
+#### [Install and run DevTools from Android Studio](https://flutter.dev/docs/development/tools/devtools/android-studio)
+
+#### [Install and run DevTools from VS Code](https://flutter.dev/docs/development/tools/devtools/vscode)
+
+#### [Install and run DevTools from the command line](https://flutter.dev/docs/development/tools/devtools/cli)
+
+#### [Using the Flutter inspector](https://flutter.dev/docs/development/tools/devtools/inspector)
+
+#### [Using the Timeline view](https://flutter.dev/docs/development/tools/devtools/timeline)
+
+#### [Using the Memory view](https://flutter.dev/docs/development/tools/devtools/memory)
+
+#### [Using the Performance view](https://flutter.dev/docs/development/tools/devtools/performance)
+
+#### [Using the debugger](https://flutter.dev/docs/development/tools/devtools/debugger)
+
+#### [Using the Logging view](https://flutter.dev/docs/development/tools/devtools/logging)
+
+### Flutter SDK
+
+#### [Upgrading Flutter](https://flutter.dev/docs/development/tools/sdk/upgrading)
+
+#### [Flutter SDK releases](https://flutter.dev/docs/development/tools/sdk/releases)
+
+#### [Breaking changes](https://flutter.dev/docs/release/breaking-changes)
+
+#### [Flutter release notes](https://flutter.dev/docs/development/tools/sdk/release-notes)
+
+### [Hot reload](https://flutter.dev/docs/development/tools/hot-reload)
+
+### [Code formatting](https://flutter.dev/docs/development/tools/formatting)
+
+## [AndroidX Migration](https://flutter.dev/docs/development/androidx-migration)
+
+# Testing & debugging
+
+## [Debugging Flutter apps](https://flutter.dev/docs/testing/debugging)
+
+## [Debugging Flutter apps programmatically](https://flutter.dev/docs/testing/code-debugging)
+
+## [Using an OEM debugger](https://flutter.dev/docs/testing/oem-debuggers)
+
+## [Flutter's build modes](https://flutter.dev/docs/testing/build-modes)
+
+## [Handling errors in Flutter](https://flutter.dev/docs/testing/errors)
+
+## [Testing Flutter apps](https://flutter.dev/docs/testing)
+
+# Performance & optimization
+
+## [Performance](https://flutter.dev/docs/perf)
+
+## [Measuring your app's size](https://flutter.dev/docs/perf/app-size)
+
+## Rendering performance
+
+### [Improving rendering performance](https://flutter.dev/docs/perf/rendering)
+
+### [Performance best practices](https://flutter.dev/docs/perf/rendering/best-practices)
+
+### [Flutter performance profiling](https://flutter.dev/docs/perf/rendering/ui-performance)
+
+# Deployment
+
+## [Creating flavors for Flutter](https://flutter.dev/docs/deployment/flavors)
+
+## [Build and release an Android app](https://flutter.dev/docs/deployment/android)
+
+## [Build and release an iOS app](https://flutter.dev/docs/deployment/ios)
+
+## [Build and release a web app](https://flutter.dev/docs/deployment/web)
+
+## [Continuous delivery with Flutter](https://flutter.dev/docs/deployment/cd)
+
+# Resources
+
+## [Bootstrap into Dart](https://flutter.dev/docs/resources/bootstrap-into-dart)
+
+## [Flutter compatibility policy](https://flutter.dev/docs/resources/compatibility)
+
+## [Inside Flutter](https://flutter.dev/docs/resources/inside-flutter)
+
+## [Platform specific behaviors and adaptations](https://flutter.dev/docs/resources/platform-adaptations)
+
 
 ---
 # [*Cookbook*](https://flutter.dev/docs/cookbook)
@@ -3103,193 +3293,3 @@ buildscript {
 
 ## 在Idea中dart运行出现：Setting VM flags failed: Unrecognized flags: checked
 - Run -> Edit Configurations...中去掉Checked Mode
-
----
-# Dart
-+ [Dart 官方 Docs](https://dart.dev/guides)
-+ [Dart语法学习 -- *good 值得再学习*](https://www.jianshu.com/p/9e5f4c81cc7d)
-
-## 语法要点
-### 基本数据类型
-
-> Dart 属于强类型语言(在Dart2.0之前，Dart是一门弱类型语言。2.0以后变更为强类型语言(注：官网原文是 Dart 2.0 has a sound type system))。同时属于动态类型语言(动态类型语言指只有在运行的时候才会检查数据类型，静态类型语言指编译期间就会检查数类型)，支持闭包
->
->
-
-### 类和对象
-+ 在Dart2里面创建对象时可以省略new关键字
-
-+ Dart具有语法糖，可以将构造函数参数赋值给实例变量
-
-```
-class Test {
-  num x, y;
-  
-  // 构造函数运行之前设置x和y
-  Test(this.x, this.y);
-}
-```
-
-+ 命名构造函数
-
-> Java可以做到方法重载（也就是：多个同名不同参数构造函数），但是Dart不可以这么做。Dart提供了命名构造。使用命名构造函数为类实现多个构造函数或提供更多的解释说明
-
-```
-class Test{
-  num x, y;
-
-  // 命名构造
-  Test.help() {
-    x = 5;
-    y = 10;
-    print('x=${x}, y = ${y}');
-  }
-}
-void main(){
-  Test.help();// 调用命名构造函数
-}
-```
-
-+ 初始化列表
-
-> 可以在构造函数体运行之前初始化实例变量，用逗号分隔初始化
-
-```
-class Test1 {
-  var x, y;
-  Test1(var x, var y)
-      : x = x,
-        y = y {
-    print('Test1 有参构造初始化');
-  }
-}
-```
-> 命名构造函数的初始化列表
-
-```
-class Test2{
-  var x,y;
-  Test2.from(Map<String, num> json)
-      : x = json['x'],
-       y = json['y'] {
-    print('Test2.from(): ($x, $y)');
-  }
-}
-```
-
-> 可以使用assert在初始化列表用来校验输入参数
-
-```
-class Test1 {
-  var x, y;
-
-  Test1(var x, var y) : assert(x >= 0) {
-    print('Test1(): ($x, $y)');
-  }
-
-}
-```
-
-### 函数
-+ 返回值为void时，可以省略void关键字
-
-+ 可选参数
-
-> Dart方法有两种类型的参数
-> 
-> 如果同时包含可选参数和必需参数，必需的参数在参数列表前面， 可选数在后面
-> 
-> 可选参数可以有一个默认值，当默认值在调用者没有指定值时使用
-> 
-> 可选参数具体可分为:
-> 
-> Optional named parameters（可选命名参数）
-> 
-> Optional positional parameters（可选位置参数）
-
-+ 可选命名参数
-
-> *在方法参数中，使用"{}"包围的参数属于可选命名参数*
-> 
-> 命名参数中的必要参数要添加@required标注，这样有利于静态代码分析器进行检查
-
-```
-  void _buildThree(int num, {String name, int range}) {
-    
-  }
-```
-> 可以为可选参数添加默认值
-
-```
-  void _buildThree(int num, {String name, int range = 10}) {
-
-  }
-```
-> 调用包含可选命名参数的方法时，需要使用paramName:value的形式指定为哪个可选参数赋值
-
-```
-  _buildThree(10,range: 1);
-```
-
-+ 可选位置参数
-
-> 在方法参数中，使用"[]"包围的参数属于可选位置参数
-
-```
-  void _buildHouse(int num, [String where, int range]) {
-
-  }
-  
-  void _buildHouseAndDefaultValue(int num, [String where = 'Shanghai', int range]) {
-
-  }
-```
-
-> 调用包含可选位置参数的方法时，无需使用paramName:value的形式，因为 可选位置参数是位置，如果想指定某个位置上的参数值，则必须前面位置的已经有值,即使前面的值存在默认值
-
-```
-    _buildHouse(10,10); //不可行的
-    
-    _buildHouse(10,'shenzhen',10); //可行的
-    
-    _buildHouseAndDefaultValue(10,10); //不可行的
-    
-    _buildHouseAndDefaultValue(10,'shenzhen',10); //可行的
-```
-
-> 这里特意使用两个不同类型的可选参数作为示例，如果前后可选参数为相同类型，则会出现异常结果，并且只有在发生后才会注意到。所以这一点要特别注意。比如一下示例，假如本意是想赋值给age,但结果将会差强人意
-
-```
-void _buildHouse(int num, [int range , int age]) {
-  print('range :  $range  age : $age');
-}
-
-void main() {
-  _buildHouse(10,10);
-}
-
-输出：
-
-range :  10  age : null
-```
-
-### 其他
-+ 字符串插值
-
-> $variableName (or ${expression})
-
-+ dynamic 关键字
-
-> dynamic不是实际的type，而是类型检查开关。一个变量被dynamic修饰，相当于告诉static type 系统“相信我，我知道我自己在做什么”
-
-+ `??` 和 `??=` 操作符
-
-> `AA ?? "999"` 表示如果AA为空，返回999
-> 
-> `AAA ?= 999` 如果AAA为空，把999赋值给AAA
-
-## Dart SDK安装
-- brew tap dart-lang/dart
-- brew install dart
-- brew info dart
-
