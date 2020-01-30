@@ -2444,9 +2444,200 @@ Pod::Spec.new do |s|
 
 ### [Add Flutter to existing app Introduction](https://flutter.dev/docs/development/add-to-app)
 
++ Flutter 可以作为一个库或模块，被集成到已有的应用程序中。然后，可以将该模块导入到Android或iOS（当前支持的平台）应用程序中，在Flutter中呈现应用程序UI的一部分。或者，只是为了运行共享的Dart逻辑
+
++ 从 Flutter v1.12 起，支持在每一个app中运行一个全屏的 Flutter 实例，但有下述限制：
+
+> 运行多个 Flutter 实例或在部分屏幕视图中运行可能具有未定义的行为
+> 
+> 在后台模式下运行 Flutter 的功能尚在开发中
+> 
+> 不支持将Flutter库打包到另一个可共享库或将多个Flutter库打包到应用程序中
+
++ Add to Android applications
+
+> 通过在Gradle脚本中添加Flutter SDK钩子自动构建和导入Flutter模块
+> 
+> 将Flutter模块构建到一个通用的Android存档（AAR）中，以集成到您自己的构建系统中，并与AndroidX实现更好的Jetifier互操作性
+> 
+> Android Studio Android/Flutter协同编辑和模块创建/导入向导
+> 
+> 支持Java和Kotlin主机应用程序
+> 
+> Flutter 模块可以使用 Flutter 插件与平台交互。Android插件应该迁移到 V2 插件api中，以获得最佳的应用程序正确性。从Flutter v1.12开始，Flutter 团队和 FlutterFire 维护的大多数插件都已迁移
+> 
+> 通过使用来自IDEs的Flutter attach或命令行连接到包含Flutter的应用程序，支持Flutter调试和状态热重新加载
+
++ Add to iOS applications
+
+> 通过向CocoaPods和Xcode构建阶段添加Flutter SDK钩子，自动构建并导入Flutter模块
+> 
+> 将 Flutter 模块构建到一个通用的iOS框架中，以便集成到您自己的构建系统中
+> 
+> 支持Objective-C和Swift主机应用程序
+> 
+> Flutter 模块可以使用 Flutter 插件与平台交互
+> 
+> 通过使用来自IDEs的Flutter attach或命令行连接到包含Flutter的应用程序，支持Flutter调试和状态热重新加载
+
 ### Adding to an Android app
 
 #### [Integrate a Flutter module into your Android project](https://flutter.dev/docs/development/add-to-app/android/project-setup)
+
++ Flutter 可以嵌入到现有的Android应用程序中，作为源代码 Gradle 子项目或AARs
+
++ 集成流程可以使用Android Studio IDE和Flutter插件完成，也可以手动完成
+
++ 现有的Android应用程序可能支持MIPS或 x86/x86_64 等架构。Flutter目前只支持为armeabi-v7a和arm64-v8a构建提前（AOT）编译的库
+
++ Using Android Studio
+
+> Android Studio IDE是一种自动集成Flutter模块的便捷方式。使用Android Studio，可以在同一个项目中同时编辑Android代码和Flutter代码。也可以使用 IntelliJ Flutter 插件功能，比如Dart代码补全、热重新加载和widget检查器
+> 
+> Android Studio的 Add-to-app 流程仅在Android Studio 3.6 加上版本42+的Flutter IntelliJ插件上受支持。Android Studio集成也只支持使用源代码Gradle子项目进行集成，而不支持使用AARs
+> 
+> 使用 File > New > New Module... 在现有Android项目中的 Android Studio 菜单中，可以创建一个新的 Flutter 模块来集成，或者选择先前创建的现有 Flutter 模块
+> 
+> 如果创建新模块，可以使用向导选择模块名称、位置等
+> 
+> Android Studio插件会自动配置 Android 项目，将 Flutter 模块添加为依赖项，为应用程序准备好构建
+> 
+> 要查看IDE插件自动对Android项目所做的更改，请考虑在执行其他步骤之前使用版本控制工具检查变更
+> 
+> 默认情况下，项目的  Project pane 可能显示“Android”视图。如果在 Project pane 中看不到新的Flutter文件，请确保将  Project pane 设置为显示“项目文件”，其中显示所有文件而不进行筛选
+
++ Manual integration
+
+> 为了将 Flutter 模块与现有的Android应用程序手动集成，而不使用 Android Studio 的 Flutter 插件，请遵循以下步骤：
+> 
+> *Create a Flutter module*
+> 
+> 假设你在 some/path/MyApp 上有一个现有的Android应用程序，你希望你的 Flutter 项目作为兄弟姐妹：
+
+```
+$ cd some/path/
+$ flutter create -t module --org com.example my_flutter
+```
+
++ Java 8 requirement
+
+> Flutter Android引擎使用Java 8特性
+> 
+> 在尝试将 Flutter 模块项目连接到宿主Android应用程序之前，请确保宿主Android应用程序的 build.gradle 文件在 Android{} 块中声明以下源代码兼容性，例如：
+
+```
+// MyApp/app/build.gradle
+
+android {
+  //...
+  compileOptions {
+    sourceCompatibility 1.8
+    targetCompatibility 1.8
+  }
+}
+```
+
+> *Add the Flutter module as a dependency*
+> 
+> 接下来，将 Flutter 模块作为 Gradle 现有应用程序的依赖项添加。实现这一目标有两种方法。AAR 机制创建通用的 Android AARs 作为中介来打包 Flutter 模块。采用这种方式的优点是，下游应用程序开发者不用安装 Flutter SDK；缺点是，如果需要经常构建，会增加一个构建步骤
+> 
+> 源代码子项目机制是一个方便的 one-click 构建过程，但需要Flutter SDK。这是Android Studio IDE插件使用的机制
+> 
+> *Option A - Depend on the Android Archive (AAR)*
+> 
+> 此选项将 Flutter 库打包为一个由AARs和POMs构件组成的通用本地Maven存储库。此选项允许您的团队在不安装Flutter SDK的情况下构建宿主应用程序。然后，您可以从本地或远程存储库分发工件
+> 
+> 假设您在 some/path/my_flutter 构建了 Flutter 模块，然后运行：
+
+```
+$ cd some/path/my_flutter
+$ flutter build aar
+```
+
+> 更具体地说，该命令创建包含下述文件的本地存储库：
+
+```
+build/host/outputs/repo
+└── com
+    └── example
+        └── my_flutter
+            ├── flutter_release
+            │   ├── 1.0
+            │   │   ├── flutter_release-1.0.aar
+            │   │   ├── flutter_release-1.0.aar.md5
+            │   │   ├── flutter_release-1.0.aar.sha1
+            │   │   ├── flutter_release-1.0.pom
+            │   │   ├── flutter_release-1.0.pom.md5
+            │   │   └── flutter_release-1.0.pom.sha1
+            │   ├── maven-metadata.xml
+            │   ├── maven-metadata.xml.md5
+            │   └── maven-metadata.xml.sha1
+            ├── flutter_profile
+            │   ├── ...
+            └── flutter_debug
+                └── ...
+```
+
+> 要依赖AAR，宿主应用程序必须能够找到这些文件。为此，请在宿主应用程序中编辑app/build.gradle，例如它包含本地存储库和依赖项：
+
+```
+// MyApp/app/build.gradle
+
+android {
+  // ...
+}
+
+repositories {
+  maven {
+    url 'some/path/my_flutter/build/host/outputs/repo'
+    // This is relative to the location of the build.gradle file
+    // if using a relative path.
+  }
+  maven {
+    url 'http://download.flutter.io'
+  }
+}
+
+dependencies {
+  // ...
+  debugImplementation 'com.example.flutter_module:flutter_debug:1.0'
+  profileImplementation 'com.example.flutter_module:flutter_profile:1.0'
+  releaseImplementation 'com.example.flutter_module:flutter_release:1.0'
+}
+```
+
+> 还可以使用 Build > Flutter > Build AAR 菜单在 Android Studio中 为Flutter模块构建 AAR
+> 
+> *Option B - Depend on the module’s source code*
+> 
+> 本方法为您的 Android 项目和 Flutter 项目启用一步构建。当同时处理这两个部分并快速迭代时，此方法非常方便，但是您的团队必须安装Flutter SDK来构建宿主应用程序
+> 
+> 将 Flutter 模块作为子项目包含在宿主应用程序的 settings.gradle 中:
+
+```
+// MyApp/settings.gradle
+
+include ':app'                                     // assumed existing content
+setBinding(new Binding([gradle: this]))                                 // new
+evaluate(new File(                                                      // new
+  settingsDir.parentFile,                                               // new
+  'my_flutter/.android/include_flutter.groovy'                          // new
+))                                                                      // new
+```
+
+> 假设 my_flutter 是 MyApp 的兄弟
+> 
+> 绑定和脚本评估允许Flutter模块在设置的评估上下文中包含自身（as:Flutter）和该模块使用的任何Flutter插件（as:package_info、：video_player等）
+> 
+> 在应用中引入对 Flutter 模块的实现依赖：
+
+```
+// MyApp/app/build.gradle
+
+dependencies {
+  implementation project(':flutter')
+}
+```
 
 #### [Adding a Flutter screen to an Android app](https://flutter.dev/docs/development/add-to-app/android/add-flutter-screen)
 
