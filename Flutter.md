@@ -2641,13 +2641,634 @@ dependencies {
 
 #### [Adding a Flutter screen to an Android app](https://flutter.dev/docs/development/add-to-app/android/add-flutter-screen)
 
++ 本指南介绍如何在现有 Android 应用程序中添加单个 Flutter 屏幕。 Flutter 屏幕可以添加为普通的不透明屏幕或透明屏幕
+
++ Add a normal Flutter screen
+
+> *step 1: Add FlutterActivity to AndroidManifest.xml*
+> 
+> Flutter 提供 FlutterActivity 实现在 Android 应用程序中显示 Flutter 界面。与任何其他 Activity 一样，FlutterActivity 必须在 AndroidManifest.xml中注册。将以下 XML 添加到 AndroidManifest.xml 的 application tag 下：
+
+```
+<activity
+  android:name="io.flutter.embedding.android.FlutterActivity"
+  android:theme="@style/LaunchTheme"
+  android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+  android:hardwareAccelerated="true"
+  android:windowSoftInputMode="adjustResize"
+  />
+```
+
+> 对 @style/LaunchTheme 的引用可以被任何想要应用到 FlutterActivity 的 Android 主题所替代。主题的选择决定了应用于 Android 系统chrome的颜色，比如Android的导航栏，以及 Flutter UI 第一次呈现之前 FlutterActivity 的背景色
+> 
+> *Step 2: Launch FlutterActivity*
+> 
+> 在清单文件中注册了 FlutterActivity 后，可从应用程序中的任何位置启动 FlutterActivity。下面的示例显示了从 OnClickListener 启动的 FlutterActivity
+
+```
+// ExistingActivity.java
+
+myButton.setOnClickListener(new OnClickListener() {
+  @Override
+  public void onClick(View v) {
+    startActivity(
+      FlutterActivity.createDefaultIntent(currentActivity)
+    );
+  }
+});
+```
+
+> 前面的例子假设 Dart 入口点为main（），并且初始 Flutter 路径是'/'。无法使用Intent更改 Dart 入口点，但可以使用Intent更改初始路由。下面的示例演示如何启动 FlutterActivity，呈现自定义初始路由
+
+```
+// ExistingActivity.java
+
+myButton.addOnClickListener(new OnClickListener() {
+  @Override
+  public void onClick(View v) {
+    startActivity(
+      FlutterActivity
+        .withNewEngine()
+        .initialRoute("/my_route")
+        .build(currentActivity)
+      );
+  }
+});
+```
+
+> 使用 withNewEngine（）工厂方法可以为当前 FlutterActivity 配置在内部创建的FlutterEngine 实例。这需要比较长的初始化时间。另一种方法是指示 FlutterActivity 使用预先创建并缓存的 FlutterEngine，这将使 Flutter 的初始化时间最小化
+> 
+> *Step 3: (Optional) Use a cached FlutterEngine*
+> 
+> 默认情况下，每个 FlutterActivity 都会创建自己的 FlutterEngine 。每个 FlutterEngine 都有比较长的创建时间。这意味着标准 FlutterActivity 的启动会有短暂的延迟。为了减少延迟，可以预先创建 FlutterEngine 
+> 
+> 要预先创建 FlutterEngine ，请在应用程序中找到一个合理的位置来实例化 FlutterEngine 。以下示例在 Application 类中预先创建 FlutterEngine ：
+
+```
+// MyApplication.java
+
+public class MyApplication extends Application {
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    // Instantiate a FlutterEngine.
+    flutterEngine = new FlutterEngine(this);
+
+    // Start executing Dart code to pre-warm the FlutterEngine.
+    flutterEngine.getDartExecutor().executeDartEntrypoint(
+      DartEntrypoint.createDefault()
+    );
+
+    // Cache the FlutterEngine to be used by FlutterActivity.
+    FlutterEngineCache
+      .getInstance()
+      .put("my_engine_id", flutterEngine);
+  }
+}
+```
+
+> 传递给 FlutterEngine 的ID可以是任意字串，但要确保将同一ID传递给将使用缓存的 FlutterEngine 的 FlutterActiity 或 FlutterFragment
+> 
+> 要预先创建 FlutterEngine ，必须执行 Dart 入口点。请记住，在调用executedEntryPoint（）时，Dart 入口点方法开始执行。如果Dart入口点调用 runApp(）来运行 Flutter 应用程序，那么 Flutter 应用程序的行为就像它在零尺寸的窗口中运行一样，直到此 FlutterEngine 连接到 FlutterActiity、FlutterFragment 或 FlutterView。确保你的应用程序在预先创建 FlutterEngine 和显示 Flutter 内容之间的行为正常
+> 
+> 有了预先创建且缓存的 FlutterEngine，现在需要指示 FlutterActivity 使用缓存的FlutterEngine，而不是创建新的FlutterEngine。要实现这一点，请使用 FlutterActivity 的withCachedEngine（）生成器：
+
+```
+// ExistingActivity.java
+
+myButton.addOnClickListener(new OnClickListener() {
+  @Override
+  public void onClick(View v) {
+    startActivity(
+      FlutterActivity
+        .withCachedEngine("my_engine_id")
+        .build(currentActivity)
+      );
+  }
+});
+```
+
+> 当使用缓存的 FlutterEngine 时，该 FlutterEngine 的生命周期比显示它的任何 FlutterActivity 或 FlutterFragment 都要长。请记住，只要预先创建 FlutterEngine ，Dart代码就开始执行，并在 FlutterActivity/FlutterFragment 销毁后继续执行。要停止执行并清除资源，可从 FlutterEngineCache 获取FlutterEngine 并使用 FlutterEngine.destroy（）销毁 FlutterEngine
+> 
+> 运行时性能并不是预先创建和缓存 FlutterEngine 的唯一原因。预先创建 FlutterEngine 执行 Dart 代码独立于 FlutterActivity，这使得 FlutterEngine 可以在任何时刻执行任意的 Dart 代码。非UI应用程序逻辑可以在 FlutterEngine（如网络和数据缓存）中执行，也可以在服务或其他地方的后台行为中执行。当使用 FlutterEngine 在后台执行时，要遵守Android对后台执行的所有限制
+> 
+> Flutter 的调试/发布版本具有截然不同的性能特征。要评估 Flutter 性能，使用发布版本
+> 
+> *Initial route with a cached engine*
+> 
+> 当使用新的 FlutterEngine 配置 FlutterActivity 或 FlutterFragment 时，初始路由的概念是可用的。然而，当使用缓存 FlutterEngine 时，FlutterActivity 和 FlutterFragment 不提供初始路由的概念。这是因为缓存的 FlutterEngine 已经在运行Dart代码，这意味着配置初始路由太迟了
+> 
+> 可以在执行 Dart 的入口点之前配置预先创建的 FlutterEngine 的初始路由：
+
+```
+// MyApplication.java
+
+public class MyApplication extends Application {
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    // Instantiate a FlutterEngine.
+    flutterEngine = new FlutterEngine(this);
+    // Configure an initial route.
+    flutterEngine.getNavigationChannel().setInitialRoute("your/route/here");
+    // Start executing Dart code to pre-warm the FlutterEngine.
+    flutterEngine.getDartExecutor().executeDartEntrypoint(
+      DartEntrypoint.createDefault()
+    );
+    // Cache the FlutterEngine to be used by FlutterActivity or FlutterFragment.
+    FlutterEngineCache
+      .getInstance()
+      .put("my_engine_id", flutterEngine);
+  }
+}
+```
+
+> 通过设置 navigation channel 的初始路由，关联的 FlutterEngine 在初始执行runApp（）Dart函数时显示所指定的界面
+
++ Add a translucent Flutter screen
+
+> 一些应用程序希望部署一个看起来像模态的 Flutter 屏幕，例如对话框或 bottom sheet 。Flutter 支持半透明 FlutterActivity
+> 
+> *Step 1: Use a theme with translucency*
+> 
+> 对于使用半透明背景渲染的 Activity，Android需要一个特殊的主题属性。使用以下属性创建或更新Android主题：
+
+```
+<style name="MyTheme" parent="@style/MyParentTheme">
+  <item name="android:windowIsTranslucent">true</item>
+</style>
+```
+
+> 然后，将半透明的主题应用到 FlutterActivity 中
+
+```
+<activity
+  android:name="io.flutter.embedding.android.FlutterActivity"
+  android:theme="@style/MyTheme"
+  android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+  android:hardwareAccelerated="true"
+  android:windowSoftInputMode="adjustResize"
+  />
+```
+
+> *Step 2: Start FlutterActivity with transparency*
+> 
+> 要在透明背景下启动 FlutterActivity，请将适当的背景模式传递给IntentBuilder：
+
+```
+// ExistingActivity.java
+
+// Using a new FlutterEngine.
+startActivity(
+  FlutterActivity
+    .withNewEngine()
+    .backgroundMode(FlutterActivity.BackgroundMode.transparent)
+    .build(context)
+);
+
+// Using a cached FlutterEngine.
+startActivity(
+  FlutterActivity
+    .withCachedEngine("my_engine_id")
+    .backgroundMode(FlutterActivity.BackgroundMode.transparent)
+    .build(context)
+);
+```
+
+> 确保 Flutter 内容也包括一个半透明的背景。如果 Flutter UI 绘制了一个纯色的背景，那么它仍然看起来 FlutterActivity 有一个不透明的背景
+
 #### [Adding a Flutter Fragment to an Android app](https://flutter.dev/docs/development/add-to-app/android/add-flutter-fragment)
 
 ### Adding to an IOS app
 
 #### [Integrate a Flutter module into your iOS project](https://flutter.dev/docs/development/add-to-app/ios/project-setup)
 
++ 可以将 Flutter 作为嵌入式框架添加到现有的IOS应用程序中
+
++ System requirements
+
+> 开发环境必须满足安装了 Xcode 的 Flutter 的 macOS 系统要求。Flutter 支持 iOS8.0 及更高版本
+
++ Create a Flutter module
+
+> 要将 Flutter 嵌入到现有的应用程序中，首先创建一个 Flutter 模块
+
+```
+cd some/path/
+flutter create --template module my_flutter
+```
+
+> Flutter 模块项目在 some/path/my_flutter/ 创建。从该目录中，可以运行与在任何其他flutter项目中相同的flutter命令，如 flutter run--debug 或 flutter build ios。还可以使用 Flutter 和 Dart 插件在 Android Studio/IntelliJ 或 VS Code 中运行该模块。此项目包含模块的单视图示例版本，然后嵌入到现有的应用程序中，这对于增量测试代码的 Flutter 部分非常有用
+
++ Module organization
+
+> my_flutter 模块目录结构类似于常规 Flutter 应用：
+
+```
+my_flutter/
+├── .ios/
+│   ├── Runner.xcworkspace
+│   └── Flutter/podhelper.rb
+├── lib/
+│   └── main.dart
+├── test/
+└── pubspec.yaml
+```
+
+> 在 lib/ 下添加代码；在 my_flutter/pubspec.yaml 里添加依赖
+> 
+> .ios/ 隐含子文件夹包含一个 Xcode workspace，可以在其中运行模块的独立版本。它是一个包装程序，用于引导 Flutter 代码，并包含帮助脚本，以帮助构建框架或将模块嵌入到现有应用程序中，与 CocoaPods 一起使用
+> 
+> 在已有应用或插件下添加 IOS 代码，不要在 .ios/ 下添加。针对 .ios/ 目录下的修改不会出现在调用该模块的原有应用中。Flutter 可能覆盖 .ios/
+> 
+> 因为 .ios/ 是自动生成的，不要对该目录进行源码管理
+
++ Embed the Flutter module in your existing application
+
+> 在现有的应用程序中有两种嵌入 Flutter 的方法:
+> 
+> 使用 CocoaPods 依赖关系管理器并安装 Flutter SDK（推荐）
+> 
+> 为 Flutter engine 、编译的Dart代码和所有 Flutter 插件创建框架。手动嵌入框架，并在 Xcode 中更新现有应用程序的构建设置
+> 
+> 由于Flutter不支持输出 x86 的 AOT 二进制文件，因此该应用不能以发布模式在模拟器上运行。可以在模拟器或实际设备上以调试模式运行，以及在实际设备上以发布模式运行
+> 
+> *Option A - Embed with CocoaPods and the Flutter SDK*
+> 
+> 此方法要求在项目中工作的每个开发人员都有一个本地安装的 Flutter SDK 版本。只需在 Xcode 中构建应用程序，自动运行脚本来嵌入 Dart 和插件代码。这允许快速迭代最新版本的 Flutter 模块，而无需在 Xcode 之外运行其他命令
+> 
+> 下面的示例假定现有的应用程序和 Flutter 模块都在兄弟目录中。如果目录结构不同，则可能需要调整相对路径：
+
+```
+some/path/
+├── my_flutter/
+│   └── .ios/
+│       └── Flutter/
+│         └── podhelper.rb
+└── MyApp/
+    └── Podfile
+```
+
+> 如果现有的应用程序（MyAPP）还没有 Podfile，请遵循 [CocoaPods getting started guide](https://flutter.dev/docs/development/add-to-app/ios/project-setup)，将 CocoaPods 添加到项目中
+> 
+> *1.Add the following lines to your Podfile:*
+
+```
+// MyApp/Podfile
+
+flutter_application_path = '../my_flutter'
+load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
+```
+
+> *2.对于每个需要嵌入 Flutter 的 Podfile target ，调用： `install_all_flutter_pods(flutter_application_path)`*
+
+```
+// MyApp/Podfile
+
+target 'MyApp' do
+  install_all_flutter_pods(flutter_application_path)
+end
+```
+
+> *3.运行：pod install*
+> 
+> 当更改 my_flutter/pubspec.yaml 中的 Flutter 插件依赖项时，在 Flutter 模块目录中运行 flutter pub get 以刷新 podhelper.rb 脚本读取的插件列表。然后，从应用程序中的 some/path/MyApp 再次运行 pod install
+> 
+> podhelper.rb 脚本将插件、Flutter.framework 和 App.framework 嵌入到项目中
+> 
+> 应用的调试和发布构建配置分别嵌入了 Flutter 的调试和发布构建模式。
+> 
+> Flutter.framework 是 Flutter engine 包，App.framework 是为这个项目的编译的Dart代码
+> 
+> 在 Xcode 中打开 MyApp.xcworkspace，使用 `⌘B` 来构建工程
+> 
+> *Option B - Embed frameworks in Xcode*
+> 
+> 或者，可以通过手动编辑现有的 Xcode 项目来生成必要的框架并将它们嵌入到应用程序中。如果您的团队成员不能在本地安装 Flutter SDK 和 CocoaPods，或者如果您不想在现有应用程序中使用 CocoaPods 作为依赖管理器，那么您可以这样做。每次在 Flutter 模块中进行代码更改时，都必须运行 flutter build ios-framework
+> 
+> 下面的示例假设将框架生成到 some/path/MyApp/Flutter/
+
+```
+flutter build ios-framework --output=some/path/MyApp/Flutter/
+```
+
+```
+some/path/MyApp/
+└── Flutter/
+    ├── Debug/
+    │   ├── Flutter.framework
+    │   ├── App.framework
+    │   ├── FlutterPluginRegistrant.framework
+    │   └── example_plugin.framework (each plugin with iOS platform code is a separate framework)
+    ├── Profile/
+    │   ├── Flutter.framework
+    │   ├── App.framework
+    │   ├── FlutterPluginRegistrant.framework
+    │   └── example_plugin.framework
+    └── Release/
+        ├── Flutter.framework
+        ├── App.framework
+        ├── FlutterPluginRegistrant.framework
+        └── example_plugin.framework
+```
+
+> 安装了Xcode 11之后，可以通过添加标志 ` --xcframework --no-universal` 来生成 XCFrameworks 而不是 universal frameworks
+> 
+> 在 Xcode 中将生成的 Flutter 框架嵌入或链接进已经存在的 IOS 工程中
+> 
+> 例如，可以将框架在Finder中从 some/path/MyApp/Flutter/Release/ 拖到目标的 build settings > Build Phases > Link Binary With Libraries 中
+> 
+> 在目标的  build settings 中，向  Framework Search Paths (FRAMEWORK_SEARCH_PATHS) 中添加 $(PROJECT_DIR)/Flutter/Release/ 
+
 #### [Adding a Flutter screen to an iOS app](https://flutter.dev/docs/development/add-to-app/ios/add-flutter-screen)
+
++ 本指南介绍如何在现有的iOS应用程序中添加单个 Flutter 屏幕
+
++ Start a FlutterEngine and FlutterViewController
+
+> 要从现有的iOS启动 Flutter 屏幕，可以启动 FlutterEngine 和 FlutterViewController
+> 
+> FlutterEngine 充当Dart虚拟机和 Flutter 运行时的宿主，FlutterViewController 连接到 FlutterEngine 以将 UIKit 输入事件传递到 Flutter 并显示由 FlutterEngine 渲染的帧
+> 
+> FlutterEngine 的寿命可能与 FlutterViewController 相同，或者比 FlutterViewController 的寿命长
+> 
+> 通常建议为应用预先创建一个长寿命的 FlutterEngine，因为：
+> 
+> 1.FlutterViewController 显示的更快
+> 
+> 2.Flutter 和 Dart 的状态比 FlutterViewController 寿命长
+> 
+> 3.在显示UI之前，IOS应用和插件可以和 Flutter 和 Dart 的逻辑进行交互
+>
+> *Create a FlutterEngine*
+>
+> 创建 FlutterEngine 的合适位置是特定于宿主应用程序的。作为一个例子，演示了在app delegate 的 app startup 时创建一个 FlutterEngine，并将其作为属性暴露出来
+> 
+> **AppDelegate.h:**
+
+```
+@import UIKit;
+@import Flutter;
+
+@interface AppDelegate : FlutterAppDelegate // More on the FlutterAppDelegate below.
+@property (nonatomic,strong) FlutterEngine *flutterEngine;
+@end
+```
+
+> **AppDelegate.m**
+
+```
+#import <FlutterPluginRegistrant/GeneratedPluginRegistrant.h> // Used to connect plugins.
+
+#import "AppDelegate.h"
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary<UIApplicationLaunchOptionsKey, id> *)launchOptions {
+  self.flutterEngine = [[FlutterEngine alloc] initWithName:@"my flutter engine"];
+  // Runs the default Dart entrypoint with a default Flutter route.
+  [self.flutterEngine run];
+  [GeneratedPluginRegistrant registerWithRegistry:self.flutterEngine];
+  return [super application:application didFinishLaunchingWithOptions:launchOptions];
+}
+
+@end
+```
+
+> *Show a FlutterViewController with your FlutterEngine*
+>
+> 下面的示例显示了一个通用的 ViewController，其中一个 UIButton 被钩住以显示 FlutterViewController。 FlutterViewController 使用在 AppDelegate 中创建的 FlutterEngine 实例
+> 
+> **ViewController.m**
+
+```
+@import Flutter;
+#import "AppDelegate.h"
+#import "ViewController.h"
+
+@implementation ViewController
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    // Make a button to call the showFlutter function when pressed.
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+    [button addTarget:self
+               action:@selector(showFlutter)
+     forControlEvents:UIControlEventTouchUpInside];
+    [button setTitle:@"Show Flutter!" forState:UIControlStateNormal];
+    button.backgroundColor = UIColor.blueColor;
+    button.frame = CGRectMake(80.0, 210.0, 160.0, 40.0);
+    [self.view addSubview:button];
+}
+
+- (void)showFlutter {
+    FlutterEngine *flutterEngine =
+        ((AppDelegate *)UIApplication.sharedApplication.delegate).flutterEngine;
+    FlutterViewController *flutterViewController =
+        [[FlutterViewController alloc] initWithEngine:flutterEngine nibName:nil bundle:nil];
+    [self presentViewController:flutterViewController animated:YES completion:nil];
+}
+@end
+```
+
+> 使用前面的示例，当调用 AppDelegate 中创建的 FlutterEngine 上的run时，默认Dart库的默认 main（）入口将被运行
+
+> *Alternatively - Create a FlutterViewController with an implicit FlutterEngine*
+>
+> 作为上述示例的替代，可以让 FlutterViewController 隐式地创建自己的 FlutterEngine，而无需提前创建 FlutterEngine
+> 
+> 通常不建议这样做，因为按需创建 FlutterEngine 可能会在 FlutterViewController 出现与第一帧呈现之间引入明显的延迟。然而，如果很少显示 Flutter 屏幕，当没有好的启发式方法来确定何时应该启动 Dart 虚拟机，以及 Flutter 不需要在 FlutterViewController 之间保持状态时，这可能非常有用
+> 
+> 为了让 FlutterViewController 不使用已有的 FlutterEngine，省略对 FlutterEngine 的构造，并在构造 FlutterViewController 时不引用 FlutterEngine
+> 
+> **ViewController.m**
+
+```
+// Existing code omitted.
+- (void)showFlutter {
+  FlutterViewController *flutterViewController =
+      [[FlutterViewController alloc] initWithProject:nil nibName:nil bundle:nil];
+  [self presentViewController:flutterViewController animated:YES completion:nil];
+}
+@end
+```
+
++ Using the FlutterAppDelegate
+
+> 建议使用应用程序的 UIApplicationDelegate 子类 FlutterAppDelegate，但不是必需的
+> 
+> FlutterAppDelegate 具有下述功能：
+> 
+> 将应用程序回调（如openURL）转发到插件（如local_auth）
+> 
+> 转发状态栏点击（只能在AppDelegate中检测到）以触发滚动到顶部的行为
+> 
+> 如果 app delegate 不能直接使 FlutterAppDelegate 成为一个子类，那么让 app delegate 实现 FlutterAppLifeCycleProvider 协议，以确保插件收到必要的回调。否则，依赖于这些事件的插件可能有未定义的行为
+> 
+> **AppDelegate.h**
+
+```
+@import Flutter;
+@import UIKit;
+@import FlutterPluginRegistrant;
+
+@interface AppDelegate : UIResponder <UIApplicationDelegate, FlutterAppLifeCycleProvider>
+@property (strong, nonatomic) UIWindow *window;
+@property (nonatomic,strong) FlutterEngine *flutterEngine;
+@end
+```
+
+> **AppDelegate.m**
+
+```
+@interface AppDelegate ()
+@property (nonatomic, strong) FlutterPluginAppLifeCycleDelegate* lifeCycleDelegate;
+@end
+
+@implementation AppDelegate
+
+- (instancetype)init {
+    if (self = [super init]) {
+        _lifeCycleDelegate = [[FlutterPluginAppLifeCycleDelegate alloc] init];
+    }
+    return self;
+}
+
+- (BOOL)application:(UIApplication*)application
+didFinishLaunchingWithOptions:(NSDictionary<UIApplicationLaunchOptionsKey, id>*))launchOptions {
+    self.flutterEngine = [[FlutterEngine alloc] initWithName:@"io.flutter" project:nil];
+    [self.flutterEngine runWithEntrypoint:nil];
+    [GeneratedPluginRegistrant registerWithRegistry:self.flutterEngine];
+    return [_lifeCycleDelegate application:application didFinishLaunchingWithOptions:launchOptions];
+}
+
+// Returns the key window's rootViewController, if it's a FlutterViewController.
+// Otherwise, returns nil.
+- (FlutterViewController*)rootFlutterViewController {
+    UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
+    if ([viewController isKindOfClass:[FlutterViewController class]]) {
+        return (FlutterViewController*)viewController;
+    }
+    return nil;
+}
+
+- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
+    [super touchesBegan:touches withEvent:event];
+
+    // Pass status bar taps to key window Flutter rootViewController.
+    if (self.rootFlutterViewController != nil) {
+        [self.rootFlutterViewController handleStatusBarTouches:event];
+    }
+}
+
+- (void)application:(UIApplication*)application
+didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings {
+    [_lifeCycleDelegate application:application
+didRegisterUserNotificationSettings:notificationSettings];
+}
+
+- (void)application:(UIApplication*)application
+didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
+    [_lifeCycleDelegate application:application
+didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+}
+
+- (void)application:(UIApplication*)application
+didReceiveRemoteNotification:(NSDictionary*)userInfo
+fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+    [_lifeCycleDelegate application:application
+       didReceiveRemoteNotification:userInfo
+             fetchCompletionHandler:completionHandler];
+}
+
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
+    return [_lifeCycleDelegate application:application openURL:url options:options];
+}
+
+- (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
+    return [_lifeCycleDelegate application:application handleOpenURL:url];
+}
+
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)url
+  sourceApplication:(NSString*)sourceApplication
+         annotation:(id)annotation {
+    return [_lifeCycleDelegate application:application
+                                   openURL:url
+                         sourceApplication:sourceApplication
+                                annotation:annotation];
+}
+
+- (void)application:(UIApplication*)application
+performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
+  completionHandler:(void (^)(BOOL succeeded))completionHandler NS_AVAILABLE_IOS(9_0) {
+    [_lifeCycleDelegate application:application
+       performActionForShortcutItem:shortcutItem
+                  completionHandler:completionHandler];
+}
+
+- (void)application:(UIApplication*)application
+handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
+  completionHandler:(nonnull void (^)(void))completionHandler {
+    [_lifeCycleDelegate application:application
+handleEventsForBackgroundURLSession:identifier
+                  completionHandler:completionHandler];
+}
+
+- (void)application:(UIApplication*)application
+performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+    [_lifeCycleDelegate application:application performFetchWithCompletionHandler:completionHandler];
+}
+
+- (void)addApplicationLifeCycleDelegate:(NSObject<FlutterPlugin>*)delegate {
+    [_lifeCycleDelegate addDelegate:delegate];
+}
+@end
+```
+
++ Launch options
+
+> 为了定制 Flutter 运行时，还可以指定 Dart 入口点、库和路由
+> 
+> *Dart entrypoint*
+> 
+> 调用 FlutterEngine 的 run，默认文件 lib/main.dart 中的 main() 函数
+> 
+> 可以使用 runWithEntrypoint 通过一个 NSString 指定一个不同的 Dart 入口函数
+> 
+> 除了main（）之外的 Dart 入口函数必须用以下方式进行注解，以便在编译时不会被 tree-shaken
+> 
+> **main.dart**
+
+```
+@pragma('vm:entry-point')
+  void myOtherEntrypoint() { ... };
+```
+
+> *Dart library*
+> 
+> 除了指定Dart函数外，还可以在特定文件中指定入口点函数
+> 
+> 例如，以下命令在 lib/other_file.dart 中运行 myOtherEntrypoint（），而不是在 lib/main.dart 中运行main（）：
+
+```
+[flutterEngine runWithEntrypoint:@"myOtherEntrypoint" libraryURI:@"other_file.dart"];
+```
+
+> *Route*
+> 
+> 构建 FlutterEngine 时，可以为 Flutter WidgetsApp 设置初始路由：
+
+```
+FlutterEngine *flutterEngine =
+    [[FlutterEngine alloc] initWithName:@"my flutter engine"];
+[[flutterEngine navigationChannel] invokeMethod:@"setInitialRoute"
+                                      arguments:@"/onboarding"];
+[flutterEngine run];
+```
 
 ### [Running, debugging, and hot reload](https://flutter.dev/docs/development/add-to-app/debugging)
 
