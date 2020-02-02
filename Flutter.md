@@ -3485,17 +3485,320 @@ FlutterEngine *flutterEngine =
 
 # Performance & optimization
 
-## [Performance](https://flutter.dev/docs/perf)
-
 ## [Measuring your app's size](https://flutter.dev/docs/perf/app-size)
+
++ 许多开发人员担心他们编译的应用程序的大小。由于 Flutter 应用程序的 APK、app bundle 或 IPA 版本是自包含的，并且包含运行该应用程序所需的所有代码和资产，因此其大小可能会引起关注。应用程序越大，它在设备上需要的空间就越多，下载时间也就越长，而且它可能会打破像 Android 即时应用（ Android instant app ）这样的有用功能的限制
+
++ 默认情况下，使用 flutter run 启动应用程序，或者单击 IDE 中的 Play 按钮（在试驾和编写第一个 Flutter 应用程序时使用），生成 Flutter 应用程序的调试版本。由于允许热重载和源代码级调试的开销，调试生成的应用程序大小很大
+
++ 生成最终用户版本 - Android
+
+> 从 Flutter 项目的顶部运行以下命令，以获得32位Android设备的APK大小:
+
+```
+flutter build apk --target-platform=android-arm
+```
+
+> 输出应该如下所示：
+
+```
+Built build/app/outputs/apk/release/app-release.apk (4.2MB).
+```
+
+> 对于64位 Android 设备，运行以下命令：
+
+```
+flutter build apk --target-platform=android-arm64
+```
+
+> 下面是一个输出示例：
+
+```
+Built build/app/outputs/apk/release/app-release.apk (4.6MB).
+```
+
+> 运行以下命令来获取两个apk，一个用于32位，一个用于64位：
+
+```
+flutter build apk --split-per-abi
+```
+
+> 下面是一个输出示例：
+
+```
+Built build/app/outputs/apk/release/app-armeabi-v7a-release.apk (4.2MB).
+Built build/app/outputs/apk/release/app-arm64-v8a-release.apk (4.6MB).
+```
+
+> 不要直接在 Flutter  1.9（或更高版本）中运行 flutter build apk，因为它会生成一个包含32位和64位二进制文件的胖 APK
+
++ 生成最终用户版本 - iOS
+
+> 要大致了解发行版 IPA 的大小，运行以下命令：
+
+```
+flutter build ios && tar -zcf build/app.ipa build/ios/iphoneos/Runner.app && ls -lh build/app.ipa
+```
+
+> example/helloworld 应用程序生成的 IPA 文件为8.3 MB
+
+```
+-rw-r--r--  1 userName  primarygroup   8.3M Oct 25 13:47 build/app.ipa
+```
+
+> 按照 iOS create build archive 说明中的描述，通过创建发布归档文件可以获得更接近的结果。如果在项目中启用了 bitcode，则还可以选择从 bitcode 重建。如果此选项可用，则应选择此选项，以便更紧密地匹配应用商店将为您的应用程序生成的内容。您还可以为特定的手机架构选择应用程序精简，这应该非常接近该设备商店中的最终 IPA 大小
+> 
+> 要准确测量 iOS 应用程序，必须将发布版 IPA 上载到 Apple的app Store Connect（说明）并从中获取大小报告。IPAs 通常大于 APKs
+
++ Reducing app size
+
+> 可以做一些显而易见的事情来缩小应用程序：
+> 
+> 删除未使用的资源
+> 
+> 最小化从库导入的资源
+> 
+> 支持有限数量的屏幕密度
+> 
+> 压缩PNG和JPEG文件
 
 ## Rendering performance
 
 ### [Improving rendering performance](https://flutter.dev/docs/perf/rendering)
 
++ 在应用程序中渲染动画是衡量性能时最引人关注的主题之一。部分归功于 Flutter 的 Skia 引擎以及它快速创建和处理 widget 的能力，Flutter 应用程序在默认情况下是有性能的，所以您只需要避免常见的陷阱就可以获得优异的性能
+
++ 如果您看到的是janky（非平滑）动画，请使用 profile 模式创建并分析应用程序的性能。默认的 Flutter 构建以调试模式创建一个应用程序，不用展现发布版本的性能
+
++ 几个常见的陷阱
+
+> Rebuilding far more of the UI than expected each frame
+> 
+> Building a large list of children directly, rather than using a ListView
+
 ### [Performance best practices](https://flutter.dev/docs/perf/rendering/best-practices)
 
++ 一般来说，Flutter 应用程序在默认情况下是有性能的，因此只需要避免常见的陷阱就可以获得优异的性能，而不需要使用复杂的分析工具进行微观优化。这些最好的建议将帮助编写性能最好的 Flutter 应用程序
+
++ Best practices
+
+> 如何设计一个 Flutter 应用程序，以最有效地渲染场景？特别是，如何确保框架生成的绘制代码尽可能高效？在设计应用程序时，需要考虑以下几点：
+> 
+> *Controlling build() cost*
+> 
+> 避免在build（）方法中重复和代价高昂的工作，因为在祖先 widget 重建时可以频繁调用build（）
+> 
+> 避免使用包含较大的 build() 函数的体量过大的 widget，根据封装和如何变化将其拆分成较小的 widget
+> 当对 state 对象调用 setState（）时，所有子窗口 widget 都将重新生成。因此，将 setState（）调用局部化到其 UI 实际需要更改的子树部分。如果更改包含在树的一小部分，请避免在树的上部调用setState（）
+> 
+> 当重新遇到与前一帧相同的子小部件实例时，重建所有子部件的遍历将停止。此技术在优化动画的框架中被大量使用，其中动画不影响子树
+> 
+> *Apply effects only when needed*
+> 
+> 小心使用 effects（*动画效果*），因为它们可能很昂贵。其中一些在后台调用saveLayer（），这可能是一个昂贵的操作
+> 
+> 应用特定效果时的一些一般规则：
+> 
+> 仅在必要时使用不透明度 widget。有关将不透明度直接应用于图像的示例，请参见“不透明度API”页面中的“透明图像”部分，这比使用“不透明度” widget 更快
+> 
+> 剪裁（Clipping）不会调用saveLayer（）（除非使用Clip.antiAliasWithSaveLayer 显式请求），因此这些操作不像不透明操作那样昂贵，但剪裁仍然很昂贵，因此请谨慎使用。默认情况下，剪辑被禁用（ Clip.none ），因此必须在需要时显式启用它
+> 
+> 其他可能触发saveLayer（）并可能代价高昂的 widget：
+> 
+> ShaderMask
+> 
+> ColorFilter
+> 
+> Chip - 如果 `disabledColorAlpha != 0xff` 可能调用 `saveLayer()`
+> 
+> Text - 如果存在 `overflowShader`，可能会调用 `saveLayer（）`
+> 
+> 避免调用 `saveLayer（）` 的方法
+> 
+> 要在图像中实现淡入，请考虑使用 FadeInImage 小部件，该小部件使用 GPU 的片段着色器应用渐变不透明度。有关详细信息，请参见 [Opacity docs](https://api.flutter.dev/flutter/widgets/Opacity-class.html)
+> 
+> 要创建圆角矩形，而不是应用剪切矩形，请考虑使用许多小部件类提供的 borderRadius 属性
+> 
+> *Render grids and lists lazily*
+> 
+> 在构建大型网格或列表时，使用带有回调的 lazy 方法。这样，只有屏幕的可见部分在启动时生成
+> 
+> *Build and display frames in 16ms*
+> 
+> 由于有两个独立的线程用于生成和渲染，因此您有16ms用于生成，16ms用于在60Hz显示器上渲染。如果要考虑延迟，请在16毫秒或更短的时间内构建和显示帧。注意，这意味着在8ms或更短的时间内构建，在8ms或更短的时间内渲染，总共16ms或更短。如果缺少帧（jankyness）是一个问题，那么每个构建和渲染阶段的16ms是可以的
+> 
+> 如果您的帧在 profile 模式下的渲染速度远低于16ms，那么即使存在一些性能缺陷，您也不必担心性能问题，但是您仍然应该尽可能快地构建和渲染帧
+> 
+> 将帧渲染时间降低到16毫秒以下可能不会产生视觉差异，但它可以提高电池寿命和发热问题
+> 
+> 它可能在您的设备上运行良好，但请考虑针对目标设备的最低性能
+> 
+> 当120fps设备变得广泛可用时，为了提供最平滑的体验，您需要在8ms（总计）内渲染帧
+> 
+> 如果你想知道为什么60fps会带来流畅的视觉体验，请看视频为什么60fps？
+
++ Pitfalls
+
+> 如果需要调整应用程序的性能，或者用户界面没有想象的那么平滑，IDE 的 Flutter 插件可以提供帮助。在 Flutter Performance 窗口中，启用“ `Show widget rebuild information` 复选框。此功能可帮助检测何时渲染和显示超过16毫秒的帧。在可能的情况下，插件提供指向相关提示的链接
+> 
+> 以下行为可能会对应用程序的性能产生负面影响:
+> 
+> 避免使用 Opacity widget，尤其是在动画中避免使用它。使用 AnimatedOpacity 或 FadeInImage 代替
+> 
+> 使用 AnimatedBuilder 时，请避免在 builder 函数中放置子树，该函数用于生成不依赖于动画的小部件。此子树是为动画的每个刻度重建的。相反，只需构建子树的那一部分，并将其作为子级传递给 AnimatedBuilder
+> 
+> 避免剪辑动画。如果可能，请在设置图像动画之前对其进行预剪辑
+> 
+> 如果大多数子项在屏幕上不可见，请避免将构造函数与子项的具体列表（如Column（）或ListView（））一起使用，以避免生成成本
+
 ### [Flutter performance profiling](https://flutter.dev/docs/perf/rendering/ui-performance)
+
++ Flutter 旨在提供每秒60帧（fps）的性能，或在能够120Hz更新的设备上提供每秒120帧的性能
+
++ 对于60FPS，帧需要渲染大约每16Ms
+
++ Jank 发生在 UI 渲染不顺利的时候。例如，每隔一段时间，一个帧需要10倍的时间来渲染，因此它会被丢弃，并且动画会明显地抖动
+
++ 有人说“一个快速的应用程序很好，但是一个平滑的应用程序更好。”如果你的应用程序渲染不平滑，你如何修复它？你从哪里开始？本指南将向您介绍从何处开始、要采取的步骤以及可以帮助您的工具
+
+> 应用程序的性能由多个度量指标决定。性能有时指的是原始速度，但也指的是用户界面的平滑度和缺乏口吃( lack of stutter )。其他性能示例包括I/O或网络速度。本页主要关注第二类性能（UI平滑度），但您可以使用大多数相同的工具来诊断其他性能问题
+
++ 诊断性能问题
+
+> 要诊断存在性能问题的应用程序，将启用性能覆盖来查看UI和GPU线程。在开始之前，需要确保是在 profile 模式下运行的，并且没有使用模拟器。为了获得最佳效果，可以选择用户可能使用的速度最慢的设备
+> 
+> *Connect to a physical device*
+> 
+> 几乎所有 Flutter 应用程序的性能调试都应该在物理Android或iOS设备上进行，且 Flutter 应用程序以 profile 模式运行。使用调试模式，或在模拟器上运行应用程序，通常并不表示发布模式生成的最终行为。应该考虑检查用户可能合理使用的最慢设备的性能
+> 
+> 为什么要在真正的设备上运行：
+> 
+> 模拟器和仿真器不使用相同的硬件，因此它们的性能特征不同：一些在模拟器上的操作比实际设备更快，一些则更慢
+> 
+> 调试模式需要启用一些额外的检查（比如断言等），这些操作在 profile 和 发布版本中不会执行，但却很昂贵
+> 
+> 调试模式也以不同于发布模式的方式执行代码。调试版本会在应用程序运行时编译 Dart 代码“即时”（JIT），但在应用程序加载到设备上之前，profile 和发布版本会预编译为本机指令（也称为“提前”或AOT）。JIT会导致应用程序暂停进行JIT编译，这本身会导致jank
+> 
+> *Run in profile mode*
+> 
+> Flutter 的 profile 模式编译和启动应用程序的方式与 release 模式几乎相同，但只有足够多的附加功能允许调试性能问题。例如，profile 模式为分析工具提供跟踪信息
+> 
+> 如下所示在 profile 模式下启动应用程序：
+> 
+> 在 Android Studio 或 IntelliJ 中，使用菜单项 `Run > Flutter Run main.dart in Profile Mode`
+> 
+> 在 VS Code 中，打开 launch.json 文件，并将 flutterMode 属性设置为profile 模式（完成 profiling 后，将其改回 release 或 debug 模式）：
+
+```
+"configurations": [
+  {
+    "name": "Flutter",
+    "request": "launch",
+    "type": "dart",
+    "flutterMode": "profile"
+  }
+]
+```
+
+> 在命令行，使用 --profile 选项：
+
+```
+$ flutter run --profile
+```
+
++ Launch DevTools
+
+> DevTools 提供了一些特性，如分析、检查堆、显示代码覆盖率、启用性能覆盖率和逐步调试器。DevTools 的 Timeline 视图允许逐帧调查应用程序的UI性能
+> 
+> 当以 profile 模式运行时，启动 DevTools
+
++ The performance overlay
+
+> 性能覆盖（performance overlay）以两个图表的形式显示统计信息，显示应用程序中的时间消耗情况。如果 UI 是janky（跳过帧），这些图将帮助找出原因。这些图表显示在运行的应用程序的顶部，但它们并不像一个普通的 widget 那样被绘制 —— Flutter engine 本身绘制了覆盖层（overlay），只对性能产生了最小的影响。每个图代表该线程的最后300帧
+> 
+> 本节介绍如何启用性能覆盖并使用它诊断应用程序中 jank 的原因。下面的屏幕截图显示了 Flutter Gallery 示例上运行的性能覆盖：
+> 
+> 显示GPU线程（顶部）和UI线程（底部）的性能覆盖图
+> 
+> 绿色竖条表示当前帧
+
++ 解释图表
+
+> 上图显示了GPU线程的时间消耗，下图显示了UI（“CPU”）线程的时间消耗。沿着垂直轴的白色线条跨过图表显示16ms增量；如果图表越过其中一条线，则运行频率小于60Hz。水平轴表示帧。图表只是在应用绘制时更新，所以空闲则图表停止移动
+> 
+> 覆盖（overlay）应该始终在 profile 模式下查看，因为调试模式的性能是故意牺牲的，以换取旨在帮助开发的昂贵断言，因此结果是误导性的
+> 
+> 每个帧应该在 1/60秒（大约16ms）内被创建和显示。超过此限制的帧（在任一图形中）无法显示，导致jank，并且一个或两个图形中都会出现一个垂直的红色条。如果UI图中出现红色条，则 Dart 代码太耗时；如果GPU图中出现红色竖条，则场景太复杂，无法快速渲染
+
++ Flutter’s threads
+
+> Flutter 使用几个线程来完成它的工作，尽管覆盖图(overlay)中只显示了其中的两个线程。所有的 Dart 代码都在 UI 线程上运行。尽管不能直接访问任何其他线程，但在UI线程上的操作会对其他线程产生性能影响
+> 
+> *Platform thread*
+> 
+> 平台的主线。插件代码在这里运行。有关更多信息，请参阅iOS的UIKit文档或Android的主线程文档。此线程未显示在性能覆盖中
+> 
+> *UI thread*
+> 
+> UI线程在 Dart 虚拟机中执行 Dart 代码。这个线程包括您编写的代码，以及 Flutter 框架代表应用程序执行的代码。当应用程序创建并显示场景时，UI 线程创建一个层树（layer tree），这是一个轻量级对象，包含与设备无关的绘制命令，并将层树发送到要在设备上呈现的GPU线程。不要阻塞这个线程！UI线程显示在性能覆盖图的最下面一行
+> 
+> *GPU thread*
+> 
+> GPU 线程获取层树，并通过与 GPU（图形处理单元）对话来显示它。不能直接访问 GPU 线程或它的数据，但是，如果这个线程很慢，这是在 Dart 代码中所做的一些事情的结果。Skia，图形库，运行在这个线程上，有时被称为光栅化线程。GPU 线程显示在性能覆盖图的第一行
+> 
+> *I/O thread*
+> 
+> 执行昂贵的任务（主要是I/O），否则会阻塞UI或GPU线程。此线程未显示在性能覆盖中
+
++ Displaying the performance overlay
+
+> *Using the Flutter inspector*
+> 
+> 启用 Performance Overlay 小部件的最简单方法是使用 Flutter 检查器，它可以在 DevTools 的检查器视图中使用。只需单击 Performance Overlay（性能覆盖）按钮，即可在运行的应用程序上切换覆盖
+> 
+> *From the command line*
+> 
+> 使用命令行中的P键切换性能覆盖
+> 
+> *Programmatically*
+> 
+> 要以编程方式启用覆盖，请参阅[以编程方式调试颤振应用程序](https://flutter.dev/docs/testing/code-debugging)页面中的“性能覆盖”部分
+> 
+> 你可能对 Flutter Gallery 示例应用程序很熟悉。要使用 Flutter Gallery 的性能覆盖，请使用 Flutter 安装的 examples 目录中的副本，并在 profile 模式下运行应用程序。程序的编写使得应用程序菜单允许您动态切换覆盖，以及启用对 saveLayer 调用和缓存图像存在性的检查
+> 
+> 无法在从应用程序商店下载的 Flutter Gallery 应用程序中启用性能覆盖。该版本的应用程序被编译为发布模式（不是 profile 模式），并且不提供启用或禁用覆盖的菜单
+
++ Identifying problems in the UI graph
+
+> 如果性能覆盖在UI图中显示为红色，则从分析Dart VM开始，即使GPU图也显示为红色
+
++ Identifying problems in the GPU graph
+
+> 有时场景会生成一个易于构造但在 GPU 线程上渲染代价高昂的层树。当这种情况发生时，UI图没有红色，但是 GPU 图显示红色。在这种情况下，需要弄清楚代码正在做什么，这会导致呈现代码变慢。特定类型的工作负载对于GPU来说更为困难。它们可能涉及到对saveLayer的不必要调用、与多个对象相交的不透明性以及特定情况下的剪辑或阴影
+> 
+> 如果怀疑慢度的来源是在动画过程中，请单击 `Flutter inspector` 中的 `Slow Animations` 按钮，将动画慢5倍。如果希望对速度进行更多控制，也可以通过编程方式执行此操作
+> 
+> 是第一帧慢，还是整个动画慢？如果是整个动画，剪辑会导致速度减慢吗？也许有另一种不使用剪辑的方法来绘制场景。例如，将不透明的角点覆盖到正方形上，而不是剪切到圆角矩形上。如果是正在淡入、旋转或以其他方式操纵的静态场景，则重绘边界可能会有所帮助
+> 
+> *Checking for offscreen layers*
+> 
+> saveLayer 方法是 Flutter 框架中最昂贵的方法之一。当对场景应用后期处理时，它很有用，但它会减慢应用程序的速度，如果不需要，应该避免使用它。即使不显式调用saveLayer，隐式调用也可能发生。可以使用 PerformanceOverlayLayer.checkboard offscreenlayers 开关检查当前场景是否正在使用 saveLayer
+> 
+> 启用开关后，运行应用程序并查找任何用闪烁框勾勒的图像。如果正在渲染新帧，则框会在帧之间闪烁。例如，可能有一组对象具有使用saveLayer渲染的不透明性。在这种情况下，对每个单独的小部件应用不透明度可能比在小部件树的上方应用父小部件更有效。其他可能代价高昂的操作也一样，如剪辑或阴影
+> 
+> 不透明度、剪辑和阴影本身并不是一个坏主意。但是，将它们应用到小部件树的顶部可能会导致对saveLayer的额外调用，以及不必要的处理
+> 
+> 当遇到对saveLayer的调用时，请问自己以下问题：
+> 
+> 应用程序需要这种效果吗？
+> 
+> 这些调用能被取消吗？
+> 
+> 可以对单个元素而不是组应用相同的效果吗？
+> 
+> *Checking for non-cached images*
+> 
+> 
 
 # Deployment
 
