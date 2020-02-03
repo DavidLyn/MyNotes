@@ -3798,7 +3798,35 @@ $ flutter run --profile
 > 
 > *Checking for non-cached images*
 > 
+> 在有意义的情况下，使用 RepaintBoundary 缓存图像是很好的
 > 
+> 从资源的角度来看，最昂贵的操作之一是使用图像文件渲染纹理。首先，压缩图像是从持久存储中提取的。图像被解压缩到主机内存（GPU内存），并传输到设备内存（RAM）
+> 
+> 换句话说，图像I/O可能很昂贵。缓存提供复杂层次结构的快照，以便在后续帧中更容易渲染。由于光栅缓存项在构建和占用GPU内存时非常昂贵，因此仅在绝对必要时才缓存图像
+> 
+> 通过启用 PerformanceOverlayLayer.checkboardRasterCacheImages 开关，可以看到正在缓存哪些图像
+> 
+> 运行应用程序并查找使用随机彩色棋盘显示的图像，指示图像已缓存。当您与场景交互时，棋盘图像应该保持不变，您不希望看到闪烁，这将表明缓存的图像正在被重新缓存
+> 
+> 在大多数情况下，您希望看到静态图像上的棋盘格，但不希望看到非静态图像上的棋盘格。如果没有缓存静态图像，可以将其放入RepaintBoundary小部件中进行缓存。如果引擎认为图像不够复杂，它可能仍然会忽略重新绘制的边界
+> 
+> *Viewing the widget rebuild profiler*
+> 
+> Flutter 框架的设计使其很难创建不是60fps和平滑的应用程序。通常，如果有jank，那是因为有一个简单的 bug 导致每帧要重建的 UI 比所需的要多。Widget rebuild profiler帮助调试和修复由于这些错误而导致的性能问题
+
++ Benchmarking
+
+> 可以通过编写基准测试来衡量和跟踪应用程序的性能。Flutter 驱动程序库为基准测试提供支持。使用此集成测试框架，可以生成跟踪以下内容的度量：
+> 
+> Jank
+> 
+> 下载大小
+> 
+> 电池效率
+> 
+> 启动时间
+> 
+> 跟踪这些基准可以让您在引入对性能有不利影响的回归时得到通知
 
 # Deployment
 
@@ -3806,7 +3834,279 @@ $ flutter run --profile
 
 ## [Build and release an Android app](https://flutter.dev/docs/deployment/android)
 
++ 在典型的开发周期中，可以在命令行使用 flutter run 测试应用程序，或者使用 IDE 中的 Run 和 Debug 选项测试应用程序。默认情况下，Flutter 会生成应用程序的调试版本
+
++ 当您准备应用程序的发布版本（例如发布到Google Play商店）时，此页面可以提供帮助。在发布之前，您可能需要对应用程序进行一些最后的润色
+
++ Adding a launcher icon
+
+> 当一个新的 Flutter 应用程序被创建时，它有一个默认的启动图标。要自定义此图标，可能需要查看 flutter_launcher_icons 包
+> 
+> 或者，可以使用以下步骤手动执行此操作：
+> 
+> 1.回顾 [材料设计产品图标设计指南](https://material.io/design/iconography/)
+> 
+> 2.在 <app dir>/android/app/src/main/res/ 目录中，将图标文件放在使用配置限定符命名的文件夹中。默认的 mipmap-folders 演示了正确的命名约定
+> 
+> 3.在 AndroidManifest.xml 中，将应用程序标记 android:icon 属性更新为引用上一步中的图标（例如，<application android:icon=“@mipmap/ic_launcher”…）
+> 
+> 4.要验证图标是否已被替换，请运行应用程序并检查启动程序中的应用程序图标
+
++ Signing the app
+
+> 要在Play Store上发布，需要为应用程序提供数字签名。使用以下说明为应用程序签名
+> 
+> *Create a keystore*
+> 
+> 如果已有 keystore，跳过下一步。如果不是，请在命令行运行以下命令创建一个：
+> 
+> 在Mac/Linux上，使用以下命令：
+
+```
+keytool -genkey -v -keystore ~/key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias key
+```
+
+> 在Windows上，使用以下命令：
+
+```
+keytool -genkey -v -keystore c:/Users/USER_NAME/key.jks -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias key
+```
+
+> 保持 keystore 文件私有；不要将其签入公共源代码管理
+> 
+> keytool 命令可能不在您的路径中，它是作为Android Studio一部分安装的Java的一部分。对于具体路径，运行 flutter doctor -v 并定位在“Java binary at:”之后打印的路径。然后使用这个完全限定的路径，用 keytool 替换 java（在最后）。如果路径包含空格分隔的名称（如程序文件），请在空格分隔的名称周围加引号。例如：/"Program Files"/
+> 
+> -storetype JKS 标记仅对 Java9 或更新版本是必需的。从 Java 9 版本开始，keystore 类型默认为 PKS12
+
++ Reference the keystore from the app
+
+> 创建一个名为 <app dir>/android/key.properties 的文件，其中包含对 keystore 的引用：
+
+```
+storePassword=<password from previous step>
+keyPassword=<password from previous step>
+keyAlias=key
+storeFile=<location of the key store file, such as /Users/<user name>/key.jks>
+```
+
++ Configure signing in gradle
+
+> 通过编辑 <app dir>/android/app/build.gradle 文件为应用配置签名
+> 
+> 1.替换下述：
+
+```
+  android {
+```
+
+> 为下述内容：
+
+```
+   def keystoreProperties = new Properties()
+   def keystorePropertiesFile = rootProject.file('key.properties')
+   if (keystorePropertiesFile.exists()) {
+       keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+   }
+
+   android {
+```
+
+> 2.替换下述：
+
+```
+   buildTypes {
+       release {
+           // TODO: Add your own signing config for the release build.
+           // Signing with the debug keys for now,
+           // so `flutter run --release` works.
+           signingConfig signingConfigs.debug
+       }
+   }
+```
+
+> 为下述内容：
+
+```
+   signingConfigs {
+       release {
+           keyAlias keystoreProperties['keyAlias']
+           keyPassword keystoreProperties['keyPassword']
+           storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+           storePassword keystoreProperties['storePassword']
+       }
+   }
+   buildTypes {
+       release {
+           signingConfig signingConfigs.release
+       }
+   }
+```
+
+> 应用的发布版本现在将自动签名
+> 
+> 更改 gradle 文件后，可能需要运行 flutter clean。这将防止缓存的构建影响签名过程
+
++ R8
+
+> R8 是来自 Google 的新代码收缩器，在构建一个发布版 APK 或 AAB 时默认启用它。若要禁用 R8，请传递 --no-shrink 标志来 flutter build apk 或 flutter build appbundle
+> 
+> 混淆和缩小可以大大延长Android应用程序的编译时间
+
++ Reviewing the app manifest
+
+> 检查位于 <App dir>/android/App/src/main 中的默认应用程序清单文件 android Manifest.xml，并验证这些值是否正确，尤其是以下值：
+> 
+> *application*
+> 
+> 编辑 application 标签中的 android:label 以定义应用程序的最终名称
+> 
+> *uses-permission*
+> 
+> 如果应用程序代码需要访问 Internet，请添加 android.permission.INTERNET 权限。标准模板不包含此标记，但允许在开发期间访问 Internet，以便在 Flutter 工具和正在运行的应用程序之间进行通信
+
++ Reviewing the build configuration
+
+> 查看位于 <app dir>/android/app 中的默认 Gradle 构建文件 build.Gradle，并验证这些值是否正确，尤其是 defaultConfig 块中的以下值：
+> 
+> *applicationId*
+> 
+> 指定最终的、唯一的（应用程序Id）appid
+> 
+> *versionCode & versionName*
+> 
+> 指定内部应用程序版本号和版本号显示字符串。可以通过在pubspec.yaml文件中设置version属性来完成此操作
+> 
+> *minSdkVersion & targetSdkVersion*
+> 
+> 指定应用程序运行的最低API级别和API级别
+
++ Building the app for release
+
+> 发布到Play Store时有两种可能的发布格式:
+> 
+> App bundle（首选)
+> 
+> APK
+> 
+> *Build an app bundle*
+> 
+> 本节介绍如何构建发布应用程序包。如果您完成了签名步骤，应用程序包将被签名
+> 
+> 最近，Flutter 团队收到了几份来自开发者的报告，显示他们在 Android 6.0 上构建应用程序包时遇到了某些设备上的应用程序崩溃。当 Android 团队正在寻找一个可行的解决方案时，可以尝试将APK拆分，作为一个临时的解决方案
+> 
+> 从命令行：
+> 
+> 1.输入 `cd <app dir>`
+> 
+> 2.运行 `flutter build appbundle`
+> 
+> 应用程序的发行包创建于 `<app dir>/build/app/outputs/bundle/release/app.aab`
+> 
+> 默认情况下，app bundle 包含 Dart 代码和为 armeabi-v7a（ARM 32位）、arm64-v8a（arm64位）和x86-64（x86 64位）编译的 Flutter 运行时
+
++ Test the app bundle
+
+> 应用程序包(app bundle)可以通过多种方式进行测试本节将介绍两种:
+> 
+> *Offline using the bundle tool*
+> 
+> 1.如果您还没有这样做，请从 [GitHub 存储库](https://github.com/google/bundletool/releases/tag/0.12.0) 下载 bundletool
+> 
+> 2.从应用程序包(app bundle)生成一组 APKs
+> 
+> 3.将 APK 部署到连接的设备
+> 
+> *Online using Google Play*
+> 
+> 1.把包上传到 Google Play 进行测试。您可以使用内部测试跟踪或 alpha 或 beta 通道来测试包，然后再将其发布到生产环境中
+> 
+> 2.按照 [这些步骤](https://developer.android.com/studio/publish/upload-bundle) 将包上载到Play Store
+
++ Build an APK
+
+> 虽然 app bundle 比 APK 更受欢迎，但有些商店还不支持 app bundle。在这种情况下，为每个目标ABI（应用程序二进制接口）构建一个发布版 APK
+> 
+> 如果您完成了签名步骤，APK将被签名
+> 
+> 从命令行：
+> 
+> 1.输入 `cd <app dir>`
+> 
+> 2.运行 `flutter build apk --split-per-abi`
+> 
+> 此命令生成两个APK文件:
+> 
+> <app dir>/build/app/outputs/apk/release/app-armeabi-v7a-release.apk
+> 
+> <app dir>/build/app/outputs/apk/release/app-arm64-v8a-release.apk
+> 
+> <app dir>/build/app/outputs/apk/release/app-x86_64-release.apk
+> 
+> 删除 --split-per-abi 标志将生成一个fat APK，其中包含为所有目标 ABIs 编译的代码。这类 APK 的大小比其拆分的 APK 要大，这导致用户下载不适用于其设备架构的二进制文件
+
++ Install an APK on a device
+
+> 按照以下步骤在连接的Android设备上安装APK:
+> 
+> 从命令行：
+> 
+> 1.使用USB电缆将Android设备连接到计算机
+> 
+> 2.输入 `cd <app dir>`
+> 
+> 3.运行 `flutter install`
+
++ Updating the app’s version number
+
+> 应用程序的默认版本号为1.0.0。要更新它，请导航到pubspec.yaml文件并更新以下行：
+
+```
+version: 1.0.0+1
+```
+
+> 版本号是三个由点分隔的数字，如上面示例中的1.0.0，后面是可选的内部版本号，如上面示例中的1，由+分隔
+> 
+> 通过分别指定 --build-name 和 --build-number，Flutter 应用的版本号和内部版本号都可以在被覆盖
+> 
+> 在 Android 中，build-name 用作 versionName，build-number 用作versionCode
+
++ Android release FAQ
+
+> *应该什么时候构建应用程序包(app bundles)和 APKs ？*
+> 
+> Google Play商店建议您使用 app bundles 而不是 APKs，因为它们允许更有效地将应用程序交付给用户。但是，如果您是通过 Google Play商店以外的方式分发应用程序，那么 APK 可能是您唯一的选择
+> 
+> *什么是 fat APK?*
+> 
+> fat APK 是单个 APK，它包含嵌入在其中的多个abi的二进制文件。这样做的好处是，单个APK运行在多个体系结构上，因此具有更广泛的兼容性，但它的缺点是其文件大小要大得多，导致用户在安装应用程序时下载和存储更多字节。当构建 APK 而不是 app bundle 时，强烈建议构建split APK（在创建 APK 时使用 --split-per-abi 选项）
+> 
+> *支持的目标体系结构是什么？*
+> 
+> 在发布模式下构建应用程序时，可以为armeabi-v7a（ARM 32位）、arm64-v8a（arm64位）和x86-64（x86 64位）编译Flutter应用程序。Flutter 目前不支持为 x86 Android构建
+> 
+> *如何在 Android Studio 中构建一个发布版本？*
+> 
+> 在 Android Studio 中，打开应用程序文件夹下的现有 android/ 文件夹。然后，在项目面板中选择 build.gradle（Module: app）：
+> 
+> 接下来，选择构建变量。单击主菜单中的 `Build > Select Build Variant`。在 `Build Variants` 面板中选择任何变量（默认为“调试”）
+> 
+> 生成的应用程序包(app bundle)或 APK 文件位于应用程序文件夹中的 `build/app/outputs` 中
+
 ## [Build and release an iOS app](https://flutter.dev/docs/deployment/ios)
+
++ 本指南提供了将 Flutter 应用程序发布到  App Store 和 TestFlight 的步骤
+
++ 有关混淆 Dart 代码的信息，请参见 [Obfuscating Dart Code](https://github.com/flutter/flutter/wiki/Obfuscating-Dart-Code)
+
++ 预备工作
+
+> 在开始发布应用程序之前，请确保它符合 [苹果的应用程序审查指南](https://developer.apple.com/app-store/review/)
+> 
+> 要将应用程序发布到 App Store，您需要注册 [Apple Developer Program](https://developer.apple.com/programs/)
+> 
+> 您可以在Apple的 [ Choosing a Membership](https://developer.apple.com/support/compare-memberships/) 指南中阅读更多有关各种会员资格选项的信息
+
++ Register your app on App Store Connect
 
 ## [Build and release a web app](https://flutter.dev/docs/deployment/web)
 
