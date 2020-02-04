@@ -3457,6 +3457,102 @@ FlutterEngine *flutterEngine =
 
 #### [Upgrading Flutter](https://flutter.dev/docs/development/tools/sdk/upgrading)
 
++ 无论你遵循哪一个 [Flutter release channels](https://github.com/flutter/flutter/wiki/Flutter-build-release-channels)，都可以使用 Flutter 命令来升级 Flutter SDK 和应用所依赖的软件包
+
+> *Flutter's channels*
+> 
+> Flutter 具有以下通道，稳定性逐次递增：
+> 
+> **master**
+> 
+> The current tip-of-tree, absolute latest cutting edge build. Usually functional, though sometimes we accidentally break things
+> 
+> **dev**
+> 
+> 最新的全面测试版本。通常是功能性的，但是关于已知的“坏”dev构建的列表，请参见坏构建。我们不断地尝试将master滚动到dev，这样做需要运行比在master开发期间运行的更多的测试，这就是为什么这实际上与master不同
+> 
+> **beta**
+> 
+> 每个月，我们都会选择前一个月左右的“最佳”开发版本，并将其升级到beta版。这些构建已经过我们的代码实验室的测试
+> 
+> **stable**
+> 
+> 当我们相信我们有一个特别好的建设，我们促进它到稳定的渠道。我们打算每季度或多或少地这样做，但这可能有所不同。我们建议您将此频道用于所有生产应用程序版本。我们可能会为高优先级的错误将修补程序发送到稳定通道，尽管我们的目的是很少这样做
+
++ One-time setup
+
+> 要使 Flutter 命令正常工作，应用程序的 pubspec.yaml 文件必须需要 Flutter SDK。例如，下面的代码片段指定 Flutter 和 flutter_test 需要 Flutter SDK：
+
+```
+name: hello_world
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+```
+
+> 不要使用 pub get 或 pub upgrade 命令来管理 Flutter 应用程序的依赖项。相反，使用 flutter pub get 或 flutter pub upgrade。如果要手动使用 pub，可以通过设置 FLUTTER_ROOT 环境变量直接运行它
+
++ Upgrading the Flutter SDK and packages
+
+> 要同时更新 Flutter SDK 和应用程序所依赖的包，请使用应用程序根目录（包含 pubspec.yaml 文件的同一目录）中的 Flutter upgrade 命令：
+
+```
+$ flutter upgrade
+```
+
+> 这个命令首先获取 Flutter channel 上可用的 Flutter SDK 的最新版本。然后此命令将应用程序所依赖的每个包更新为最新的兼容版本
+> 
+> 如果您想要更新版本的 Flutter SDK，请切换到不太稳定的 Flutter channel，然后运行 `flutter upgrade`
+
++ Switching Flutter channels
+
+> Flutter 有四个 release channel：stable、beta、dev和master。我们建议使用 stable 通道，除非您需要更新的版本
+>
+> 要查看当前 channel，请使用以下命令：
+
+```
+$ flutter channel
+```
+
+> 若要更改为另一个 channel，请使用 `flutter channel <channel-name>`。一旦你改变了你的 channel，使用 Flutter 升级下载 Flutter SDK 和依赖包。例如
+
+```
+$ flutter channel dev
+$ flutter upgrade
+```
+
++ Upgrading packages only
+
+> 如果您修改了 pubspec.yaml 文件，或者只想更新应用程序所依赖的包（而不是包和 Flutter 本身），那么使用 flutter pub 命令之一
+> 
+> 要获取 pubspec.yaml 文件中列出的所有依赖项，而不进行不必要的更新，请使用 get 命令：
+
+```
+$ flutter pub get
+```
+
+> 要更新到 pubspec.yaml 文件中列出的所有依赖项的最新兼容版本，请使用 upgrade 命令：
+
+```
+$ flutter pub upgrade
+```
+
++ Keeping informed
+
+> 我们在 Flutter announcements 邮件列表中发布突破性的更改通知。您还可以在 Flutter dev 邮件列表上提问。除了订阅接收通知外，我们还希望收到您的来信
+
++ Selecting a specific version
+
+> 如果要切换到特定版本的 Flutter，可以使用 Flutter version 命令：
+
+```
+$ flutter version v1.9.1+hotfix.3
+```
+> 要将包固定到特定版本，请在 pubspec.yaml 文件中显式指定其版本。有关此文件格式的详细信息，请参阅 dart.dev 上的 pubspec.yaml 文档
+
 #### [Flutter SDK releases](https://flutter.dev/docs/development/tools/sdk/releases)
 
 #### [Breaking changes](https://flutter.dev/docs/release/breaking-changes)
@@ -4107,6 +4203,170 @@ version: 1.0.0+1
 > 您可以在Apple的 [ Choosing a Membership](https://developer.apple.com/support/compare-memberships/) 指南中阅读更多有关各种会员资格选项的信息
 
 + Register your app on App Store Connect
+
+> App Store Connect（以前叫iTunes Connect）是管理应用程序生命周期的地方。您将定义应用程序名称和描述，添加屏幕截图，设置定价，并管理发布到 App Store 和 TestFlight 的版本
+> 
+> 注册应用程序包括两个步骤：注册唯一的Bundle ID和在app Store Connect上创建应用程序记录
+> 
+> *Register a Bundle ID*
+> 
+> 每个 iOS 应用程序都与 一个 Bundle ID 相关联，Bundle ID 是向苹果公司注册的唯一标识符。要注册应用程序的 Bundle ID，请执行以下步骤：
+> 
+> 1.打开开发者帐户的 App ID 页面
+> 
+> 2.单击+创建新的 Bundle ID
+> 
+> 3.输入应用程序名称，选择 `Explicit App ID`，然后输入 ID
+> 
+> 4.选择应用程序将使用的服务，然后单击“继续”
+> 
+> 5.在下一页，确认详细信息并单击 `Register ` 以注册 Bundle ID
+> 
+> *Create an application record on App Store Connect*
+> 
+> 接下来，您将在应用商店连接上注册应用程序：
+> 
+> 1.在浏览器中打开 App Store Connect
+> 
+> 2.在 App Store Connect 登录页上，单击 `My Apps`
+> 
+> 3.单击 `My Apps` 面左上角的“+”，然后选择 `New App`
+> 
+> 4.在出现的表单中填写应用程序的详细信息。在 Platforms 部分，确保选中 iOS。因为 Flutter 目前不支持 tvOS，所以不选中该复选框。单击“创建”
+> 
+> 5.导航到应用程序详细信息并从侧栏中选择应用程序信息
+> 
+> 6.在“常规信息”部分中，选择在上一步中注册的 Bundle ID
+> 
+> 具体参见 [App Store Connect 帮助](https://help.apple.com/app-store-connect/#/dev2cd126805)
+
++ Review Xcode project settings
+
+> 在这一步中，将查看Xcode工作区中最重要的设置。有关详细步骤和说明，请参阅 [Prepare for app distribution](https://help.apple.com/xcode/mac/current/#/dev91fe7130a)
+> 
+> 在Xcode中导航到目标的设置：
+> 
+> 1.在 Xcode 中，打开应用的ios文件夹中的 Runner.xcworkspace
+> 
+> 2.要查看应用程序的设置，请在 Xcode 项目导航器中选择 `Runner project`。然后，在主视图侧栏中，选择 `Runner target`
+> 
+> 3.选择 `General` 选项卡
+> 
+> 在 `Identity` 部分中：
+> 
+> *Display Name*
+> 
+> 要在 `home screen` 和其他地方显示的应用程序的名称
+> 
+> *Bundle Identifier*
+> 
+> 在  App Store Connect 上注册的 App ID
+> 
+> 在 `Signing` 部分:
+> 
+> *Automatically manage signing*
+> 
+> Xcode 是否应自动管理应用程序签名和设置。默认设置为 true，这对于大多数应用程序来说应该足够了
+> 
+> *Team*
+> 
+> 选择与您注册的 Apple 开发者帐户关联的团队。如果需要，请选择 `Add Account…`，然后更新此设置
+> 
+> 在 Deployment Info 部分：
+> 
+> *Deployment Target*
+> 
+> 应用将支持的最低 iOS 版本。Flutter 支持 iOS 8.0 及更高版本。如果您的应用程序包含使用iOS 8中不可用api的 Objective-C 或 Swift 代码，请适当更新此设置
+
++ Updating the app’s version number
+
+> 应用程序的默认版本号为1.0.0。要更新它，请导航到 pubspec.yaml 文件并更新以下行：
+
+```
+version: 1.0.0+1
+```
+
+> 版本号是三个由点分隔的数字，如上面示例中的1.0.0，后面是可选的内部版本号，如上面示例中的1，由+分隔
+> 
+> 通过分别指定 --build-name 和 --build-number，版本号和内部版本号都可以在 Flutter 的内部版本中被覆盖
+> 
+> 在 iOS 中，build-name 使用 CFBundleShortVersionString，而 build-number 使用 CFBundleVersion
+
++ Add an app icon
+
+> 创建新的 Flutter 应用程序时，将创建一个占位符图标集。在这一步中，将用应用程序的图标替换这些占位符图标
+> 
+> 1.查看iOS应用图标指南
+> 
+> 2.在 Xcode 项目导航器中，选择 Runner 文件夹中的 Assets.xcapets。使用自己的应用程序图标更新占位符图标
+> 
+> 3.使用 `flutter run` 运行应用程序验证图标是否已被取代
+
++ Create a build archive
+
+> 在此步骤中，将创建生成存档并将存档上载到 App Store Connect
+> 
+> 在开发过程中，您一直在使用调试版本进行构建、调试和测试。当你准备好将你的应用程序发布到 App Store 或 TestFlight 上的用户时，你需要准备一个发布版本
+> 
+> 在命令行上，在应用程序目录中执行以下步骤：
+> 
+> 1.运行 `flutter build ios` 以创建发布版本（ `flutter build` 默认为 `--release`）
+> 
+> 要确保 Xcode 刷新发布模式配置，请关闭并重新打开 Xcode 工作区。对于 Xcode 8.3 及更高版本，此步骤不是必需的
+> 
+> 在 Xcode 中，配置应用程序版本并生成：
+> 
+> 1.在 Xcode 中，打开应用的 ios 文件夹中的 `Runner.xcworkspace`
+> 
+> 2.选择 `Product > Scheme > Runner`
+> 
+> 3.选择 `Product > Destination > Generic iOS Device`
+> 
+> 4.在 Xcode 项目导航器中选择 Runner，然后在“设置”视图侧栏中选择 `Runner target`
+> 
+> 5.在 `Identity` 部分中，将版本更新为要发布的面向用户的版本号
+> 
+> 6.在 Identity 部分中，将 `Build identifier` 更新为用于跟踪 App Store Connect 的此生成的唯一生成号。每次上载都需要一个唯一的 build number
+> 
+> 最后，创建一个 build archive 并将其上载到 App Store Connect：
+> 
+> 1.选择 `Product > Archive` 以生成 build archive
+> 
+> 2.在 Xcode 管理器窗口的侧栏中，选择iOS应用程序，然后选择刚刚生成的 build archive
+> 
+> 3.单击 `Validate App` 按钮。如果报告了任何问题，请解决这些问题并生成另一个生成。在上载存档之前，可以重用相同的 `build ID`
+> 
+> 4.成功验证存档后，单击 `Distribute App`。可以在 App Store Connect 应用程序详细信息页的 `Activities` 选项卡中跟踪生成的状态
+> 
+> 5.您应该在30分钟内收到一封电子邮件，通知您的构建已经过验证，可以在 TestFlight 上发布给测试人员。此时，您可以选择是在 TestFlight 上发布，还是继续将应用程序发布到应用程序商店
+
++ Release your app on TestFlight
+
+> TestFlight 允许开发人员将他们的应用程序推送到内部和外部测试人员那里。在这个可选步骤中，您将在 TestFlight 上发布构建
+> 
+> 1.导航到 App Store Connect 上 `application details` 页的 TestFlight 选项卡
+> 
+> 2.在侧边栏中选择 `Internal Testing`
+> 
+> 3.选择要发布到测试人员的 `build `，然后单击 `Save `
+> 
+> 4.添加任何内部测试人员的电子邮件地址。可以在 App Store Connect 的用户和角色页面中添加其他内部用户，该页面顶部的下拉菜单中提供了这些用户
+> 
+> 具体参见 [Distribute an app using TestFlight](https://help.apple.com/xcode/mac/current/#/dev2539d985f)
+
++ Release your app to the App Store
+
+> 当您准备好向世界发布应用程序时，请按照以下步骤提交应用程序以供审阅并发布到应用程序商店：
+> 
+> 1.从 App Store Connect 上应用程序的详细信息页面的侧栏中选择定价和可用性，并完成所需信息
+> 
+> 2.从侧栏中选择状态。如果这是此应用的第一个版本，则其状态将为1.0准备提交。填写所有必需字段
+> 
+> 3.点击 `Submit for Review`
+> 
+> 苹果将在他们的应用程序审查过程完成时通知您。您的应用程序将根据您在版本发布部分中指定的说明发布
+> 
+> 具体参见 [Distribute an app through the App Store](https://help.apple.com/xcode/mac/current/#/dev067853c94)
 
 ## [Build and release a web app](https://flutter.dev/docs/deployment/web)
 
