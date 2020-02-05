@@ -3555,19 +3555,431 @@ $ flutter version v1.9.1+hotfix.3
 
 #### [Flutter SDK releases](https://flutter.dev/docs/development/tools/sdk/releases)
 
++ Stable channel (Windows、macOS、Linux) 列表
++ Beta channel (Windows、macOS、Linux) 列表
++ Dev channel (Windows、macOS、Linux) 列表
++ Master channel
+
+> 安装包不可用于 master。但是，您可以通过克隆 master channel，然后触发 SDK 依赖项的下载，直接从GitHub repo获得SDK：
+
+```
+$ git clone -b master https://github.com/flutter/flutter.git
+$ ./flutter/bin/flutter --version
+```
+
 #### [Breaking changes](https://flutter.dev/docs/release/breaking-changes)
+
++ no need to note
 
 #### [Flutter release notes](https://flutter.dev/docs/development/tools/sdk/release-notes)
 
++ no need to note
+
 ### [Hot reload](https://flutter.dev/docs/development/tools/hot-reload)
 
++ Flutter 的热重新加载功能可以帮助您快速轻松地进行实验、构建 UI、添加功能和修复bug。热重新加载通过将更新的源代码文件注入正在运行的 Dart 虚拟机（VM）来工作。在 VM 用新版本的字段和函数更新类之后，Flutter 框架会自动重建小部件树，允许您快速查看更改的效果
+
++ 要热重新加载 Flutter 应用程序：
+
+> 1.从支持的 Flutter 编辑器或终端窗口运行应用程序。目标可以是物理或虚拟设备。只有处于调试模式的 Flutter 应用程序才能热重新加载
+> 
+> 2.修改项目中的一个 Dart 文件。大多数类型的代码更改都可以热重新加载；有关需要热重新启动的更改列表，请参阅限制
+> 
+> 3.如果您在支持 Flutter IDE 工具的 IDE/编辑器中工作，请选择“全部保存”（cmd-s/ctrl-s），或单击工具栏上的“热重新加载”按钮；如果使用 flutter run 在命令行运行应用程序，请在终端窗口中输入 r
+> 
+> 在成功的热重新加载操作之后，您将在控制台中看到一条类似于：
+
+```
+Performing hot reload...
+Reloaded 1 of 448 libraries in 978ms.
+```
+
+> 应用程序将更新以反映更改，并且应用程序的当前状态将保留上述示例中计数器变量的值。应用程序将继续从运行热重新加载命令之前的位置执行。代码更新并继续执行
+> 
+> 仅当修改后的 Dart 代码在更改后再次运行时，代码更改才具有可见效果。具体来说，热重新加载会导致所有现有的小部件重新生成。只有与小部件的重建相关的代码才会自动重新执行
+> 
+> 下一节将描述在热重新加载后修改的代码不会再次运行的常见情况。在某些情况下，对 Dart 代码的微小更改使您能够继续对应用程序使用热重新加载
+
++ Compilation errors
+
+> 当代码更改导致编译错误时，热重新加载总是生成类似于以下内容的错误消息：
+
+```
+Hot reload was rejected:
+'/Users/obiwan/Library/Developer/CoreSimulator/Devices/AC94F0FF-16F7-46C8-B4BF-218B73C547AC/data/Containers/Data/Application/4F72B076-42AD-44A4-A7CF-57D9F93E895E/tmp/ios_testWIDYdS/ios_test/lib/main.dart': warning: line 16 pos 38: unbalanced '{' opens here
+  Widget build(BuildContext context) {
+                                     ^
+'/Users/obiwan/Library/Developer/CoreSimulator/Devices/AC94F0FF-16F7-46C8-B4BF-218B73C547AC/data/Containers/Data/Application/4F72B076-42AD-44A4-A7CF-57D9F93E895E/tmp/ios_testWIDYdS/ios_test/lib/main.dart': error: line 33 pos 5: unbalanced ')'
+    );
+    ^
+```
+
+> 在这种情况下，只需更正指定 Dart 代码行上的错误，以继续使用热重新加载
+
++ Previous state is combined with new code
+
+> Flutter 的状态热重新加载保留了应用程序的状态。此设计使您能够仅查看最新更改的效果，而不丢弃当前状态。例如，如果你的应用需要用户登录，你可以在导航层次结构中修改和热重新加载几个级别的页面，而无需重新输入登录凭据。状态是保持的，这通常是期望的行为
+> 
+> 如果代码更改影响应用程序的状态（或其依赖项），则应用程序必须处理的数据可能与从头开始执行时的数据不完全一致。结果可能是热重新加载后的行为与热重新启动后的行为不同
+> 
+> 例如，如果将类定义从扩展 StatelessWidget 为 StatefulWidget（或相反），则在热重新加载之后，应用程序的前一个状态将保留。但是，状态可能与新更改不兼容
+> 
+> 考虑以下代码:
+
+```
+class MyWidget extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return GestureDetector(onTap: () => print('T'));
+  }
+}
+```
+
+> 运行应用程序后，如果进行以下更改：
+
+```
+class MyWidget extends StatefulWidget {
+  @override
+  State<MyWidget> createState() => MyWidgetState();
+}
+
+class MyWidgetState extends State<MyWidget> { /*...*/ }
+```
+
+> 然后热重新加载；控制台显示一个断言失败，类似于：
+
+```
+MyWidget is not a subtype of StatelessWidget
+```
+
+> 在这些情况下，需要热重启才能看到更新的应用程序
+
++ Recent code change is included but app state is excluded
+
+> 在 Dart 中，静态字段被延迟初始化。这意味着第一次运行 Flutter 应用程序并读取静态字段时，它将被设置为初始值设定项的值。全局变量和静态字段被视为状态，因此在热重新加载期间不会重新初始化
+> 
+> 如果更改全局变量和静态字段的初始值设定项，则需要完全重新启动才能查看更改。例如，请考虑以下代码:
+
+```
+final sampleTable = [
+  Table("T1"),
+  Table("T2"),
+  Table("T3"),
+  Table("T4"),
+];
+```
+
+> 运行应用程序后，如果进行以下更改：
+
+```
+final sampleTable = [
+  Table("T1"),
+  Table("T2"),
+  Table("T3"),
+  Table("T10"),    // modified
+];
+```
+
+> 然后热重新加载，更改不会反映出来
+> 
+> 相反，在以下示例中：
+
+```
+const foo = 1;
+final bar = foo;
+void onClick() {
+  print(foo);
+  print(bar);
+}
+```
+
+> 首次运行应用程序将打印 1 和 1。然后，如果您进行以下更改：
+
+```
+const foo = 2;    // modified
+final bar = foo;
+void onClick() {
+  print(foo);
+  print(bar);
+}
+```
+
+> 虽然对 const 字段值的更改总是热重新加载，但 static 字段初始值设定项不会重新运行。从概念上讲，const 字段被视为别名而不是 state
+> 
+> 当一组更改需要热重启才能生效时，Dart虚拟机会检测初始值设定项更改和标志。上述示例中的大多数初始化工作都会触发标记机制，但不适用于以下情况：
+
+```
+final bar = foo;
+```
+
+> 要在热重新加载后更新 foo 并查看更改，请考虑将该字段重新定义为 const 或使用 getter 返回值，而不是使用 final。例如：
+
+```
+const bar = foo;
+```
+
+> 或者
+
+```
+get bar => foo;
+```
+
++ Recent UI change is excluded
+
+> 即使热重新加载操作成功并且没有生成异常，某些代码更改也可能在刷新的UI中不可见。此行为在应用程序的main（）方法更改后很常见
+> 
+> 一般来说，如果修改后的代码位于根小部件的构建方法的下游，则热重新加载的行为与预期一致。但是，如果修改后的代码不会因为重新构建小部件树而重新执行，那么在热重新加载之后就看不到它的效果
+> 
+> 例如，请考虑以下代码：
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return GestureDetector(onTap: () => print('tapped'));
+  }
+}
+```
+
+> 运行此应用程序后，可以按如下方式更改代码：
+
+```
+import 'package:flutter/widgets.dart';
+
+void main() {
+  runApp(const Center(
+      child: const Text('Hello', textDirection: TextDirection.ltr)));
+}
+```
+
+> 通过热重启，程序从头开始，执行main（）的新版本，并构建显示文本Hello的小部件树
+> 
+> 但是，如果在此更改后重新热加载应用程序，则不会重新执行main（），并且将以未更改的MyApp实例作为根小部件重建小部件树。热重新加载后，结果没有明显变化
+
++ Limitations
+
+> 您还可能遇到完全不支持热重新加载的罕见情况。其中包括：
+> 
+> initState（）上的更改不会由热重新加载反映。需要热重启
+> 
+> 枚举类型更改为常规类或常规类更改为枚举类型。例如，如果您更改:
+
+```
+enum Color {
+  red,
+  green,
+  blue
+}
+```
+
+> 为:
+
+```
+class Color {
+  Color(this.i, this.j);
+  final int i;
+  final int j;
+}
+```
+
+> 泛型类型声明被修改。例如，如果更改：
+
+```
+class A<T> {
+  T i;
+}
+```
+
+> 为:
+
+```
+class A<T, V> {
+  T i;
+  V v;
+}
+```
+
+> 在这些情况下，热重新加载会生成诊断消息，并在不提交任何更改的情况下失败
+
++ How it works
+
+> 调用热重新加载时，主机将查看自上次编译以来编辑的代码。将重新编译以下库：
+> 
+> 任何代码更改的库
+> 
+> 应用程序的主库
+> 
+> 从主库到受影响库的库
+> 
+> 在 Dart 2中，这些库的 Dart 源代码被转换为内核文件并发送到移动设备的 Dart 虚拟机
+> 
+> Dart 虚拟机从新内核文件重新加载所有库。到目前为止没有代码被重新执行
+> 
+> 热重新加载机制然后使 Flutter 框架触发对所有现有控件的重新构建/重新布局/重画和渲染对象
+
 ### [Code formatting](https://flutter.dev/docs/development/tools/formatting)
+
++ 尽管您的代码可能遵循我们经验丰富的开发团队中的任何首选样式，但他们可能会发现：
+
+> 拥有单一的、共享的样式，并且
+> 
+> 通过自动格式化强制使用此样式
+> 
+> 另一种选择通常是在代码评审期间进行令人厌烦的格式化辩论，在代码评审期间，最好将时间花在代码行为上，而不是花在代码样式上
+
++ Automatically formatting code in Android Studio and IntelliJ
+
+> 安装 Dart 插件以自动格式化 Android Studio 和 IntelliJ 中的代码
+> 
+> 若要在“当前源代码”窗口中自动格式化代码，请在“代码”窗口中单击鼠标右键，然后选择 `Reformat Code with dartfmt` 。您可以在 IntelliJ Preferences 的Keymap部分添加快捷键
+
++ Automatically formatting code in VS Code
+
+> 安装 Flutter 扩展以获得 VS Code 中代码的自动格式化
+> 
+> 若要在当前源代码窗口中自动设置代码格式，请在代码窗口中单击鼠标右键，然后选择 Format Document。可以将键盘快捷键添加到此 VS Code Preferences
+
++ Automatically formatting code with the ‘flutter’ command
+
+> 可以使用 flutter format 命令在命令行界面（CLI）中自动格式化代码：
+
+```
+$ flutter format path1 path2 ...
+```
+
++ Using trailing commas
+
+> Flutter 代码通常涉及构建相当深的树形数据结构，例如在 build 方法中。为了获得良好的自动格式，我们建议您采用可选的尾随逗号
+> 
+> 添加尾随逗号的原则很简单：在函数、方法和构造函数中的参数列表末尾添加尾随逗号，在这些位置您需要保留精心编制的格式
+> 
+> 这有助于自动格式化程序为 Flutter 样式的代码插入适当数量的换行符
 
 ## [AndroidX Migration](https://flutter.dev/docs/development/androidx-migration)
 
 # Testing & debugging
 
 ## [Debugging Flutter apps](https://flutter.dev/docs/testing/debugging)
+
++ 有很多工具和特性可以帮助调试 Flutter 应用程序。以下是一些可用的工具：
+
+> DevTools，一套在浏览器中运行的性能和分析工具
+> 
+> Android Studio/IntelliJ,VS code（启用 Flutter 和 Dart 插件）支持内置的源代码级调试器，能够设置断点、逐步执行代码和检查值
+> 
+> Flutter inspector 是 DevTools 中提供的一个小部件检查器，也可以直接从 Android Studio 和 IntelliJ（通过 Flutter 插件启用）。检查器允许检查小部件树的可视化表示、检查单个小部件及其属性值、启用性能覆盖等等
+
++ DevTools
+
+> 对于调试和分析应用程序，DevTools 可能是您需要的第一个工具。DevTools 在浏览器中运行，支持多种功能：
+> 源码级调试器
+> 
+> 显示可视化窗口小部件树的窗口小部件检查器，以及“widget select”模式，在该模式下，您可以在应用程序中选择窗口小部件，并深入到树中的该窗口小部件
+> 
+> 内存分析器
+> 
+> 支持跟踪、导入和导出跟踪信息的时间线视图
+> 
+> 日志视图
+> 
+> 如果在 debug 模式或 profile 模式下运行应用程序，则可以在浏览器中打开 DevTools 以连接到应用程序。DevTools 不能很好地处理编译为 release 模式的应用程序，因为调试和分析信息已经被剥离了
+> 
+> 如果使用 DevTools 进行分析，请确保在 profile 模式下运行应用程序。否则，出现在概要文件中的主要输出是验证框架的各种不变量的调试断言
+
++ Setting breakpoints
+
+> 可以直接在 IDE/编辑器（比如 Android Studio/IntelliJ 和 VS code）中、在DevTools 调试器中或以编程方式设置断点
+
++ The Dart analyzer
+
+> 如果使用的是支持 Flutter 的 IDE/编辑器，Dart 分析器已经在检查代码并寻找可能的错误
+> 
+> 如果从命令行运行，请使用 `flutter analyze` 测试代码
+> 
+> Dart 分析器大量使用您在代码中放置的类型注释来帮助跟踪问题。我们鼓励您在任何地方都使用它们（避免var、非类型化参数、非类型化列表文本等等），因为这是跟踪问题最快、最不痛苦的方法
+
++ Logging
+
+> 另一个有用的调试工具是日志记录。以编程方式设置日志记录，然后在 DevTools 日志记录视图或控制台中查看输出
+
++ Debugging application layers
+
+> Flutter 是用一个分层的架构设计的，它包括小部件、渲染和绘画层
+> 
+> Flutter窗口小部件检查器提供窗口小部件树的可视化表示，但是如果您想要更详细的级别，或者您想要窗口小部件树、层树或呈现树的基于文本的详细转储，请参见 [调试Flutter应用程序](https://flutter.dev/docs/testing/code-debugging#debug-flags-application-layers) 页面中的 [调试标志：应用程序层](https://flutter.dev/docs/testing/code-debugging)
+
++ Debug mode assertions
+
+> 在开发过程中，强烈建议您使用 Flutter 的调试模式。如果在 Android Studio 中使用bug图标，或者在命令行运行flutter，则这是默认设置。一些工具通过命令行标志支持assert语句 --enable-asserts
+> 
+> 在这种模式下，Dart assert 语句被启用，Flutter 框架对执行期间遇到的每个 assert 语句的参数求值，如果结果为 false，则抛出异常。这允许开发人员启用或禁用不变量检查，以便相关的性能成本仅在调试会话期间支付
+> 
+> 当一个不变量被违反时，它会报告给控制台，并提供一些上下文信息来帮助跟踪问题的根源
+
++ Debugging animations
+
+> 调试动画的最简单方法是减慢它们的速度。Flutter 检查器提供了一个慢速动画按钮，或者可以 [通过编程来降低动画的速度](https://flutter.dev/docs/testing/code-debugging#debugging-animations)
+> 
+> 有关调试 janky（非平滑）应用程序的更多信息，请参见 [Flutter 性能分析](https://flutter.dev/docs/perf/rendering/ui-performance)
+
++ Measuring app startup time
+
+> 要收集有关 Flutter 应用程序启动所需时间的详细信息，可以使用 trace-startup 和 profile 选项运行 flutter run 命令
+
+```
+$ flutter run --trace-startup --profile
+```
+
+> 跟踪输出保存为名为 start_up_info.JSON 的 JSON 文件，位于 Flutter 项目的 build 目录下。输出列出从应用程序启动到这些跟踪事件（以微秒为单位捕获）所用的时间：
+> 
+> 进入 Flutter engine 代码的时间
+> 
+> 呈现应用程序第一帧的时间
+> 
+> Flutter 框架初始化时间
+> 
+> 完成 Flutter 框架初始化的时间
+> 
+> 例如：
+
+```
+{
+  "engineEnterTimestampMicros": 96025565262,
+  "timeToFirstFrameMicros": 2171978,
+  "timeToFrameworkInitMicros": 514585,
+  "timeAfterFrameworkInitMicros": 1657393
+}
+```
+
++ Tracing Dart code
+
+> 要执行性能跟踪，可以使用DevTools时间线视图。时间线视图还支持导入和导出跟踪文件
+> 
+> 也可以通过编程方式执行跟踪，尽管这些跟踪不能导入DevTool的时间轴视图中
+> 
+> 在跟踪之前，请确保在 profile 模式下运行应用程序，以确保运行时性能特征与最终产品的性能特征非常匹配
+
++ Performance overlay
+
+> 要获得应用程序性能的图形视图，打开 performance overlay。可以通过单击“Flutter 检查器”中的 `Performance Overlay` 按钮来执行此操作
+> 
+> 也可以通过编程方式打开 overlay
+
++ Common problems
+
+> *“Too many open files” exception (MacOS)*
+> 
+> Mac OS一次可以打开多少文件的默认限制相当低。如果遇到此限制，请使用ulimit命令增加可用文件处理程序的数量：
+
+```
+ulimit -S -n 2048
+```
+
+> 如果使用 Travis 或 Cirrus 进行测试，请分别将同一行添加到 `flutter/.Travis.yml` 或 `flutter/.Cirrus.yml`，以增加它们可以打开的可用文件处理程序的数量
 
 ## [Debugging Flutter apps programmatically](https://flutter.dev/docs/testing/code-debugging)
 
