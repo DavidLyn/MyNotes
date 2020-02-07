@@ -3983,13 +3983,312 @@ ulimit -S -n 2048
 
 ## [Debugging Flutter apps programmatically](https://flutter.dev/docs/testing/code-debugging)
 
++ 本文档描述了可以在代码中启用的调试功能
+
++ Logging
+
+> 可以在 DevTools 的日志视图或系统控制台中查看日志
+> 
+> 有两个选择可用于输出日志。首先是使用 stdout 或 stderr。通常，这是使用 print（）语句完成的，或者通过导入 dart:io 并调用 stderr 和 stdout 上的方法来完成的。例如：
+
+```
+stderr.writeln('print me');
+```
+
+> 如果一次输出太多，那么 Android 有时会丢弃一些日志行。为了避免这一点，请使用foundation 库中的 debugPrint()。它对 print 进行了包装，将输出限制到一个避免被 Android 内核丢弃的级别
+> 
+> 另一个选择是使用 dart:developer log（）函数。这允许在日志输出中包含更多的粒度和信息。下面是一个例子：
+
+```
+import 'dart:developer' as developer;
+
+void main() {
+  developer.log('log me', name: 'my.app.category');
+
+  developer.log('log me 1', name: 'my.other.category');
+  developer.log('log me 2', name: 'my.other.category');
+}
+```
+
++ 还可以将应用程序数据传递给 `log()` 调用。使用 `error:` 命名参数调用 `log()` ，对要发送的对象进行 JSON 编码，并将编码的字符串传递给 `error` 参数
+
+```
+import 'dart:convert';
+import 'dart:developer' as developer;
+
+void main() {
+  var myCustomObject = ...;
+
+  developer.log(
+    'log me',
+    name: 'my.app.category',
+    error: jsonEncode(myCustomObject),
+  );
+}
+```
+
+> 如果在 DevTool 的 logging 视图中查看日志输出， JSON 编码的错误参数将被解释为一个数据对象，并在该日志条目的 details 视图中呈现
+
++ Setting breakpoints
+
+> 可以在 DevTools 的调试器或 IDE 的内置调试器中设置断点。如果要以编程方式设置断点，请使用以下说明:
+> 
+> 可以使用 debugger（）语句插入编程断点。要使用它，必须在相关文件的顶部导入 dart:developer 包
+> 
+> debugger（）语句接受一个可选的 when 参数，可以将其指定为仅在特定条件为 true 时中断，如下例所示：
+
+```
+import 'dart:developer';
+
+void someFunction(double offset) {
+  debugger(when: offset > 30.0);
+  // ...
+}
+```
+
++ Debug flags: application layers
+
+> Flutter 框架的每一层都提供一个函数，将当前状态或事件转储到控制台（使用debugPrint）
+> 
+> *Widget tree*
+> 
+> 要转储小部件库的状态，请调用 	`debugDumpApp（）`。只要应用程序至少构建了一次（换句话说，在调用 `runApp（）` 之后的任何时候），就可以在应用程序没有运行构建阶段的任何时候（换句话说，不在build（）方法中）或多或少地调用这个函数
+> 
+> 例如，以下应用程序：
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(
+    MaterialApp(
+      home: AppHome(),
+    ),
+  );
+}
+
+class AppHome extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      child: Center(
+        child: FlatButton(
+          onPressed: () {
+            debugDumpApp();
+          },
+          child: Text('Dump App'),
+        ),
+      ),
+    );
+  }
+}
+```
+
++ 前一个应用程序输出如下内容（具体细节因框架版本、设备大小等而异）：
+
+```
+I/flutter ( 6559): WidgetsFlutterBinding - CHECKED MODE
+I/flutter ( 6559): RenderObjectToWidgetAdapter<RenderBox>([GlobalObjectKey RenderView(497039273)]; renderObject: RenderView)
+I/flutter ( 6559): └MaterialApp(state: _MaterialAppState(1009803148))
+I/flutter ( 6559):  └ScrollConfiguration()
+I/flutter ( 6559):   └AnimatedTheme(duration: 200ms; state: _AnimatedThemeState(543295893; ticker inactive; ThemeDataTween(ThemeData(Brightness.light Color(0xff2196f3) etc...) → null)))
+I/flutter ( 6559):    └Theme(ThemeData(Brightness.light Color(0xff2196f3) etc...))
+I/flutter ( 6559):     └WidgetsApp([GlobalObjectKey _MaterialAppState(1009803148)]; state: _WidgetsAppState(552902158))
+I/flutter ( 6559):      └CheckedModeBanner()
+I/flutter ( 6559):       └Banner()
+I/flutter ( 6559):        └CustomPaint(renderObject: RenderCustomPaint)
+```
+
+> 这是“展平”树，显示通过各种构建函数投影的所有小部件。（这是在小部件树的根上调用toStringDeep（）时获得的树。）您将看到许多小部件不出现在应用程序的源代码中，因为它们是由框架的小部件的构建函数插入的
+> 
+> 由于当按钮从按下变为释放时会调用 `debugDumpApp（）` 调用，因此它与调用 `setState（）` 的 FlatButton 对象一致，从而将自身标记为脏的。这就是为什么，当您查看转储时，应该看到标记为“dirty”的特定对象。您还可以看到注册了哪些手势监听器；在本例中，列出了一个 gesturedector，它只监听一个“tap”手势（“tap”是 `tapegesturedector的toStringShort` 函数的输出）
+> 
+> 如果您编写自己的小部件，则可以通过重写 debugFillProperties（） 来添加信息。将[DiagnosticsProperty][[]对象添加到方法的参数中，并调用超类方法。这个函数是toString方法用来填充小部件描述的
+
++ Render tree
+
+> 如果您试图调试布局问题，那么 Widgets 层的树可能不够详细。在这种情况下，可以通过调用 `debugDumpRenderTree（）` 来转储呈现树。与 `debugDumpApp（）` 一样，除了在布局或绘制阶段之外，可以随时或多或少地调用它。一般来说，从帧回调或事件处理程序调用它是最好的解决方案
+> 
+> 要调用 `debugDumpRenderTree（）`，需要将 `import'package:flutter/rendering.dart'；` 添加到源文件中
+
+```
+I/flutter ( 6559): RenderView
+I/flutter ( 6559):  │ debug mode enabled - android
+I/flutter ( 6559):  │ window size: Size(1080.0, 1794.0) (in physical pixels)
+I/flutter ( 6559):  │ device pixel ratio: 2.625 (physical pixels per logical pixel)
+I/flutter ( 6559):  │ configuration: Size(411.4, 683.4) at 2.625x (in logical pixels)
+I/flutter ( 6559):  │
+I/flutter ( 6559):  └─child: RenderCustomPaint
+I/flutter ( 6559):    │ creator: CustomPaint ← Banner ← CheckedModeBanner ←
+I/flutter ( 6559):    │   WidgetsApp-[GlobalObjectKey _MaterialAppState(1009803148)] ←
+I/flutter ( 6559):    │   Theme ← AnimatedTheme ← ScrollConfiguration ← MaterialApp ←
+I/flutter ( 6559):    │   [root]
+I/flutter ( 6559):    │ parentData: <none>
+I/flutter ( 6559):    │ constraints: BoxConstraints(w=411.4, h=683.4)
+I/flutter ( 6559):    │ size: Size(411.4, 683.4)
+......
+
+```
+
+> 这是根 RenderObject 对象的 toStringDeep（）函数的输出
+> 
+> 调试布局问题时，要查看的关键字段是 size 和 constraint 字段。constraint 沿着树向下流动，size 又向上流动
+
++ Layer tree
+
+> 如果试图调试合成问题，可以使用 debugDumpLayerTree（）
+
++ Semantics tree
+
++ **还有一些没有看完**
+
 ## [Using an OEM debugger](https://flutter.dev/docs/testing/oem-debuggers)
 
 ## [Flutter's build modes](https://flutter.dev/docs/testing/build-modes)
 
++ Flutter 工具在编译应用程序时支持三种模式，在测试时支持 headless 模式。根据您在开发周期中的位置选择编译模式。你在调试你的代码吗？你需要分析信息吗？准备好部署应用程序了吗？
+
+> 在开发过程中使用 debug 模式，如果要使用热重新加载
+> 
+> 要分析性能时使用 profile 模式
+> 
+> 准备发布应用程序时使用 release 模式
+
++ Debug
+
+> 在调试模式下，应用程序安装为在物理设备、模拟器上进行调试
+> 
+> *移动应用程序的调试模式意味着：*
+> 
+> 断言已启用
+> 
+> 服务扩展已启用
+> 
+> 编译是为了快速开发和运行周期而优化的（但不是为了执行速度、二进制大小或部署）
+> 
+> 已启用调试，支持源代码级调试的工具（如DevTools）可以连接到进程
+> 
+> *web应用的调试模式意味着：*
+> 
+> 构建版本没有缩小，也没有进行 tree shaking 处理
+> 
+> 应用程序是用 dartdevc 编译器编译的，以便调试
+> 
+> 默认情况下，`flutter run` 编译为调试模式。IDE 支持这种模式。例如， Android Studio 提供了一个 `Run>Debug…` 菜单选项，以及一个绿色的 bug 图标，在项目页面上覆盖了一个小三角形
+> 
+> *注意：*
+> 
+> 热重新加载仅在调试模式下工作
+> 
+> 模拟器仅在调试模式下执行
+> 
+> 在调试模式下，应用程序性能可能很差。在实际设备上以 profile 模式测量性能
+
++ Release
+
+> 当你想要最大的优化和最小的大小时，使用 Release 模式来部署应用程序。对于移动设备，Release 模式（模拟器或仿真器不支持）意味着：
+> 
+> 断言被禁用
+> 
+> 调试信息被删除
+> 
+> 调试被禁用
+> 
+> 编译是为快速启动、快速执行和较小的包大小而优化的
+> 
+> 服务扩展被禁用
+> 
+> *web应用的 Release 模式意味着：*
+> 
+> 构建被缩小了，并进行了 tree shaking
+> 
+> 应用程序是用 dart2js 编译器编译的，以获得最佳性能
+> 
+> `flutter run--release` 命令编译为 release 模式。IDE支持这种模式。例如， Android Studio 提供了 `Run>Run…` 菜单选项，以及项目页面上的三角形绿色 Run 按钮图标
+> 
+> 可以使用 `flutter build <target>` 将特定目标的编译为 release 模式
+
++ Profile
+
+> 在 profile 模式下，一些调试功能被保留以便能分析应用程序的性能。仿真器和模拟器上的 profile 模式被禁用，因为它们的行为不代表实际性能。在移动设备上，profile 模式与 release 模式类似，但有以下区别：
+> 
+> 某些服务扩展（例如启用 performance overlay ）已启用
+> 
+> 已启用跟踪，支持源代码级调试的工具（如 DevTools ）可以连接到进程
+> 
+> web应用的 profile 模式意味着：
+> 
+> 构建没有缩小，但 `tree shaking` 被执行
+> 
+> 应用程序是用 dart2js 编译器编译的
+> 
+> IDE 支持这种模式。例如，Android Studio 提供了 `Run>Profile…` 菜单选项。Flutter 运行命令 `flutter run --profile` 为 profile 模式
+> 
+> 使用 DevTools 套件分析应用程序的性能
+
 ## [Handling errors in Flutter](https://flutter.dev/docs/testing/errors)
 
++ Flutter 框架捕获由框架本身触发的回调期间发生的错误，包括在构建、布局和绘制期间
+
++ 所有这些错误都路由到 `FlutterError.onError` 处理程序。默认情况下，这将调用 `FlutterError.dumpErrorToConsole`，正如您可能猜到的，它将错误转储到设备日志。当从 IDE 运行时，检查器会重写此选项，以便错误也可以路由到 IDE 的控制台，从而允许您检查消息中提到的对象
+
++ 当在构建阶段发生错误时，将调用 `ErrorWidget.builder` 回调来构建使用的小部件，而不是失败的小部件。默认情况下，在 debug 模式下显示红色错误消息，在 release 模式下显示灰色背景
+
++ 通常，您可以通过将它们设置为 void main（）函数中的值来覆盖其中的每一个
+
++ 例如，要使应用程序在 release 模式中显示错误时立即退出，可以使用以下处理程序：
+
+```
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.dumpErrorToConsole(details);
+    if (kReleaseMode)
+      exit(1);
+  };
+  runApp(MyApp());
+}
+
+// rest of `flutter create` code...
+```
+
 ## [Testing Flutter apps](https://flutter.dev/docs/testing)
+
++ 应用程序的功能越多，手动测试就越困难。自动测试有助于确保应用程序在发布前正确运行，同时保留功能和错误修复速度
+
++ 自动测试分为几类：
+
+> 单元测试测试单个函数、方法或类
+> 
+> 小部件测试（在其他UI框架中称为组件测试）测试单个小部件
+> 
+> 集成测试测试完整的应用程序或应用程序的大部分
+
++ 一般来说，一个经过良好测试的应用程序有许多单元和小部件测试，由代码覆盖率跟踪，加上足够的集成测试来覆盖所有重要的用例
+
++ Unit tests
+
+> 单元测试测试单个函数、方法或类。单元测试的目标是在各种条件下验证逻辑单元的正确性。被测单元的外部依赖通常被模拟出来。单元测试通常不会从运行测试的进程外部读取或写入磁盘、呈现到屏幕或接收用户操作
+
++ Widget tests
+
+> 小部件测试（在其他UI框架中称为组件测试）测试单个小部件。小部件测试的目标是验证小部件的UI看起来和交互是否如预期的那样。测试一个小部件涉及多个类，需要一个提供适当的小部件生命周期上下文的测试环境
+> 
+> 例如，被测试的小部件应该能够接收和响应用户操作和事件，执行布局，并实例化子小部件。因此，小部件测试比单元测试更全面。然而，与单元测试一样，小部件测试的环境被一个比成熟的UI系统简单得多的实现所取代
+
++ Integration tests
+
+> 集成测试测试完整的应用程序或应用程序的大部分。集成测试的目标是验证正在测试的所有小部件和服务是否按预期协同工作。此外，您可以使用集成测试来验证应用程序的性能
+> 
+> 通常，集成测试在真实设备或操作系统仿真器（如 iOS 仿真器或 Android 仿真器）上运行。正在测试的应用程序通常与测试驱动程序代码隔离，以避免扭曲结果
+
++ Continuous integration services
+
+> 持续集成（CI）服务允许您在推送新代码更改时自动运行测试。这提供了关于代码更改是否按预期工作的及时反馈，并且不会引入错误
 
 # Performance & optimization
 
@@ -4784,6 +5083,18 @@ version: 1.0.0+1
 
 ## [Continuous delivery with Flutter](https://flutter.dev/docs/deployment/cd)
 
++ 使用 Flutter 遵循持续交付的最佳实践，以确保您的应用程序交付给您的beta测试人员，并在不使用手动工作流的情况下频繁地进行验证
+
++ fastlane
+
+> 本指南展示了如何将 fastlane（开源软件套件）与现有的测试和连续集成（CI）工作流（例如，Travis 或 Cirrus ）集成在一起
+> 
+> *Local setup*
+> 
+> 建议您在迁移到基于云的系统之前在本地测试构建和部署过程。您还可以选择从本地计算机执行连续传送
+> 
+> **not finished**
+
 # Resources
 
 ## [Bootstrap into Dart](https://flutter.dev/docs/resources/bootstrap-into-dart)
@@ -4797,6 +5108,102 @@ version: 1.0.0+1
 
 ---
 # [*Cookbook*](https://flutter.dev/docs/cookbook)
+
+## Animation
+
+### [Animate a page route transition](https://flutter.dev/docs/cookbook/animation/page-route-animation)
+
+### [Animate a widget using a physics simulation](https://flutter.dev/docs/cookbook/animation/physics-simulation)
+
+### [Animate the properties of a container](https://flutter.dev/docs/cookbook/animation/animated-container)
+
+### [Fade a widget in and out](https://flutter.dev/docs/cookbook/animation/opacity-animation)
+
+## Design
+
+### [Add a Drawer to a screen](https://flutter.dev/docs/cookbook/design/drawer)
+
+### [Display a snackbar](https://flutter.dev/docs/cookbook/design/snackbars)
+
+### [Export fonts from a package](https://flutter.dev/docs/cookbook/design/package-fonts)
+
+### [Update the UI based on orientation](https://flutter.dev/docs/cookbook/design/orientation)
+
+### [Use a custom font](https://flutter.dev/docs/cookbook/design/fonts)
+
+### [Use themes to share colors and font styles](https://flutter.dev/docs/cookbook/design/themes)
+
+### [Work with tabs](https://flutter.dev/docs/cookbook/design/tabs)
+
+## Forms
+
+### [Build a form with validation](https://flutter.dev/docs/cookbook/forms/validation)
+
+### [Create and style a text field](https://flutter.dev/docs/cookbook/forms/text-input)
+
+### [Focus and text fields](https://flutter.dev/docs/cookbook/forms/focus)
+
+### [Handle changes to a text field](https://flutter.dev/docs/cookbook/forms/text-field-changes)
+
+### [Retrieve the value of a text field](https://flutter.dev/docs/cookbook/forms/retrieve-input)
+
+## Gestures
+
+### [Add Material touch ripples](https://flutter.dev/docs/cookbook/gestures/ripples)
+
+### [Handle taps](https://flutter.dev/docs/cookbook/gestures/handling-taps)
+
+### [Implement swipe to dismiss](https://flutter.dev/docs/cookbook/gestures/dismissible)
+
+## Images
+
+### [Display images from the internet](https://flutter.dev/docs/cookbook/images/network-image)
+
+### [Fade in images with a placeholder](https://flutter.dev/docs/cookbook/images/fading-in-images)
+
+### [Work with cached images](https://flutter.dev/docs/cookbook/images/cached-images)
+
+## Lists
+
+### [Create a grid list](https://flutter.dev/docs/cookbook/lists/grid-lists)
+
+### [Create a horizontal list](https://flutter.dev/docs/cookbook/lists/horizontal-list)
+
+### [Create lists with different types of items](https://flutter.dev/docs/cookbook/lists/mixed-list)
+
+### [Place a floating app bar above a list](https://flutter.dev/docs/cookbook/lists/floating-app-bar)
+
+### [Use lists](https://flutter.dev/docs/cookbook/lists/basic-list)
+
+### [Work with long lists](https://flutter.dev/docs/cookbook/lists/long-lists)
+
+## Maintenance
+
+### [Report errors to a service](https://flutter.dev/docs/cookbook/maintenance/error-reporting)
+
+## Navigation
+
+### [Animate a widget across screens](https://flutter.dev/docs/cookbook/navigation/hero-animations)
+
+### [Navigate to a new screen and back](https://flutter.dev/docs/cookbook/navigation/navigation-basics)
+
+### [Navigate with named routes](https://flutter.dev/docs/cookbook/navigation/named-routes)
+
+### [Pass arguments to a named route](https://flutter.dev/docs/cookbook/navigation/navigate-with-arguments)
+
+### [Return data from a screen](https://flutter.dev/docs/cookbook/navigation/returning-data)
+
+### [Send data to a new screen](https://flutter.dev/docs/cookbook/navigation/passing-data)
+
+## Networking
+
+### [Fetch data from the internet](https://flutter.dev/docs/cookbook/networking/fetch-data)
+
+### [Make authenticated requests](https://flutter.dev/docs/cookbook/networking/authenticated-requests)
+
+### [Parse JSON in the background](https://flutter.dev/docs/cookbook/networking/background-parsing)
+
+### [Work with WebSockets](https://flutter.dev/docs/cookbook/networking/web-sockets)
 
 ## Persistence
 
@@ -5464,6 +5871,36 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 ```
+
+## Plugins
+
+### [Play and pause a video](https://flutter.dev/docs/cookbook/plugins/play-video)
+
+### [https://flutter.dev/docs/cookbook/plugins/picture-using-camera](Take a picture using the camera)
+
+## Testing
+
+### Integration
+
+#### [An introduction to integration testing](https://flutter.dev/docs/cookbook/testing/integration/introduction)
+
+#### [Handle scrolling](https://flutter.dev/docs/cookbook/testing/integration/scrolling)
+
+#### [Performance profiling](https://flutter.dev/docs/cookbook/testing/integration/profiling)
+
+### Unit
+
+#### [An introduction to unit testing](https://flutter.dev/docs/cookbook/testing/unit/introduction)
+
+#### [Mock dependencies using Mockito](https://flutter.dev/docs/cookbook/testing/unit/mocking)
+
+### Widget
+
+#### [An introduction to widget testing](https://flutter.dev/docs/cookbook/testing/widget/introduction)
+
+#### [Find widgets](https://flutter.dev/docs/cookbook/testing/widget/finders)
+
+#### [Tap, drag, and enter text](https://flutter.dev/docs/cookbook/testing/widget/tap-drag.html)
 
 # 填坑记录
 ## 第一次运行flutter命令（如flutter doctor）时，它会下载它自己的依赖项并自行编译。以后再运行就会快得多
