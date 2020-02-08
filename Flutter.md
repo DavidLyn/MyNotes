@@ -5123,29 +5123,1625 @@ version: 1.0.0+1
 
 ### [Add a Drawer to a screen](https://flutter.dev/docs/cookbook/design/drawer)
 
++ 在使用 Material Design 的应用程序中，导航有两个主要选项：tab 和 drawer。当没有足够的空间来支撑 tab 时，drawer 提供了一个方便的选择
+
++ 在 Flutter 中，将 Drawer 小部件与 Scaffold 结合使用，创建一个具有 Material Design Drawer的布局。使用以下步骤：
+
+> 1.创建 Scaffold
+> 
+> 2.添加 Drawer
+> 
+> 3.用项目填充 Drawer
+> 
+> 4.以编程方式关闭 Drawer
+
++ 1. Create a Scaffold
+
+> 要向应用程序添加 Drawer，请将其包装在 Scaffold 小部件中。Scaffold 小部件为遵循 Material Design 准则的应用程序提供了一致的视觉结构。它还支持特殊的 Material Design 组件，如 Drawer、 AppBar 和 SnackBar
+> 
+> 在本例中，创建带 Drawer 的 Scaffold：
+
+```
+Scaffold(
+  drawer: // Add a Drawer here in the next step.
+);
+```
+
++ 2. Add a drawer
+
+> 在 Scaffold 上加一个 Drawer。Drawer 可以是任何小部件，但通常最好使用 Material 库中的 Drawer 小部件，它遵循 Material Design 规范
+
+```
+Scaffold(
+  drawer: Drawer(
+    child: // Populate the Drawer in the next step.
+  )
+);
+```
+
++ 3. Populate the drawer with items
+
+> 既然已经准备好了 Drawer，就给它添加内容。对于本例，请使用 ListView。虽然可以使用 Column 小部件，但 ListView 很方便，因为如果内容占用的空间超过屏幕支持的空间，它允许用户在 Drawer 中滚动
+> 
+> 用一个 DrawerHeader 和两个 ListTile 小部件填充 ListView
+
+```
+Drawer(
+  // Add a ListView to the drawer. This ensures the user can scroll
+  // through the options in the drawer if there isn't enough vertical
+  // space to fit everything.
+  child: ListView(
+    // Important: Remove any padding from the ListView.
+    padding: EdgeInsets.zero,
+    children: <Widget>[
+      DrawerHeader(
+        child: Text('Drawer Header'),
+        decoration: BoxDecoration(
+          color: Colors.blue,
+        ),
+      ),
+      ListTile(
+        title: Text('Item 1'),
+        onTap: () {
+          // Update the state of the app.
+          // ...
+        },
+      ),
+      ListTile(
+        title: Text('Item 2'),
+        onTap: () {
+          // Update the state of the app.
+          // ...
+        },
+      ),
+    ],
+  ),
+);
+
+```
+
+
++ 4. Close the drawer programmatically
+
+> 用户点击项目后，可能需要关闭 drawer 。您可以使用 Navigator 来完成此操作
+> 
+> 当用户打开 drawer 时，Flutter 会将 drawer 添加到导航堆栈中。因此，要关闭 drawer，请调用 Navigator.pop（context）
+
+```
+ListTile(
+  title: Text('Item 1'),
+  onTap: () {
+    // Update the state of the app.
+    // ...
+    // Then close the drawer.
+    Navigator.pop(context);
+  },
+),
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  final appTitle = 'Drawer Demo';
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: appTitle,
+      home: MyHomePage(title: appTitle),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  final String title;
+
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(child: Text('My Page!')),
+      drawer: Drawer(
+        // Add a ListView to the drawer. This ensures the user can scroll
+        // through the options in the drawer if there isn't enough vertical
+        // space to fit everything.
+        child: ListView(
+          // Important: Remove any padding from the ListView.
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              child: Text('Drawer Header'),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+            ),
+            ListTile(
+              title: Text('Item 1'),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: Text('Item 2'),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Display a snackbar](https://flutter.dev/docs/cookbook/design/snackbars)
+
++ 当某些操作发生时，简要地通知用户是很有用的。例如，当用户刷走列表中的邮件时，可能希望通知他们该邮件已被删除。甚至可以给他们一个撤销操作的选项。在 Material Design 中，这是 SnackBar 的工作
+
++ 1. Create a Scaffold
+
+> 创建遵循 Material Design 准则的应用程序时，可为应用程序提供一致的视觉结构。在本例中，在屏幕底部显示 SnackBar，而不重叠其他重要的小部件，如 `FloatingActionButton`
+> 
+> 来自 material 库的 Scaffold 小部件创建了这个可视化结构，并确保重要的小部件不会重叠
+
+```
+Scaffold(
+  appBar: AppBar(
+    title: Text('SnackBar Demo'),
+  ),
+  body: SnackBarPage(), // Complete this code in the next step.
+);
+```
+
++ 2. Display a SnackBar
+
+> 在 Scaffold 就位的情况下，展示一个 SnackBar。首先，创建一个 SnackBar，然后使用 Scaffold 显示它
+
+```
+final snackBar = SnackBar(content: Text('Yay! A SnackBar!'));
+
+// Find the Scaffold in the widget tree and use it to show a SnackBar.
+Scaffold.of(context).showSnackBar(snackBar);
+```
+
++ 3. Provide an optional action
+
+> 可能希望在显示 SnackBar 时向用户提供操作。例如，如果用户意外地删除了一条消息，可以使用 SnackBar 中的可选操作来恢复该消息
+> 
+> 下面是为SnackBar小部件提供附加操作的示例：
+
+```
+final snackBar = SnackBar(
+  content: Text('Yay! A SnackBar!'),
+  action: SnackBarAction(
+    label: 'Undo',
+    onPressed: () {
+      // Some code to undo the change.
+    },
+  ),
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(SnackBarDemo());
+
+class SnackBarDemo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'SnackBar Demo',
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('SnackBar Demo'),
+        ),
+        body: SnackBarPage(),
+      ),
+    );
+  }
+}
+
+class SnackBarPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: RaisedButton(
+        onPressed: () {
+          final snackBar = SnackBar(
+            content: Text('Yay! A SnackBar!'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () {
+                // Some code to undo the change.
+              },
+            ),
+          );
+
+          // Find the Scaffold in the widget tree and use
+          // it to show a SnackBar.
+          Scaffold.of(context).showSnackBar(snackBar);
+        },
+        child: Text('Show SnackBar'),
+      ),
+    );
+  }
+}
+```
 
 ### [Export fonts from a package](https://flutter.dev/docs/cookbook/design/package-fonts)
 
++ 可以将字体声明为单独包的一部分，而不是将字体声明为应用程序的一部分。这是一种在多个不同项目中共享相同字体的方便方法，或者对于将其包发布到 pub.dev 的程序员来说也是一种方便的方法
+
+> 查看 google_fonts 包，可以直接访问近1000个开源字体系列
+
++ 1. Add a font to a package
+
+> 要从包中导出字体，需要将字体文件导入到包项目的 lib 文件夹中。可以将字体文件直接放在 lib 文件夹或子目录中，例如 lib/fonts
+> 
+> 在本例中，假设您有一个名为 awesome_package 的 Flutter 库，其中的字体位于 lib/fonts 文件夹中
+
+```
+awesome_package/
+  lib/
+    awesome_package.dart
+    fonts/
+      Raleway-Regular.ttf
+      Raleway-Italic.ttf
+```
+
++ 2.Add the package and fonts to the app
+
+> 现在可以通过更新应用程序根目录中的 pubspec.yaml 来使用包中的字体
+> 
+> *Add the package to the app*
+
+```
+dependencies:
+  awesome_package: <latest_version>
+```
+
+> *Declare the font assets*
+> 
+> 既然已经导入了这个包，告诉 Flutter 在哪里可以从 awesome_package 中找到字体
+> 
+> 要声明包字体，请在字体的路径前面加上 packages/awesome_package。这告诉 Flutter 在包的 lib 文件夹中查找字体
+
+```
+flutter:
+  fonts:
+    - family: Raleway
+      fonts:
+        - asset: packages/awesome_package/fonts/Raleway-Regular.ttf
+        - asset: packages/awesome_package/fonts/Raleway-Italic.ttf
+          style: italic
+```
+
+> *3. Use the font*
+> 
+> 使用 TextStyle 更改文本的外观。要使用包字体，请声明要使用的字体以及该字体所属的包
+
+```
+Text(
+  'Using the Raleway font from the awesome_package',
+  style: TextStyle(
+    fontFamily: 'Raleway',
+    package: 'awesome_package',
+  ),
+);
+```
+
++ 完整示例
+
+> *Fonts*
+> 
+> Raleway 和 RobotoMono 字体是从 [Google fonts](https://fonts.google.com)下载的
+> 
+> *pubspec.yaml*
+
+```
+name: package_fonts
+description: An example of how to use package fonts with Flutter
+
+dependencies:
+  awesome_package:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  fonts:
+    - family: Raleway
+      fonts:
+        - asset: packages/awesome_package/fonts/Raleway-Regular.ttf
+        - asset: packages/awesome_package/fonts/Raleway-Italic.ttf
+          style: italic
+  uses-material-design: true
+```
+
++ *main.dart*
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Package Fonts',
+      home: MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // The AppBar uses the app-default font.
+      appBar: AppBar(title: Text('Package Fonts')),
+      body: Center(
+        // This Text widget uses the Raleway font.
+        child: Text(
+          'Using the Raleway font from the awesome_package',
+          style: TextStyle(
+            fontFamily: 'Raleway',
+            package: 'awesome_package',
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Update the UI based on orientation](https://flutter.dev/docs/cookbook/design/orientation)
+
++ 在某些情况下，当用户将屏幕从纵向模式旋转到横向模式时，您需要更新应用程序的显示。例如，应用程序可能在纵向模式下显示一个项目，但在横向模式下将这些相同的项目并排显示
+
+> 在 Flutter 中，可以根据给定的方向构建不同的布局。在本例中，使用以下步骤构建一个列表，该列表在纵向模式下显示两列，在横向模式下显示三列：
+> 
+> 1.生成包含两列的 GridView
+> 
+> 2.使用 OrientationBuilder 更改列数
+
++ 1. Build a GridView with two columns
+
+> 首先，创建要使用的项列表。不要使用普通列表，而是创建一个在网格中显示项的列表。现在，创建一个包含两列的网格
+
+```
+GridView.count(
+  // A list with 2 columns
+  crossAxisCount: 2,
+  // ...
+);
+```
+
++ 2. Use an OrientationBuilder to change the number of columns
+
+> 要确定应用程序的当前方向，请使用 OrientationBuilder 小部件。 OrientationBuilder 通过比较父窗口小部件可用的宽度和高度来计算当前方向，并在父窗口小部件的大小更改时重建
+> 
+> 使用方向，构建一个列表，以纵向模式显示两列，或以横向模式显示三列
+
+```
+OrientationBuilder(
+  builder: (context, orientation) {
+    return GridView.count(
+      // Create a grid with 2 columns in portrait mode,
+      // or 3 columns in landscape mode.
+      crossAxisCount: orientation == Orientation.portrait ? 2 : 3,
+    );
+  },
+);
+```
+
+> 如果您对屏幕的方向感兴趣，而不是对父级可用的空间量感兴趣，请使用 MediaQuery.of（context）.orientation 而不是 OrientationBuilder 小部件
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final appTitle = 'Orientation Demo';
+
+    return MaterialApp(
+      title: appTitle,
+      home: OrientationList(
+        title: appTitle,
+      ),
+    );
+  }
+}
+
+class OrientationList extends StatelessWidget {
+  final String title;
+
+  OrientationList({Key key, this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          return GridView.count(
+            // Create a grid with 2 columns in portrait mode, or 3 columns in
+            // landscape mode.
+            crossAxisCount: orientation == Orientation.portrait ? 2 : 3,
+            // Generate 100 widgets that display their index in the List.
+            children: List.generate(100, (index) {
+              return Center(
+                child: Text(
+                  'Item $index',
+                  style: Theme.of(context).textTheme.headline,
+                ),
+              );
+            }),
+          );
+        },
+      ),
+    );
+  }
+}
+```
 
 ### [Use a custom font](https://flutter.dev/docs/cookbook/design/fonts)
 
++ 尽管 Android 和 iOS 提供了高质量的系统字体，但设计师最常见的要求之一是定制字体。例如，您可能有一个来自设计师的自定义字体，或者您可能从 Google Fonts 下载了一个字体
+
++ Flutter 使用自定义字体，您可以在整个应用程序或单个小部件上应用自定义字体
+
++ 1. Import the font files
+
+> 要使用字体，请将字体文件导入到项目中。通常的做法是将字体文件放在 flutter 项目根目录下的 fonts 或 assets 文件夹中
+> 
+> 例如，要将 Raleway 和 Roboto Mono 字体文件导入到项目中，文件夹结构可能如下所示：
+
+```
+awesome_app/
+  fonts/
+    Raleway-Regular.ttf
+    Raleway-Italic.ttf
+    RobotoMono-Regular.ttf
+    RobotoMono-Bold.ttf
+```
+
++ 2. Declare the font in the pubspec
+
+> 一旦你确定了一个字体，告诉 Flutter 在哪里找到它。可以通过在 pubspec.yaml 文件中包含字体定义来完成此操作
+
+```
+flutter:
+  fonts:
+    - family: Raleway
+      fonts:
+        - asset: fonts/Raleway-Regular.ttf
+        - asset: fonts/Raleway-Italic.ttf
+          style: italic
+    - family: RobotoMono
+      fonts:
+        - asset: fonts/RobotoMono-Regular.ttf
+        - asset: fonts/RobotoMono-Bold.ttf
+          weight: 700
+```
+
+> *pubspec.yaml option definitions*
+> 
+> family 决定字体的名称，可以在 TextStyle 对象的 fontFamily 属性中使用该字体
+> 
+> asset 是相对于 pubspec.yaml 文件的字体文件的路径。这些文件包含字体中字形的轮廓。构建应用程序时，这些文件包含在应用程序的 asset bundle 中
+> 
+> 单个字体可以引用具有不同轮廓权重和样式的许多不同文件：
+> 
+> weight 属性将文件中轮廓的权重指定为100的整数倍，介于100和900之间。这些值对应于 FontWeight，可以在 TextStyle 对象的 FontWeight 属性中使用
+> 
+> style 属性指定文件中的轮廓是 italic 还是 normal。这些值与 FontStyle 相对应，可以在 TextStyle 对象的 FontStyle 属性中使用
+
++ 3. Set a font as the default
+
+> 对于如何将字体应用于文本，有两个选项：作为默认字体或仅在特定小部件中
+> 
+> 若要将字体用作默认字体，请将 fontFamily 属性设置为应用程序主题的一部分。提供给 fontFamily 的值必须与 pubspec.yaml 中声明的家族名称匹配
+
+```
+MaterialApp(
+  title: 'Custom Fonts',
+  // Set Raleway as the default app font.
+  theme: ThemeData(fontFamily: 'Raleway'),
+  home: MyHomePage(),
+);
+```
+
++ 4. Use the font in a specific widget
+
+> 如果要将字体应用于特定小部件（如 Text 小部件），请为该小部件提供文本样式
+> 
+> 在本例中，将 RobotoMono 字体应用于单个 Text 小部件。 fontFamily 必须再次与 pubspec.yaml 中声明的名称匹配
+
+```
+Text(
+  'Roboto Mono sample',
+  style: TextStyle(fontFamily: 'RobotoMono'),
+);
+```
+
+> 如果 TextStyle 对象指定了没有确切字体文件的权重或样式，则引擎将使用一个更通用的字体文件，并尝试为请求的权重和样式外推轮廓
+
++ 完整例子
+
+> pubspec.yaml
+
+```
+name: custom_fonts
+description: An example of how to use custom fonts with Flutter
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  fonts:
+    - family: Raleway
+      fonts:
+        - asset: fonts/Raleway-Regular.ttf
+        - asset: fonts/Raleway-Italic.ttf
+          style: italic
+    - family: RobotoMono
+      fonts:
+        - asset: fonts/RobotoMono-Regular.ttf
+        - asset: fonts/RobotoMono-Bold.ttf
+          weight: 700
+  uses-material-design: true
+
+```
+
+> main.dart
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Custom Fonts',
+      // Set Raleway as the default app font.
+      theme: ThemeData(fontFamily: 'Raleway'),
+      home: MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // The AppBar uses the app-default Raleway font.
+      appBar: AppBar(title: Text('Custom Fonts')),
+      body: Center(
+        // This Text widget uses the RobotoMono font.
+        child: Text(
+          'Roboto Mono sample',
+          style: TextStyle(fontFamily: 'RobotoMono'),
+        ),
+      ),
+    );
+  }
+}
+
+```
+
 ### [Use themes to share colors and font styles](https://flutter.dev/docs/cookbook/design/themes)
 
++ 要在应用程序中共享颜色和字体样式，请使用主题。可以定义应用程序范围的主题，也可以使用主题小部件来定义应用程序特定部分的颜色和字体样式。实际上，应用程序范围的主题只是MaterialApp在应用程序根目录下创建的主题小部件
+
++ 定义主题后，在自己的小部件中使用它。Flutter 的Material widgets还使用您的主题设置appbar、按钮、复选框等的背景颜色和字体样式
+
++ Creating an app theme
+
+> 要在整个应用程序中共享主题，请向 MaterialApp 构造函数提供主题数据
+> 
+> 如果没有提供主题，Flutter 会创建一个默认主题
+
+```
+MaterialApp(
+  title: title,
+  theme: ThemeData(
+    // Define the default brightness and colors.
+    brightness: Brightness.dark,
+    primaryColor: Colors.lightBlue[800],
+    accentColor: Colors.cyan[600],
+
+    // Define the default font family.
+    fontFamily: 'Georgia',
+
+    // Define the default TextTheme. Use this to specify the default
+    // text styling for headlines, titles, bodies of text, and more.
+    textTheme: TextTheme(
+      headline: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold),
+      title: TextStyle(fontSize: 36.0, fontStyle: FontStyle.italic),
+      body1: TextStyle(fontSize: 14.0, fontFamily: 'Hind'),
+    ),
+  )
+);
+
+```
+
++ Themes for part of an application
+
+> 要在应用程序的一部分覆盖应用程序范围的主题，请在主题小部件中包装应用程序的一部分
+> 
+> 有两种方法可以实现此目的：创建唯一的 ThemeData，或扩展父主题
+> 
+> *Creating unique ThemeData*
+> 
+> 如果不想继承任何应用程序颜色或字体样式，请创建一个 ThemeData（）实例并将其传递给 Theme 小部件
+
+```
+Theme(
+  // Create a unique theme with "ThemeData"
+  data: ThemeData(
+    accentColor: Colors.yellow,
+  ),
+  child: FloatingActionButton(
+    onPressed: () {},
+    child: Icon(Icons.add),
+  ),
+);
+
+```
+
+> *Extending the parent theme*
+> 
+> 与其覆盖所有内容，不如扩展父主题。您可以使用copyWith（）方法来处理这个问题
+
+```
+Theme(
+  // Find and extend the parent theme using "copyWith". See the next
+  // section for more info on `Theme.of`.
+  data: Theme.of(context).copyWith(accentColor: Colors.yellow),
+  child: FloatingActionButton(
+    onPressed: null,
+    child: Icon(Icons.add),
+  ),
+);
+
+```
+
++ Using a Theme
+
+> 既然已经定义了一个主题，那么通过使用 Theme.of（context）方法在小部件的build（）方法中使用它
+> 
+> Theme.of（context）方法查找小部件树并返回树中最近的主题。如果在小部件上方定义了独立主题，则返回该主题。如果没有，则返回应用程序的主题
+> 
+> 实际上，FloatingActionButton 使用这种技术来查找 accentColor
+
+```
+Container(
+  color: Theme.of(context).accentColor,
+  child: Text(
+    'Text with a background color',
+    style: Theme.of(context).textTheme.title,
+  ),
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final appName = 'Custom Themes';
+
+    return MaterialApp(
+      title: appName,
+      theme: ThemeData(
+        // Define the default brightness and colors.
+        brightness: Brightness.dark,
+        primaryColor: Colors.lightBlue[800],
+        accentColor: Colors.cyan[600],
+
+        // Define the default font family.
+        fontFamily: 'Georgia',
+
+        // Define the default TextTheme. Use this to specify the default
+        // text styling for headlines, titles, bodies of text, and more.
+        textTheme: TextTheme(
+          headline: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold),
+          title: TextStyle(fontSize: 36.0, fontStyle: FontStyle.italic),
+          body1: TextStyle(fontSize: 14.0, fontFamily: 'Hind'),
+        ),
+      ),
+      home: MyHomePage(
+        title: appName,
+      ),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  final String title;
+
+  MyHomePage({Key key, @required this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Center(
+        child: Container(
+          color: Theme.of(context).accentColor,
+          child: Text(
+            'Text with a background color',
+            style: Theme.of(context).textTheme.title,
+          ),
+        ),
+      ),
+      floatingActionButton: Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme:
+              Theme.of(context).colorScheme.copyWith(secondary: Colors.yellow),
+        ),
+        child: FloatingActionButton(
+          onPressed: null,
+          child: Icon(Icons.add),
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Work with tabs](https://flutter.dev/docs/cookbook/design/tabs)
+
++ 在遵循 Material Design 指南的应用程序中，使用 tab 是一种常见的模式。Flutter 包含一种方便的方法，可以将选项卡布局创建为 material 库的一部分
+
++ 1. Create a TabController
+
+> 要使 tab 正常工作，需要使选定的 tab 和内容节保持同步。这是 TabController 的工作
+> 
+> 手动创建 TabController，或者使用 DefaultTabController 小部件自动创建 TabController
+> 
+> 使用 DefaultTabController 是最简单的选项，因为它创建了一个 TabController 并使其对所有子代小部件都可用
+
+```
+DefaultTabController(
+  // The number of tabs / content sections to display.
+  length: 3,
+  child: // Complete this code in the next step.
+);
+```
+
++ 2. Create the tabs
+
+> 选择 tab 时，它需要显示内容。可以使用 TabBar 小部件创建 tab。在本例中，创建一个包含三个 tab 小部件的 TabBar，并将其放置在 AppBar 中
+
+```
+DefaultTabController(
+  length: 3,
+  child: Scaffold(
+    appBar: AppBar(
+      bottom: TabBar(
+        tabs: [
+          Tab(icon: Icon(Icons.directions_car)),
+          Tab(icon: Icon(Icons.directions_transit)),
+          Tab(icon: Icon(Icons.directions_bike)),
+        ],
+      ),
+    ),
+  ),
+);
+```
+
+> 默认情况下，TabBar 会在小部件树中查找最近的 DefaultTabController。如果要手动创建 TabController，请将其传递给 TabBar
+
++ 3. Create content for each tab
+
+> 现在你有Tabs，当选定Tab时显示内容。为了这个目的，使用Tabbarview Widget
+> 
+> 顺序很重要，必须与 TabBar 中 tab 的顺序相对应
+
+```
+TabBarView(
+  children: [
+    Icon(Icons.directions_car),
+    Icon(Icons.directions_transit),
+    Icon(Icons.directions_bike),
+  ],
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(TabBarDemo());
+}
+
+class TabBarDemo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          appBar: AppBar(
+            bottom: TabBar(
+              tabs: [
+                Tab(icon: Icon(Icons.directions_car)),
+                Tab(icon: Icon(Icons.directions_transit)),
+                Tab(icon: Icon(Icons.directions_bike)),
+              ],
+            ),
+            title: Text('Tabs Demo'),
+          ),
+          body: TabBarView(
+            children: [
+              Icon(Icons.directions_car),
+              Icon(Icons.directions_transit),
+              Icon(Icons.directions_bike),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
 
 ## Forms
 
 ### [Build a form with validation](https://flutter.dev/docs/cookbook/forms/validation)
 
++ 应用程序通常要求用户在文本字段中输入信息。例如，可能要求用户使用电子邮件地址和密码组合登录
+
++ 要使应用程序安全且易于使用，请检查用户提供的信息是否有效。如果用户正确填写了表单，请处理该信息。如果用户提交的信息不正确，则显示友好的错误消息，让他们知道发生了什么错误
+
++ 在本例中，学习如何使用以下步骤将验证添加到具有单个文本字段的表单：
+
+> 1.使用 GlobalKey 创建窗体
+> 
+> 2.添加带有验证逻辑的 TextFormField
+> 
+> 3.创建一个按钮来验证和提交表单
+
++ 1. Create a Form with a GlobalKey
+
+> 首先，创建一个表单。表单小部件充当对多个表单字段进行分组和验证的容器
+> 
+> 创建窗体时，提供 GlobalKey。这唯一地标识表单，并允许在以后的步骤中验证表单
+
+```
+// Define a custom Form widget.
+class MyCustomForm extends StatefulWidget {
+  @override
+  MyCustomFormState createState() {
+    return MyCustomFormState();
+  }
+}
+
+// Define a corresponding State class.
+// This class holds data related to the form.
+class MyCustomFormState extends State<MyCustomForm> {
+  // Create a global key that uniquely identifies the Form widget
+  // and allows validation of the form.
+  //
+  // Note: This is a `GlobalKey<FormState>`,
+  // not a GlobalKey<MyCustomFormState>.
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    // Build a Form widget using the _formKey created above.
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: <Widget>[
+              // Add TextFormFields and RaisedButton here.
+        ]
+     )
+    );
+  }
+}
+```
+
+> 使用 GlobalKey 是访问表单的推荐方法。但是，如果有更复杂的小部件树，则可以使用Form.of（）方法在嵌套的小部件中访问表单
+
++ 2. Add a TextFormField with validation logic
+
+> 尽管表单已经就位，但它没有让用户输入文本的方法。这是 TextFormField 的工作。 TextFormField 小部件呈现一个 material design 文本字段，并在出现验证错误时显示这些错误
+> 
+> 通过向 TextFormField 提供 validator（）函数来验证输入。如果用户的输入无效，验证函数将返回包含错误消息的字符串。如果没有错误，验证程序必须返回 null
+> 
+> 对于本例，创建一个 validator，确保 TextFormField 不为空。如果为空，则返回友好的错误消息
+
+```
+TextFormField(
+  // The validator receives the text that the user has entered.
+  validator: (value) {
+    if (value.isEmpty) {
+      return 'Please enter some text';
+    }
+    return null;
+  },
+);
+```
+
++ 3. Create a button to validate and submit the form
+
+> 现在您有了一个带有文本字段的表单，请提供一个按钮，用户可以点击该按钮提交信息
+> 
+> 当用户试图提交表单时，请检查表单是否有效。如果是，则显示一条成功消息。如果不是（文本字段没有内容），则显示错误消息
+
+```
+RaisedButton(
+  onPressed: () {
+    // Validate returns true if the form is valid, otherwise false.
+    if (_formKey.currentState.validate()) {
+      // If the form is valid, display a snackbar. In the real world,
+      // you'd often call a server or save the information in a database.
+
+      Scaffold
+          .of(context)
+          .showSnackBar(SnackBar(content: Text('Processing Data')));
+    }
+  },
+  child: Text('Submit'),
+);
+```
+
++ How does this work?
+
+> 要验证表单，请使用步骤1中创建的 _formKey。可以使用 _formKey.currentState（）方法访问 FormState，它是在生成表单时由 Flutter 自动创建的
+> 
+> FormState 类包含 validate（）方法。调用 validate（）方法时，它为表单中的每个文本字段运行 validator（）函数。如果一切正常，validate（）方法返回 true。如果任何文本字段包含错误，validate（）方法将重建窗体以显示任何错误消息并返回 false
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final appTitle = 'Form Validation Demo';
+
+    return MaterialApp(
+      title: appTitle,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(appTitle),
+        ),
+        body: MyCustomForm(),
+      ),
+    );
+  }
+}
+
+// Create a Form widget.
+class MyCustomForm extends StatefulWidget {
+  @override
+  MyCustomFormState createState() {
+    return MyCustomFormState();
+  }
+}
+
+// Create a corresponding State class.
+// This class holds data related to the form.
+class MyCustomFormState extends State<MyCustomForm> {
+  // Create a global key that uniquely identifies the Form widget
+  // and allows validation of the form.
+  //
+  // Note: This is a GlobalKey<FormState>,
+  // not a GlobalKey<MyCustomFormState>.
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    // Build a Form widget using the _formKey created above.
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          TextFormField(
+            validator: (value) {
+              if (value.isEmpty) {
+                return 'Please enter some text';
+              }
+              return null;
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: RaisedButton(
+              onPressed: () {
+                // Validate returns true if the form is valid, or false
+                // otherwise.
+                if (_formKey.currentState.validate()) {
+                  // If the form is valid, display a Snackbar.
+                  Scaffold.of(context)
+                      .showSnackBar(SnackBar(content: Text('Processing Data')));
+                }
+              },
+              child: Text('Submit'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
 ### [Create and style a text field](https://flutter.dev/docs/cookbook/forms/text-input)
+
++ Text 字段允许用户在应用程序中键入文本。它们用于构建表单、发送消息、创建搜索体验等
+
++ Flutter 提供两个文本字段：TextField 和 TextFormField
+
++ TextField
+
+> TextField 是最常用的文本输入小部件
+> 
+> 默认情况下，文本字段用下划线修饰。通过提供 InputDecoration 作为文本字段的装饰属性，可以添加标签、图标、内联提示文本和错误文本。若要完全删除装饰（包括下划线和为标签保留的空间），请将装饰设置为空
+
+```
+TextField(
+  decoration: InputDecoration(
+    border: InputBorder.none,
+    hintText: 'Enter a search term'
+  ),
+);
+```
+
++ TextFormField
+
+> TextFormField 包装一个 TextField 并将其与封闭表单集成。这提供了额外的功能，例如验证和与其他 FormField 小部件的集成
+
+```
+TextFormField(
+  decoration: InputDecoration(
+    labelText: 'Enter your username'
+  ),
+);
+```
 
 ### [Focus and text fields](https://flutter.dev/docs/cookbook/forms/focus)
 
++ 当选择一个文本字段并接受输入时，它被称为具有“焦点”。通常，用户通过点击将焦点转移到文本字段，开发人员通过使用本节描述的工具以编程方式将焦点转移到文本字段
+
++ 管理焦点是创建具有直观流的表单的基本工具。例如，假设您有一个带有文本字段的搜索屏幕。当用户导航到搜索屏幕时，可以将焦点设置为搜索词的文本字段。这允许用户在屏幕可见时立即开始键入，而无需手动点击文本字段
+
++ 在本节中，学习如何在文本字段可见时立即将焦点赋予文本字段，以及如何在点击按钮时将焦点赋予文本字段
+
++ Focus a text field as soon as it’s visible
+
+> 若要在文本字段可见时立即为其提供焦点，请使用“autofocus”属性
+
+```
+TextField(
+  autofocus: true,
+);
+```
+
++ Focus a text field when a button is tapped
+
+> 与其立即将焦点转移到特定的文本字段，不如在稍后的时间点将焦点转移到文本字段。在现实世界中，您可能还需要将焦点放在特定的文本字段上，以响应 API 调用或验证错误。在本例中，在用户按下按钮后，使用以下步骤将焦点放在文本字段上：
+> 
+> *1. Create a FocusNode*
+> 
+> 首先，创建一个 FocusNode。使用 FocusNode 来识别 Flutter 的“焦点树”中的一个特定文本字段，这允许您在接下来的步骤中对文本字段进行聚焦
+> 
+> 由于 FocusMode 是长寿命对象，因此使用状态对象管理生命周期。使用以下说明在状态类的 initState（）方法中创建 FocusMode 实例，并在 dispose（）方法中清除它：
+
+```
+// Define a custom Form widget.
+class MyCustomForm extends StatefulWidget {
+  @override
+  _MyCustomFormState createState() => _MyCustomFormState();
+}
+
+// Define a corresponding State class.
+// This class holds data related to the form.
+class _MyCustomFormState extends State<MyCustomForm> {
+  // Define the focus node. To manage the lifecycle, create the FocusNode in
+  // the initState method, and clean it up in the dispose method.
+  FocusNode myFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+
+    myFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    // Clean up the focus node when the Form is disposed.
+    myFocusNode.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Fill this out in the next step.
+  }
+}
+```
+
+> *2. Pass the FocusNode to a TextField*
+> 
+> 现在有了 FocusNode，请将其传递给 build（）方法中的特定 TextField
+
+```
+class _MyCustomFormState extends State<MyCustomForm> {
+  // Code to create the Focus node...
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      focusNode: myFocusNode,
+    );
+  }
+}
+```
+
+> *3. Give focus to the TextField when a button is tapped*
+> 
+> 最后，当用户点击一个浮动操作按钮时，聚焦文本字段。使用 requestFocus（）方法执行此任务
+
+```
+FloatingActionButton(
+  // When the button is pressed, give focus to the text field using
+  // myFocusNode.
+  onPressed: () => FocusScope.of(context).requestFocus(myFocusNode),
+);
+```
+
++  完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Text Field Focus',
+      home: MyCustomForm(),
+    );
+  }
+}
+
+// Define a custom Form widget.
+class MyCustomForm extends StatefulWidget {
+  @override
+  _MyCustomFormState createState() => _MyCustomFormState();
+}
+
+// Define a corresponding State class.
+// This class holds data related to the form.
+class _MyCustomFormState extends State<MyCustomForm> {
+  // Define the focus node. To manage the lifecycle, create the FocusNode in
+  // the initState method, and clean it up in the dispose method.
+  FocusNode myFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+
+    myFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    // Clean up the focus node when the Form is disposed.
+    myFocusNode.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Text Field Focus'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // The first text field is focused on as soon as the app starts.
+            TextField(
+              autofocus: true,
+            ),
+            // The second text field is focused on when a user taps the
+            // FloatingActionButton.
+            TextField(
+              focusNode: myFocusNode,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        // When the button is pressed,
+        // give focus to the text field using myFocusNode.
+        onPressed: () => FocusScope.of(context).requestFocus(myFocusNode),
+        tooltip: 'Focus Second Text Field',
+        child: Icon(Icons.edit),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+```
+
 ### [Handle changes to a text field](https://flutter.dev/docs/cookbook/forms/text-field-changes)
 
++ 在某些情况下，每次文本字段中的文本更改时运行回调函数是很有用的。例如，您可能希望构建一个具有自动完成功能的搜索屏幕，以便在用户键入时更新结果
+
++ 如何在每次文本更改时运行回调函数？有两个选择：
+
+> *1. Supply an onChanged() callback to a TextField or a TextFormField*
+> 
+> 最简单的方法是向 TextField 或 TextFormField 提供 onChanged（）回调。每当文本更改时，都会调用回调
+> 
+> 在本例中，每次文本更改时都将文本字段的当前值打印到控制台
+
+```
+TextField(
+  onChanged: (text) {
+    print("First text field: $text");
+  },
+);
+```
+
+> *2. Use a TextEditingController*
+> 
+> 一种更强大但更精细的方法是提供 TextEditingController 作为 TextField 或 TextFormField的controller 属性
+> 
+> **Create a TextEditingController**
+
+```
+// Define a custom Form widget.
+class MyCustomForm extends StatefulWidget {
+  @override
+  _MyCustomFormState createState() => _MyCustomFormState();
+}
+
+// Define a corresponding State class.
+// This class holds data related to the Form.
+class _MyCustomFormState extends State<MyCustomForm> {
+  // Create a text controller. Later, use it to retrieve the
+  // current value of the TextField.
+  final myController = TextEditingController();
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is removed from the
+    // widget tree.
+    myController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Fill this out in the next step.
+  }
+}
+
+```
+
+> 当不再需要 TextEditingController 时，请记住将其释放。这样可以确保释放对象使用的任何资源
+> 
+> **Connect the TextEditingController to a text field**
+> 
+> 为 TextField 或 TextFormField 提供 TextEditingController 。一旦将这两个类连接在一起，就可以开始侦听对文本字段的更改
+
+```
+TextField(
+  controller: myController,
+);
+```
+
+> **Create a function to print the latest value**
+> 
+> 每次文本更改时都需要运行一个函数。在 MyCustomFormState 类中创建一个方法，打印出文本字段的当前值
+
+```
+每次文本更改时都需要运行一个函数。在MyCustomFormState类中创建一个方法，打印出文本字段的当前值
+```
+
+> **Listen to the controller for changes**
+> 
+> 最后，监听 TextEditingController 并在文本更改时调用 _printLatestValue（）方法。为此，请使用 addListener（）方法
+> 
+> 初始化 MyCustomFormState 类时开始侦听更改，释放 MyCustomFormState 时停止侦听
+
+```
+class _MyCustomFormState extends State<MyCustomForm> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Start listening to changes.
+    myController.addListener(_printLatestValue);
+  }
+}
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Retrieve Text Input',
+      home: MyCustomForm(),
+    );
+  }
+}
+
+// Define a custom Form widget.
+class MyCustomForm extends StatefulWidget {
+  @override
+  _MyCustomFormState createState() => _MyCustomFormState();
+}
+
+// Define a corresponding State class.
+// This class holds data related to the Form.
+class _MyCustomFormState extends State<MyCustomForm> {
+  // Create a text controller and use it to retrieve the current value
+  // of the TextField.
+  final myController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    myController.addListener(_printLatestValue);
+  }
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is removed from the widget tree.
+    // This also removes the _printLatestValue listener.
+    myController.dispose();
+    super.dispose();
+  }
+
+  _printLatestValue() {
+    print("Second text field: ${myController.text}");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Retrieve Text Input'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: <Widget>[
+            TextField(
+              onChanged: (text) {
+                print("First text field: $text");
+              },
+            ),
+            TextField(
+              controller: myController,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Retrieve the value of a text field](https://flutter.dev/docs/cookbook/forms/retrieve-input)
+
++ 在本节中，学习如何使用以下步骤检索用户输入到文本字段中的文本：
+
++ 1. Create a TextEditingController
+
+> 要检索用户在文本字段中输入的文本，请创建 TextEditingController 并将其提供给 TextField 或 TextFormField
+> 
+> 使用完 TextEditingController 后调用 dispose。这样可以确保放弃对象使用的任何资源
+
+```
+// Define a custom Form widget.
+class MyCustomForm extends StatefulWidget {
+  @override
+  _MyCustomFormState createState() => _MyCustomFormState();
+}
+
+// Define a corresponding State class.
+// This class holds the data related to the Form.
+class _MyCustomFormState extends State<MyCustomForm> {
+  // Create a text controller and use it to retrieve the current value
+  // of the TextField.
+  final myController = TextEditingController();
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    myController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Fill this out in the next step.
+  }
+}
+```
+
++ 2. Supply the TextEditingController to a TextField
+
+> 有了 TextEditingController，使用 controller 属性将其连接到文本字段：
+
+```
+TextField(
+  controller: myController,
+);
+```
+
++ 3. Display the current value of the text field
+
+> 将 TextEditingController 提供给文本字段后，开始读取值。使用 TextEditingController 提供的 text（）方法检索用户在文本字段中输入的字符串
+> 
+> 当用户点击一个浮动操作按钮时，下面的代码显示一个带有文本字段当前值的警告对话框
+
+```
+FloatingActionButton(
+  // When the user presses the button, show an alert dialog containing the
+  // text that the user has entered into the text field.
+  onPressed: () {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          // Retrieve the text the user has entered by using the
+          // TextEditingController.
+          content: Text(myController.text),
+        );
+      },
+    );
+  },
+  tooltip: 'Show me the value!',
+  child: Icon(Icons.text_fields),
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Retrieve Text Input',
+      home: MyCustomForm(),
+    );
+  }
+}
+
+// Define a custom Form widget.
+class MyCustomForm extends StatefulWidget {
+  @override
+  _MyCustomFormState createState() => _MyCustomFormState();
+}
+
+// Define a corresponding State class.
+// This class holds the data related to the Form.
+class _MyCustomFormState extends State<MyCustomForm> {
+  // Create a text controller and use it to retrieve the current value
+  // of the TextField.
+  final myController = TextEditingController();
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    myController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Retrieve Text Input'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: TextField(
+          controller: myController,
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        // When the user presses the button, show an alert dialog containing
+        // the text that the user has entered into the text field.
+        onPressed: () {
+          return showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                // Retrieve the text the that user has entered by using the
+                // TextEditingController.
+                content: Text(myController.text),
+              );
+            },
+          );
+        },
+        tooltip: 'Show me the value!',
+        child: Icon(Icons.text_fields),
+      ),
+    );
+  }
+}
+```
 
 ## Gestures
 
