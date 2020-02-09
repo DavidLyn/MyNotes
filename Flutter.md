@@ -6763,15 +6763,498 @@ class _MyCustomFormState extends State<MyCustomForm> {
 
 ### [Create a grid list](https://flutter.dev/docs/cookbook/lists/grid-lists)
 
++ 在某些情况下，可能希望将项目显示为一个网格，而不是一个一个接一个的常规项目列表。对于此任务，请使用 GridView 小部件
+
++ 使用网格的最简单方法是使用 GridView.count（）构造函数，因为它允许您指定想要的行或列的数量
+
++ 要可视化 GridView 的工作方式，请生成一个包含100个小部件的列表，这些小部件在列表中显示其索引
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Grid List';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: GridView.count(
+          // Create a grid with 2 columns. If you change the scrollDirection to
+          // horizontal, this produces 2 rows.
+          crossAxisCount: 2,
+          // Generate 100 widgets that display their index in the List.
+          children: List.generate(100, (index) {
+            return Center(
+              child: Text(
+                'Item $index',
+                style: Theme.of(context).textTheme.headline,
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Create a horizontal list](https://flutter.dev/docs/cookbook/lists/horizontal-list)
+
++ 可能需要创建一个水平滚动而不是垂直滚动的列表。ListView 小部件支持水平列表
+
++ 使用标准的 ListView 构造函数，传递水平滚动方向，它覆盖默认的垂直方向
+
++ 完整例子
+
+```
+ListView(
+  // This next line does the trick.
+  scrollDirection: Axis.horizontal,
+  children: <Widget>[
+    Container(
+      width: 160.0,
+      color: Colors.red,
+    ),
+    Container(
+      width: 160.0,
+      color: Colors.blue,
+    ),
+    Container(
+      width: 160.0,
+      color: Colors.green,
+    ),
+    Container(
+      width: 160.0,
+      color: Colors.yellow,
+    ),
+    Container(
+      width: 160.0,
+      color: Colors.orange,
+    ),
+  ],
+)
+```
 
 ### [Create lists with different types of items](https://flutter.dev/docs/cookbook/lists/mixed-list)
 
++ 可能需要创建显示不同类型内容的列表。例如，您可能正在处理一个列表，该列表显示一个标题，后跟与该标题相关的几个项，然后是另一个标题，依此类推
+
++ 1. Create a data source with different types of item
+
+> *Types of items*
+> 
+> 要表示列表中不同类型的项，请为每种类型的项定义一个类
+> 
+> 在本例中，创建一个应用程序，该应用程序显示一个标题，后跟五条消息。因此，请创建三个类：ListItem、HeadingItem 和 MessageItem
+
+```
+// The base class for the different types of items the list can contain.
+abstract class ListItem {}
+
+// A ListItem that contains data to display a heading.
+class HeadingItem implements ListItem {
+  final String heading;
+
+  HeadingItem(this.heading);
+}
+
+// A ListItem that contains data to display a message.
+class MessageItem implements ListItem {
+  final String sender;
+  final String body;
+
+  MessageItem(this.sender, this.body);
+}
+```
+
+> *Create a list of items*
+> 
+> 大多数情况下，您会从 internet 或本地数据库获取数据，并将这些数据转换为项列表
+> 
+> 对于本例，生成要使用的项的列表。该列表包含一个标题，后跟五条消息。每条消息都有三种类型之一：ListItem、HeadingItem 或 MessageItem
+
+```
+final items = List<ListItem>.generate(
+  1200,
+  (i) => i % 6 == 0
+      ? HeadingItem("Heading $i")
+      : MessageItem("Sender $i", "Message body $i"),
+);
+```
+
++ 2. Convert the data source into a list of widgets
+
+> 要将每个项转换为小部件，请使用ListView.builder（）构造函数
+> 
+> 一般来说，提供一个 builder 函数来检查您正在处理的项的类型，并为该类型的项返回适当的小部件
+> 
+> 本例使用 is 关键字检查项的类型。它很快，并自动将每个项目转换为适当的类型。但是，如果您喜欢其他模式，则有不同的方法来解决此问题
+
+```
+ListView.builder(
+  // Let the ListView know how many items it needs to build.
+  itemCount: items.length,
+  // Provide a builder function. This is where the magic happens.
+  // Convert each item into a widget based on the type of item it is.
+  itemBuilder: (context, index) {
+    final item = items[index];
+
+    if (item is HeadingItem) {
+      return ListTile(
+        title: Text(
+          item.heading,
+          style: Theme.of(context).textTheme.headline,
+        ),
+      );
+    } else if (item is MessageItem) {
+      return ListTile(
+        title: Text(item.sender),
+        subtitle: Text(item.body),
+      );
+    }
+  },
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp(
+    items: List<ListItem>.generate(
+      1000,
+      (i) => i % 6 == 0
+          ? HeadingItem("Heading $i")
+          : MessageItem("Sender $i", "Message body $i"),
+    ),
+  ));
+}
+
+class MyApp extends StatelessWidget {
+  final List<ListItem> items;
+
+  MyApp({Key key, @required this.items}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Mixed List';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: ListView.builder(
+          // Let the ListView know how many items it needs to build.
+          itemCount: items.length,
+          // Provide a builder function. This is where the magic happens.
+          // Convert each item into a widget based on the type of item it is.
+          itemBuilder: (context, index) {
+            final item = items[index];
+
+            if (item is HeadingItem) {
+              return ListTile(
+                title: Text(
+                  item.heading,
+                  style: Theme.of(context).textTheme.headline,
+                ),
+              );
+            } else if (item is MessageItem) {
+              return ListTile(
+                title: Text(item.sender),
+                subtitle: Text(item.body),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// The base class for the different types of items the list can contain.
+abstract class ListItem {}
+
+// A ListItem that contains data to display a heading.
+class HeadingItem implements ListItem {
+  final String heading;
+
+  HeadingItem(this.heading);
+}
+
+// A ListItem that contains data to display a message.
+class MessageItem implements ListItem {
+  final String sender;
+  final String body;
+
+  MessageItem(this.sender, this.body);
+}
+```
+
 ### [Place a floating app bar above a list](https://flutter.dev/docs/cookbook/lists/floating-app-bar)
+
++ 为了方便用户查看项目列表，您可能需要在用户向下滚动列表时隐藏  app bar。如果你的应用程序显示一个“高”的 app bar，占据了很多垂直空间，这一点尤其正确
+
++ 通常，可以通过向 Scaffold 小部件提供 app bar 属性来创建 appBar。这将创建一个固定的 appBar ，始终保持在 Scaffold 的 body 上方
+
++ 将 app bar 从 Scaffold 小部件移动到 CustomScrollView 中，可以创建一个 app bar，当您滚动 CustomScrollView 中包含的项目列表时，该 app bar 会在屏幕外滚动
+
++ 本节演示如何使用 CustomScrollView 显示项目列表，顶部有一个 app bar，当用户使用以下步骤向下滚动列表时，app bar 会在屏幕外滚动：
+
++ 1. Create a CustomScrollView
+
+> 要创建浮动的 app bar，请将 app bar 放置在还包含项目列表的 CustomScrollView 中。这将同步app bar 的滚动位置和项目列表。您可能会认为 CustomScrollView 小部件是一个 ListView，它允许您将不同类型的可滚动列表和小部件混合和匹配在一起
+> 
+> 提供给 CustomScrollView 的可滚动列表和小部件称为 slivers。有几种类型的 sliver，如 SliverList、slivegridlist 和 SliverAppBar。实际上，ListView 和 GridView 小部件使用 SliverList 和 SliverGrid 小部件来实现滚动
+> 
+> 对于本例，创建一个 CustomScrollView ，其中包含一个 SliverAppBar 和一个 SliverList 。此外，删除提供给 Scaffold 小部件的任何 app bar
+
+```
+Scaffold(
+  // No appBar property provided, only the body.
+  body: CustomScrollView(
+    // Add the app bar and list of items as slivers in the next steps.
+    slivers: <Widget>[]
+  ),
+);
+```
+
++ 2. Use SliverAppBar to add a floating app bar
+
+> 接下来，向 CustomScrollView 添加一个 app bar。Flutter 提供了 SliverAppBar 小部件，与普通的 AppBar 小部件非常相似，它使用 SliverAppBar 来显示标题、tab、图像等
+> 
+> 不过，SliverAppBar 还让您能够创建一个“浮动”的 app bar ，当用户向下滚动列表时，它会在屏幕外滚动。此外，您还可以将 SliverAppBar 配置为在用户滚动时收缩和展开
+> 
+> 要创建此效果：
+> 
+> 1.从只显示标题的 app bar 开始
+> 
+> 2.将floating属性设置为true。这允许用户在向上滚动列表时快速显示 app bar
+> 
+> 3.添加一个 flexibleSpace widget 以填充可用的 expandedHeight
+
+```
+CustomScrollView(
+  slivers: <Widget>[
+    SliverAppBar(
+      title: Text('Floating app bar'),
+      // Allows the user to reveal the app bar if they begin scrolling back
+      // up the list of items.
+      floating: true,
+      // Display a placeholder widget to visualize the shrinking size.
+      flexibleSpace: Placeholder(),
+      // Make the initial height of the SliverAppBar larger than normal.
+      expandedHeight: 200,
+    ),
+  ],
+);
+```
+
++ 3. Add a list of items using a SliverList
+
+> 现在您已经准备好了 app bar，请将项目列表添加到 CustomScrollView。有两个选项： SliverList 或 SliverGrid。如果需要逐个显示项目列表，请使用 SliverList 小部件。如果需要显示网格列表，请使用 SliverGrid 小部件
+> 
+> SliverList和SliverGrid 小部件采用一个必需的参数： SliverChildDelegate，它向 SliverList 或 SliverGrid 提供小部件列表。例如，SliverChildBuilderDelegate 允许您创建一个项目列表，这些项目是在您滚动时懒加载的，就像 ListView.builder 小部件一样
+
+```
+// Create a SliverList.
+SliverList(
+  // Use a delegate to build items as they're scrolled on screen.
+  delegate: SliverChildBuilderDelegate(
+    // The builder function returns a ListTile with a title that
+    // displays the index of the current item.
+    (context, index) => ListTile(title: Text('Item #$index')),
+    // Builds 1000 ListTiles
+    childCount: 1000,
+  ),
+)
+```
+
++ 完整例子
+
+```
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  MyApp({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Floating App Bar';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        // No appbar provided to the Scaffold, only a body with a
+        // CustomScrollView.
+        body: CustomScrollView(
+          slivers: <Widget>[
+            // Add the app bar to the CustomScrollView.
+            SliverAppBar(
+              // Provide a standard title.
+              title: Text(title),
+              // Allows the user to reveal the app bar if they begin scrolling
+              // back up the list of items.
+              floating: true,
+              // Display a placeholder widget to visualize the shrinking size.
+              flexibleSpace: Placeholder(),
+              // Make the initial height of the SliverAppBar larger than normal.
+              expandedHeight: 200,
+            ),
+            // Next, create a SliverList
+            SliverList(
+              // Use a delegate to build items as they're scrolled on screen.
+              delegate: SliverChildBuilderDelegate(
+                // The builder function returns a ListTile with a title that
+                // displays the index of the current item.
+                (context, index) => ListTile(title: Text('Item #$index')),
+                // Builds 1000 ListTiles
+                childCount: 1000,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
 
 ### [Use lists](https://flutter.dev/docs/cookbook/lists/basic-list)
 
++ 显示数据列表是移动应用程序的基本模式。Flutter 包含了 ListView 小部件，可以轻松处理列表
+
++ 对于只包含少数项的列表，使用标准 ListView 构造函数是完美的。内置的 ListTile 小部件是一种为项目提供可视化结构的方法
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Basic List';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: ListView(
+          children: <Widget>[
+            ListTile(
+              leading: Icon(Icons.map),
+              title: Text('Map'),
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_album),
+              title: Text('Album'),
+            ),
+            ListTile(
+              leading: Icon(Icons.phone),
+              title: Text('Phone'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Work with long lists](https://flutter.dev/docs/cookbook/lists/long-lists)
+
++ 标准的 ListView 构造器对于小列表非常有效。要处理包含大量项的列表，最好使用 ListView.builder 构造函数
+
++ 与默认的 ListView 构造函数（需要同时创建所有项）不同，ListView.builder（）构造函数在将项滚动到屏幕上时创建项
+
++ 1. Create a data source
+
+> 首先，你需要一个数据源。例如，数据源可能是存储区中的邮件、搜索结果或产品列表。大多数时候，这些数据来自互联网或数据库
+> 
+> 对于本例，使用 List.generate 构造函数生成10000个字符串的列表
+
+```
+final items = List<String>.generate(10000, (i) => "Item $i");
+```
+
++ 2. Convert the data source into widgets
+
+> 要显示字符串列表，请使用 ListView.builder（）将每个字符串呈现为小部件。在本例中，将每个字符串显示在自己的行上
+
+```
+ListView.builder(
+  itemCount: items.length,
+  itemBuilder: (context, index) {
+    return ListTile(
+      title: Text('${items[index]}'),
+    );
+  },
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp(
+    items: List<String>.generate(10000, (i) => "Item $i"),
+  ));
+}
+
+class MyApp extends StatelessWidget {
+  final List<String> items;
+
+  MyApp({Key key, @required this.items}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Long List';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text('${items[index]}'),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+```
 
 ## Maintenance
 
