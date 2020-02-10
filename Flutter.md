@@ -6747,17 +6747,548 @@ class _MyCustomFormState extends State<MyCustomForm> {
 
 ### [Add Material touch ripples](https://flutter.dev/docs/cookbook/gestures/ripples)
 
++ 遵循 Material Design 准则的小部件在点击时显示波纹动画
+
++ Flutter 提供了 InkWell 小部件来执行此效果。使用以下步骤创建涟漪效果：
+
+> 1.创建支持 tap 的小部件
+> 
+> 2.将其包装在 InkWell 小部件中，以管理点击回调和涟漪动画
+
+```
+// The InkWell wraps the custom flat button widget.
+InkWell(
+  // When the user taps the button, show a snackbar.
+  onTap: () {
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text('Tap'),
+    ));
+  },
+  child: Container(
+    padding: EdgeInsets.all(12.0),
+    child: Text('Flat Button'),
+  ),
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'InkWell Demo';
+
+    return MaterialApp(
+      title: title,
+      home: MyHomePage(title: title),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  final String title;
+
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Center(child: MyButton()),
+    );
+  }
+}
+
+class MyButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // The InkWell wraps the custom flat button widget.
+    return InkWell(
+      // When the user taps the button, show a snackbar.
+      onTap: () {
+        Scaffold.of(context).showSnackBar(SnackBar(
+          content: Text('Tap'),
+        ));
+      },
+      child: Container(
+        padding: EdgeInsets.all(12.0),
+        child: Text('Flat Button'),
+      ),
+    );
+  }
+}
+```
+
 ### [Handle taps](https://flutter.dev/docs/cookbook/gestures/handling-taps)
 
++ 您不仅希望向用户显示信息，还希望用户与您的应用程序进行交互。使用GestureDetector小部件响应基本操作，如轻敲和拖动
+
++ 本节展示了如何制作一个自定义按钮，当点击以下步骤时，该按钮将显示一个 snackbar：
+
+> 1.创建按钮
+> 
+> 2.将其包装在一个 GestureDetector 中，即onTap（）回调
+
+```
+// The GestureDetector wraps the button.
+GestureDetector(
+  // When the child is tapped, show a snackbar.
+  onTap: () {
+    final snackBar = SnackBar(content: Text("Tap"));
+
+    Scaffold.of(context).showSnackBar(snackBar);
+  },
+  // The custom button
+  child: Container(
+    padding: EdgeInsets.all(12.0),
+    decoration: BoxDecoration(
+      color: Theme.of(context).buttonColor,
+      borderRadius: BorderRadius.circular(8.0),
+    ),
+    child: Text('My Button'),
+  ),
+);
+```
+
++ Notes
+
+> 尽管本例创建了一个自定义按钮，但 Flutter 包含了一些按钮实现，例如： RaisedButton、 FlatButton 和 CupertinoButton
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Gesture Demo';
+
+    return MaterialApp(
+      title: title,
+      home: MyHomePage(title: title),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  final String title;
+
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Center(child: MyButton()),
+    );
+  }
+}
+
+class MyButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // The GestureDetector wraps the button.
+    return GestureDetector(
+      // When the child is tapped, show a snackbar.
+      onTap: () {
+        final snackBar = SnackBar(content: Text("Tap"));
+
+        Scaffold.of(context).showSnackBar(snackBar);
+      },
+      // The custom button
+      child: Container(
+        padding: EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).buttonColor,
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: Text('My Button'),
+      ),
+    );
+  }
+}
+```
+
 ### [Implement swipe to dismiss](https://flutter.dev/docs/cookbook/gestures/dismissible)
+
++ 在许多移动应用程序中，“swipe to dismiss”模式很常见。例如，在编写电子邮件应用程序时，您可能希望允许用户将电子邮件从列表中删除
+
++ Flutter 通过提供 Dismissible 的小部件使这项任务变得容易
+
++ 1. Create a list of items
+
+> 首先，创建一个项目列表。有关如何创建列表的详细说明，请遵循 "Working with long lists"
+> 
+> *Create a data source*
+> 
+> 在本例中，需要使用20个示例项。为了保持简单，生成一个字符串列表
+
+```
+final items = List<String>.generate(20, (i) => "Item ${i + 1}");
+```
+
+> *Convert the data source into a list*
+> 
+> 在屏幕上显示列表中的每个项目。用户暂时还无法将这些项目刷走
+
+```
+ListView.builder(
+  itemCount: items.length,
+  itemBuilder: (context, index) {
+    return ListTile(title: Text('${items[index]}'));
+  },
+);
+```
+
++ 2. Wrap each item in a Dismissible widget
+
+> 在这一步中，让用户能够使用 Dismissible 小部件从列表中扫除一个项目
+> 
+> 用户刷掉项目后，从列表中删除该项目并显示一个 snackbar。在真正的应用程序中，您可能需要执行更复杂的逻辑，例如从 web 服务或数据库中删除数据项
+
+```
+Dismissible(
+  // Each Dismissible must contain a Key. Keys allow Flutter to
+  // uniquely identify widgets.
+  key: Key(item),
+  // Provide a function that tells the app
+  // what to do after an item has been swiped away.
+  onDismissed: (direction) {
+    // Remove the item from the data source.
+    setState(() {
+      items.removeAt(index);
+    });
+
+    // Show a snackbar. This snackbar could also contain "Undo" actions.
+    Scaffold
+        .of(context)
+        .showSnackBar(SnackBar(content: Text("$item dismissed")));
+  },
+  child: ListTile(title: Text('$item')),
+);
+```
+
++ 3. Provide “leave behind” indicators
+
+> 从目前的情况来看，这款应用允许用户从列表中扫除项目，但它并没有给出用户扫除项目时的视觉指示。要提供删除项目的提示，请在将项目从屏幕上扫除时显示“留下”指示器。在这种情况下，指示器是红色背景
+> 
+> 若要添加指示器，请为 Dismissible 提供背景参数
+
+```
+Dismissible(
+  // Show a red background as the item is swiped away.
+  background: Container(color: Colors.red),
+  key: Key(item),
+  onDismissed: (direction) {
+    setState(() {
+      items.removeAt(index);
+    });
+
+    Scaffold
+        .of(context)
+        .showSnackBar(SnackBar(content: Text("$item dismissed")));
+  },
+  child: ListTile(title: Text('$item')),
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+// MyApp is a StatefulWidget. This allows updating the state of the
+// widget when an item is removed.
+class MyApp extends StatefulWidget {
+  MyApp({Key key}) : super(key: key);
+
+  @override
+  MyAppState createState() {
+    return MyAppState();
+  }
+}
+
+class MyAppState extends State<MyApp> {
+  final items = List<String>.generate(20, (i) => "Item ${i + 1}");
+
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Dismissing Items';
+
+    return MaterialApp(
+      title: title,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+
+            return Dismissible(
+              // Each Dismissible must contain a Key. Keys allow Flutter to
+              // uniquely identify widgets.
+              key: Key(item),
+              // Provide a function that tells the app
+              // what to do after an item has been swiped away.
+              onDismissed: (direction) {
+                // Remove the item from the data source.
+                setState(() {
+                  items.removeAt(index);
+                });
+
+                // Then show a snackbar.
+                Scaffold.of(context)
+                    .showSnackBar(SnackBar(content: Text("$item dismissed")));
+              },
+              // Show a red background as the item is swiped away.
+              background: Container(color: Colors.red),
+              child: ListTile(title: Text('$item')),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+```
 
 ## Images
 
 ### [Display images from the internet](https://flutter.dev/docs/cookbook/images/network-image)
 
++ 显示图像是大多数移动应用程序的基本功能。Flutter 提供了显示不同类型图像的图像小部件
+
++ 要处理来自 URL 的图像，请使用 Image.network（）构造函数
+
+```
+Image.network(
+  'https://picsum.photos/250?image=9',
+)
+```
+
++ Bonus: animated gifs
+
+> 图像小部件的一个有用之处：它支持动画gif
+
+```
+Image.network(
+  'https://github.com/flutter/plugins/raw/master/packages/video_player/doc/demo_ipod.gif?raw=true',
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var title = 'Web Images';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: Image.network(
+          'https://picsum.photos/250?image=9',
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Fade in images with a placeholder](https://flutter.dev/docs/cookbook/images/fading-in-images)
 
++ 当使用默认图像小部件显示图像时，您可能会注意到它们只是在加载时弹出到屏幕上。这可能会给用户带来视觉上的不适感
+
++ 相反，如果一开始显示一个占位符，图像在加载时就会淡入，这不是很好吗？使用 FadeInImage 小部件就是为了这个目的
+
++ FadeInImage 可以处理任何类型的图像：内存、本地资源或来自 internet 的图像
+
++ In-Memory
+
+> 在本例中，使用 transparent_image 包作为简单的透明占位符
+
+```
+FadeInImage.memoryNetwork(
+  placeholder: kTransparentImage,
+  image: 'https://picsum.photos/250?image=9',
+);
+```
+
+> *完整例子*
+
+```
+import 'package:flutter/material.dart';
+import 'package:transparent_image/transparent_image.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Fade in images';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: Stack(
+          children: <Widget>[
+            Center(child: CircularProgressIndicator()),
+            Center(
+              child: FadeInImage.memoryNetwork(
+                placeholder: kTransparentImage,
+                image: 'https://picsum.photos/250?image=9',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
++ From asset bundle
+
+> 还可以考虑使用本地资源作为占位符。首先，将资源添加到项目的 pubspec.yaml 文件中
+
+```
+ flutter:
+   assets:
++    - assets/loading.gif
+```
+
+> 然后，使用 FadeInImage.assetNetwork（）构造函数：
+
+```
+FadeInImage.assetNetwork(
+  placeholder: 'assets/loading.gif',
+  image: 'https://picsum.photos/250?image=9',
+);
+```
+
+> *完整例子*
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Fade in images';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: Center(
+          child: FadeInImage.assetNetwork(
+            placeholder: 'assets/loading.gif',
+            image: 'https://picsum.photos/250?image=9',
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Work with cached images](https://flutter.dev/docs/cookbook/images/cached-images)
+
++ 在某些情况下，当图像从web上下载时缓存它们是很方便的，因此它们可以脱机使用。为此，请使用 cached_network_image 包
+
++ 除了缓存之外，cached_network_image 包还支持在加载图像时使用占位符和淡入淡出图像
+
+```
+CachedNetworkImage(
+  imageUrl: 'https://picsum.photos/250?image=9',
+);
+```
+
++ Adding a placeholder
+
+> cached_network_image 包允许您将任何小部件用作占位符。在本例中，当图像加载时显示 spinner
+
+```
+CachedNetworkImage(
+  placeholder: (context, url) => CircularProgressIndicator(),
+  imageUrl: 'https://picsum.photos/250?image=9',
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Cached Images';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: Center(
+          child: CachedNetworkImage(
+            placeholder: (context, url) => CircularProgressIndicator(),
+            imageUrl:
+                'https://picsum.photos/250?image=9',
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
 
 ## Lists
 
@@ -7963,9 +8494,521 @@ class _MyHomePageState extends State<MyHomePage> {
 
 #### [An introduction to integration testing](https://flutter.dev/docs/cookbook/testing/integration/introduction)
 
++ 单元测试和小部件测试对于测试单个类、函数或小部件非常方便。但是，它们通常不会测试单个部件如何作为一个整体一起工作，也不会捕获在实际设备上运行的应用程序的性能。这些任务是通过集成测试执行的
+
++ 集成测试是一对工作的：首先，将工具化的应用程序部署到一个真实的设备或模拟器，然后从一个单独的测试套件“驱动”应用程序，检查以确保一路上的一切都是正确的
+
++ 要创建此测试对，请使用 flutter_driver 包。它提供了创建工具化的应用程序并从测试套件中驱动这些应用程序的工具
+
++ 在此节中，学习如何测试计数器应用程序。它演示了如何设置集成测试、如何验证应用程序显示的特定文本、如何点击特定小部件以及如何运行集成测试
+
++ 1. Create an app to test
+
+> 首先，创建一个用于测试的应用程序。在本例中，测试 flutter create 命令生成的计数器应用程序。此应用程序允许用户点击按钮增加计数器
+> 
+> 此外，为文本和 FloatingActionButton 小部件提供 ValueKey 。这允许在测试套件中识别并与这些特定的小部件交互
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Counter App',
+      home: MyHomePage(title: 'Counter App Home Page'),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  final String title;
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      _counter++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              '$_counter',
+              // Provide a Key to this specific Text widget. This allows
+              // identifing the widget from inside the test suite,
+              // and reading the text.
+              key: Key('counter'),
+              style: Theme.of(context).textTheme.display1,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        // Provide a Key to this button. This allows finding this
+        // specific button inside the test suite, and tapping it.
+        key: Key('increment'),
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+```
+
++ 2. Add the flutter_driver dependency
+
+> 接下来，使用 flutter_driver 包编写集成测试。将 flutter_driver 依赖项添加到应用程序 pubspec.yaml 文件的 dev_dependencies 部分
+> 
+> 还要添加测试依赖项，以便使用实际的测试函数和断言
+
+```
+dev_dependencies:
+  flutter_driver:
+    sdk: flutter
+  test: any
+```
+
++ 3. Create the test files
+
+> 与单元和小部件测试不同，集成测试套件与正在测试的应用程序不在同一进程中运行。因此，创建位于同一目录中的两个文件。按照惯例，目录名为 test_driver
+> 
+> 第一个文件包含应用程序的“检测”( instrumented )版本。该工具允许您“驱动”应用程序并从测试套件中记录性能分析信息。此文件可以有任何有意义的名称。对于本例，创建一个名为 test_driver/app.dart 的文件
+> 
+> 第二个文件包含测试套件，它驱动应用程序并验证它是否按预期工作。测试套件还记录性能分析信息。测试文件的名称必须与包含 instrumented 的应用程序的文件的名称相对应，并在末尾添加  _test。因此，创建第二个名为 test_driver/app_test.dart 的文件
+
+```
+counter_app/
+  lib/
+    main.dart
+  test_driver/
+    app.dart
+    app_test.dart
+```
+
++ 4. Instrument the app
+
+> 现在，测试应用程序。这包括两个步骤：
+> 
+> 1.启用 Flutter 驱动器扩展
+> 
+> 2.运行应用程序
+> 
+> 将此代码添加到 test_driver/app.dart 中
+
+```
+import 'package:flutter_driver/driver_extension.dart';
+import 'package:counter_app/main.dart' as app;
+
+void main() {
+  // This line enables the extension.
+  enableFlutterDriverExtension();
+
+  // Call the `main()` function of the app, or call `runApp` with
+  // any widget you are interested in testing.
+  app.main();
+}
+```
+
++ 5. Write the tests
+
+> 现在你有了一个工具化的应用程序，你可以为它编写测试。这包括四个步骤：
+> 
+> 1.创建 SerializableFinders 来定位特定的小部件
+> 
+> 2.在 setUpAll（）函数中运行测试之前连接到应用程序
+> 
+> 3.测试重要场景
+> 
+> 4.测试完成后，在 teardownAll（）函数中断开与应用程序的连接 
+
+```
+// Imports the Flutter Driver API.
+import 'package:flutter_driver/flutter_driver.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('Counter App', () {
+    // First, define the Finders and use them to locate widgets from the
+    // test suite. Note: the Strings provided to the `byValueKey` method must
+    // be the same as the Strings we used for the Keys in step 1.
+    final counterTextFinder = find.byValueKey('counter');
+    final buttonFinder = find.byValueKey('increment');
+
+    FlutterDriver driver;
+
+    // Connect to the Flutter driver before running any tests.
+    setUpAll(() async {
+      driver = await FlutterDriver.connect();
+    });
+
+    // Close the connection to the driver after the tests have completed.
+    tearDownAll(() async {
+      if (driver != null) {
+        driver.close();
+      }
+    });
+
+    test('starts at 0', () async {
+      // Use the `driver.getText` method to verify the counter starts at 0.
+      expect(await driver.getText(counterTextFinder), "0");
+    });
+
+    test('increments the counter', () async {
+      // First, tap the button.
+      await driver.tap(buttonFinder);
+
+      // Then, verify the counter text is incremented by 1.
+      expect(await driver.getText(counterTextFinder), "1");
+    });
+  });
+}
+```
+
++ 6. Run the tests
+
+> 现在您有了一个检测( instrumented )应用程序和一个测试套件，请运行测试。首先，一定要启动一个 Android 模拟器，iOS 模拟器，或者把你的计算机连接到一个真正的 iOS/Android 设备上
+> 
+> 然后，从项目的根目录运行以下命令：
+
+```
+flutter drive --target=test_driver/app.dart
+```
+
+> 此命令：
+> 
+> 1.构建 --target 应用程序并将其安装到模拟器/设备上
+> 
+> 2.启动应用程序
+> 
+> 3.运行位于 test_driver/ 文件夹中的 app_test.dart 测试套件
+
 #### [Handle scrolling](https://flutter.dev/docs/cookbook/testing/integration/scrolling)
 
++ 许多应用都有内容列表，从电子邮件客户端到音乐应用等等。要使用集成测试验证列表是否包含预期的内容，需要一种滚动列表以搜索特定项目的方法
+
++ 要通过集成测试滚动列表，请使用 FlutterDriver 类提供的方法，该类包含在 flutter_driver 包中：
+
++ 1. Create an app with a list of items
+
+> 本节创建了一个具有多条项目列表的应用。向要在集成测试中与之交互的小部件添加键
+
+```
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp(
+    items: List<String>.generate(10000, (i) => "Item $i"),
+  ));
+}
+
+class MyApp extends StatelessWidget {
+  final List<String> items;
+
+  MyApp({Key key, @required this.items}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Long List';
+
+    return MaterialApp(
+      title: title,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: ListView.builder(
+          // Add a key to the ListView. This makes it possible to
+          // find the list and scroll through it in the tests.
+          key: Key('long_list'),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text(
+                '${items[index]}',
+                // Add a key to the Text widget for each item. This makes
+                // it possible to look for a particular item in the list
+                // and verify that the text is correct
+                key: Key('item_${index}_text'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
++ 2. Instrument the app
+
+> 接下来，创建应用程序的检测(instrumented)版本。此代码位于名为 test_driver/app.dart 的文件中
+
+```
+import 'package:flutter_driver/driver_extension.dart';
+import 'package:scrollable_app/main.dart' as app;
+
+void main() {
+  // This line enables the extension.
+  enableFlutterDriverExtension();
+
+  // Call the `main()` function of the app or call `runApp` with
+  // any widget you are interested in testing.
+  app.main();
+}
+```
+
++ 3. Write a test that scrolls through the list
+
+> 现在，你可以写一个测试了。在这个示例中，滚动项目列表并验证列表中是否存在特定项。FlutterDriver类提供了三种滚动列表的方法：
+> 
+> scroll() 方法按给定的数量滚动特定列表
+> 
+> scrollIntoView()  方法的作用是：找到一个已经被渲染的小部件，并将其完全滚动到视图中。一些小部件（如 ListView.builder ）按需呈现项
+> 
+> scrollUntilVisible（）方法在列表中滚动，直到特定的小部件可见为止
+> 
+> 尽管这三种方法都适用于特定的用例，但 scrollUntilVisible 通常是最健壮的选项。为什么？
+> 
+> 如果单独使用 scroll（）方法，可能会错误地假定列表中每个项的高度。这可能导致滚动过多或过少
+> 
+> 如果使用 scrollIntoView（）方法，您可能会假设小部件已经被实例化和呈现。要验证应用程序是否在各种设备上运行，请对具有不同屏幕大小的设备运行集成测试。由于 ListView.builder 按需呈现项，因此是否呈现了特定的小部件取决于屏幕的大小
+> 
+> 因此，与其假设您知道列表中所有项的高度，或者在所有设备上呈现特定的小部件，不如使用 scrollUntilVisible（）方法反复滚动项目列表，直到找到您要查找的内容
+> 
+> 下面的代码演示如何使用 scrollUntilVisible（）方法在列表中查找特定项。此代码位于名为 test_driver/app_test.dart 的文件中
+
+```
+// Imports the Flutter Driver API.
+import 'package:flutter_driver/flutter_driver.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('Scrollable App', () {
+    FlutterDriver driver;
+
+    // Connect to the Flutter driver before running any tests.
+    setUpAll(() async {
+      driver = await FlutterDriver.connect();
+    });
+
+    // Close the connection to the driver after the tests have completed.
+    tearDownAll(() async {
+      if (driver != null) {
+        await driver.close();
+      }
+    });
+
+    test('verifies the list contains a specific item', () async {
+      // Create two SerializableFinders and use these to locate specific
+      // widgets displayed by the app. The names provided to the byValueKey
+      // method correspond to the Keys provided to the widgets in step 1.
+      final listFinder = find.byValueKey('long_list');
+      final itemFinder = find.byValueKey('item_50_text');
+
+      await driver.scrollUntilVisible(
+        // Scroll through the list
+        listFinder,
+        // Until finding this item
+        itemFinder,
+        // To scroll down the list, provide a negative value to dyScroll.
+        // Ensure that this value is a small enough increment to
+        // scroll the item into view without potentially scrolling past it.
+        //
+        // To scroll through horizontal lists, provide a dxScroll
+        // property instead.
+        dyScroll: -300.0,
+      );
+
+      // Verify that the item contains the correct text.
+      expect(
+        await driver.getText(itemFinder),
+        'Item 50',
+      );
+    });
+  });
+}
+```
+
++ Run the test
+
+> 使用项目根目录下的以下命令运行测试：
+
+```
+flutter drive --target=test_driver/app.dart
+```
+
 #### [Performance profiling](https://flutter.dev/docs/cookbook/testing/integration/profiling)
+
++ 在移动应用程序方面，性能对用户体验至关重要。用户希望应用程序有平滑的滚动和有意义的动画，没有口吃或跳过帧，称为“jank”。如何确保你的应用程序在各种各样的设备上没有jank？
+
+> 有两个选择：首先，在不同的设备上手动测试应用程序。虽然这种方法可能适用于较小的应用程序，但随着应用程序规模的增长，它会变得更加麻烦。或者，运行执行特定任务并记录性能时间线的集成测试。然后，检查结果以确定应用程序的特定部分是否需要改进
+> 
+> 在本节中，学习如何编写一个测试，该测试在执行特定任务时记录性能时间线，并将结果摘要保存到本地文件
+
++ 1. Write a test that scrolls through a list of items
+
+> 在本节中，记录应用程序在滚动项目列表时的性能。为了专注于性能分析，本节建立在集成测试中滚动配方的基础上
+> 
+> 按照后续说明创建一个应用程序，测试该应用程序，并编写一个测试来验证所有操作是否都按预期工作
+
++ 2. Record the performance of the app
+
+> 接下来，记录应用程序在列表中滚动时的性能。使用颤振驱动程序类提供的traceAction（）方法执行此任务
+> 
+> 此方法运行提供的函数并记录一个时间线，其中包含有关应用程序性能的详细信息。此示例提供一个函数，该函数可滚动项目列表，确保显示特定项目。当函数完成时，traceAction（）方法返回一个时间线
+
+```
+// Record a performance timeline as the app scrolls through the list of items.
+final timeline = await driver.traceAction(() async {
+  await driver.scrollUntilVisible(
+    listFinder,
+    itemFinder,
+    dyScroll: -300.0,
+  );
+
+  expect(await driver.getText(itemFinder), 'Item 50');
+});
+```
+
++ 3. Save the results to disk
+
+> 现在您已经捕获了一个性能 Timeline，您需要一种方法来查看它。Timeline 对象提供了有关发生的所有事件的详细信息，但它不提供查看结果的方便方法
+> 
+> 因此，将 Timeline 转换为 TimelineSummary。TimelineSummary可以执行两项任务，以便于查看结果：
+> 
+> 1.在磁盘上写一个json文档，总结 Timeline 中包含的数据。此摘要包括有关跳过的帧数、最慢的生成时间等信息
+> 
+> 2.将完整的 Timeline 保存为磁盘上的 json 文件。这个文件可以用 Chrome 浏览器的跟踪工具打开，这些工具可以在 Chrome://tracing 上找到
+
+```
+// Convert the Timeline into a TimelineSummary that's easier to read and
+// understand.
+final summary = new TimelineSummary.summarize(timeline);
+
+// Then, save the summary to disk.
+summary.writeSummaryToFile('scrolling_summary', pretty: true);
+
+// Optionally, write the entire timeline to disk in a json format. This
+// file can be opened in the Chrome browser's tracing tools found by
+// navigating to chrome://tracing.
+summary.writeTimelineToFile('scrolling_timeline', pretty: true);
+```
+
++ 4. Run the test
+
+> 将测试配置为捕获性能 Timeline 并将结果摘要保存到磁盘后，使用以下命令运行测试：
+
+```
+flutter drive --target=test_driver/app.dart
+```
+
++ 5. Review the results
+
+> 测试成功完成后，项目根目录中的 build 目录包含两个文件：
+> 
+> scrolling_summary.timeline_summary.json 包含摘要。使用任何文本编辑器打开文件以查看其中包含的信息。使用更高级的设置，可以在每次运行测试时保存摘要并创建结果图表
+> 
+> scrolling_timeline.timeline.json 包含完整的 timeline 数据。使用 chrome://tracing 中的跟踪工具打开该文档。该跟踪工具提供了便捷接口用于根据 timeline 数据发现应用性能问题的根源
+> 
+> *摘要示例*
+
+```
+{
+  "average_frame_build_time_millis": 4.2592592592592595,
+  "worst_frame_build_time_millis": 21.0,
+  "missed_frame_build_budget_count": 2,
+  "average_frame_rasterizer_time_millis": 5.518518518518518,
+  "worst_frame_rasterizer_time_millis": 51.0,
+  "missed_frame_rasterizer_budget_count": 10,
+  "frame_count": 54,
+  "frame_build_times": [
+    6874,
+    5019,
+    3638
+  ],
+  "frame_rasterizer_times": [
+    51955,
+    8468,
+    3129
+  ]
+}
+```
+
++ 完整例子
+
+```
+import 'package:flutter_driver/flutter_driver.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('Scrollable App', () {
+    FlutterDriver driver;
+
+    setUpAll(() async {
+      driver = await FlutterDriver.connect();
+    });
+
+    tearDownAll(() async {
+      if (driver != null) {
+        driver.close();
+      }
+    });
+
+    test('verifies the list contains a specific item', () async {
+      final listFinder = find.byValueKey('long_list');
+      final itemFinder = find.byValueKey('item_50_text');
+
+      // Record a performance profile as the app scrolls through
+      // the list of items.
+      final timeline = await driver.traceAction(() async {
+        await driver.scrollUntilVisible(
+          listFinder,
+          itemFinder,
+          dyScroll: -300.0,
+        );
+
+        expect(await driver.getText(itemFinder), 'Item 50');
+      });
+
+      // Convert the Timeline into a TimelineSummary that's easier to
+      // read and understand.
+      final summary = new TimelineSummary.summarize(timeline);
+
+      // Then, save the summary to disk.
+      summary.writeSummaryToFile('scrolling_summary', pretty: true);
+
+      // Optionally, write the entire timeline to disk in a json format.
+      // This file can be opened in the Chrome browser's tracing tools
+      // found by navigating to chrome://tracing.
+      summary.writeTimelineToFile('scrolling_timeline', pretty: true);
+    });
+  });
+}
+```
 
 ### Unit
 
