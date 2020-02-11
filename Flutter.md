@@ -8486,7 +8486,621 @@ class _MyHomePageState extends State<MyHomePage> {
 
 ### [Play and pause a video](https://flutter.dev/docs/cookbook/plugins/play-video)
 
-### [https://flutter.dev/docs/cookbook/plugins/picture-using-camera](Take a picture using the camera)
++ 播放视频是应用程序开发中的常见任务，Flutter 应用程序也不例外。为了播放视频，Flutter 团队提供了  video_player 插件。您可以使用  video_player 插件来播放存储在文件系统、资源或 internet 上的视频
+
++ 在 iOS 上，视频播放器插件使用 AVPlayer 来处理回放。在 Android 上，它使用 ExoPlayer
+
++ 本节演示如何使用 video_player  包，通过基本的播放和暂停控制，从 internet 流式播放视频
+
++ 1. Add the video_player dependency
+
+> 这个方法取决于一个 Flutter 插件：video_player。首先，将此依赖项添加到 pubspec.yaml 中
+
+```
+dependencies:
+  flutter:
+    sdk: flutter
+  video_player:
+```
+
++ 2. Add permissions to your app
+
+> 下一步，更新 android 和 ios 配置，以确保应用拥有从 internet 流式传输视频的正确权限
+> 
+> *Android*
+> 
+> 在 <application> 定义之后向 AndroidManifest.xml 文件添加以下权限。AndroidManifest.xml 文件位于 <project root>/android/app/src/main/AndroidManifest.xml
+
+```
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application ...>
+
+    </application>
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+</manifest>
+```
+
+> *iOS*
+> 
+> 对于 iOS，将以下内容添加到位于 <project root>/iOS/Runner/Info.plist中
+
+```
+<key>NSAppTransportSecurity</key>
+<dict>
+  <key>NSAllowsArbitraryLoads</key>
+  <true/>
+</dict>
+```
+
+> video_player 插件在 iOS 模拟器上不起作用。你必须在真正的 iOS 设备上测试视频
+
++ 3. Create and initialize a VideoPlayerController
+
+> 现在您已经安装了具有正确权限的 video_player 插件，请创建 VideoPlayerController。VideoPlayerController 类允许您连接到不同类型的视频并控制播放
+> 
+> 在播放视频之前，还必须初始化控制器。这将建立到视频的连接，并为播放准备控制器
+> 
+> 要创建和初始化 VideoPlayerControl，请执行以下操作：
+> 
+> 1.创建带有伴生 State 类的 StatefulWidget
+> 
+> 2.向 State 类添加变量以存储 VideoPlayerController
+> 
+> 3.向 State 类添加一个变量，以存储从 VideoPlayerControl.initialize 返回的 Future
+> 
+> 4.在 initState 方法中创建并初始化控制器
+> 
+> 5.在Dispose方法中释放控制器
+
+```
+class VideoPlayerScreen extends StatefulWidget {
+  VideoPlayerScreen({Key key}) : super(key: key);
+
+  @override
+  _VideoPlayerScreenState createState() => _VideoPlayerScreenState();
+}
+
+class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+  VideoPlayerController _controller;
+  Future<void> _initializeVideoPlayerFuture;
+
+  @override
+  void initState() {
+    // Create an store the VideoPlayerController. The VideoPlayerController
+    // offers several different constructors to play videos from assets, files,
+    // or the internet.
+    _controller = VideoPlayerController.network(
+      'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
+    );
+
+    _initializeVideoPlayerFuture = _controller.initialize();
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    // Ensure disposing of the VideoPlayerController to free up resources.
+    _controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Complete the code in the next step.
+  }
+}
+```
+
++ 4. Display the video player
+
+> 现在，显示视频。video_player 插件提供 VideoPlayer 小部件以显示由 VideoPlayerController 初始化的视频。默认情况下，VideoPlayer 小部件会占用尽可能多的空间。这通常不适合视频，因为它们是以特定的纵横比显示的，例如16x9或4x3
+> 
+> 因此，将 VideoPlayer 小部件包装在 AspectRatio 小部件中，以确保视频具有正确的比例
+> 
+> 此外，必须在完成初始化 _initializeVideoPlayerFuture（）后显示 VideoPlayer 小部件。使用 FutureBuilder 显示加载 spinner，直到控制器完成初始化。注意：初始化控制器不会开始播放
+
+```
+// Use a FutureBuilder to display a loading spinner while waiting for the
+// VideoPlayerController to finish initializing.
+FutureBuilder(
+  future: _initializeVideoPlayerFuture,
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.done) {
+      // If the VideoPlayerController has finished initialization, use
+      // the data it provides to limit the aspect ratio of the VideoPlayer.
+      return AspectRatio(
+        aspectRatio: _controller.value.aspectRatio,
+        // Use the VideoPlayer widget to display the video.
+        child: VideoPlayer(_controller),
+      );
+    } else {
+      // If the VideoPlayerController is still initializing, show a
+      // loading spinner.
+      return Center(child: CircularProgressIndicator());
+    }
+  },
+)
+```
+
++ 5. Play and pause the video
+
+> 默认情况下，视频以暂停状态开始。要开始播放，请调用 VideoPlayerControl 提供的 play（）方法。要暂停播放，请调用 pause（）方法
+> 
+> 在本例中，向应用程序中添加一个 FloatingActionButton 按钮，该按钮根据情况显示播放或暂停图标。当用户点击按钮时，播放当前暂停的视频，或暂停正在播放的视频
+
+```
+FloatingActionButton(
+  onPressed: () {
+    // Wrap the play or pause in a call to `setState`. This ensures the
+    // correct icon is shown
+    setState(() {
+      // If the video is playing, pause it.
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+      } else {
+        // If the video is paused, play it.
+        _controller.play();
+      }
+    });
+  },
+  // Display the correct icon depending on the state of the player.
+  child: Icon(
+    _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+  ),
+)
+```
+
++ 完整例子
+
+```
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
+
+void main() => runApp(VideoPlayerApp());
+
+class VideoPlayerApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Video Player Demo',
+      home: VideoPlayerScreen(),
+    );
+  }
+}
+
+class VideoPlayerScreen extends StatefulWidget {
+  VideoPlayerScreen({Key key}) : super(key: key);
+
+  @override
+  _VideoPlayerScreenState createState() => _VideoPlayerScreenState();
+}
+
+class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+  VideoPlayerController _controller;
+  Future<void> _initializeVideoPlayerFuture;
+
+  @override
+  void initState() {
+    // Create and store the VideoPlayerController. The VideoPlayerController
+    // offers several different constructors to play videos from assets, files,
+    // or the internet.
+    _controller = VideoPlayerController.network(
+      'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
+    );
+
+    // Initialize the controller and store the Future for later use.
+    _initializeVideoPlayerFuture = _controller.initialize();
+
+    // Use the controller to loop the video.
+    _controller.setLooping(true);
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    // Ensure disposing of the VideoPlayerController to free up resources.
+    _controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Butterfly Video'),
+      ),
+      // Use a FutureBuilder to display a loading spinner while waiting for the
+      // VideoPlayerController to finish initializing.
+      body: FutureBuilder(
+        future: _initializeVideoPlayerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            // If the VideoPlayerController has finished initialization, use
+            // the data it provides to limit the aspect ratio of the video.
+            return AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              // Use the VideoPlayer widget to display the video.
+              child: VideoPlayer(_controller),
+            );
+          } else {
+            // If the VideoPlayerController is still initializing, show a
+            // loading spinner.
+            return Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Wrap the play or pause in a call to `setState`. This ensures the
+          // correct icon is shown.
+          setState(() {
+            // If the video is playing, pause it.
+            if (_controller.value.isPlaying) {
+              _controller.pause();
+            } else {
+              // If the video is paused, play it.
+              _controller.play();
+            }
+          });
+        },
+        // Display the correct icon depending on the state of the player.
+        child: Icon(
+          _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+        ),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+```
+
+### [Take a picture using the camera](https://flutter.dev/docs/cookbook/plugins/picture-using-camera)
+
++ 许多应用程序需要使用设备的摄像头来拍摄照片和视频。Flutter 为此提供了 camera 插件。 camera 插件提供了一些工具来获取可用相机的列表，显示来自特定相机的预览，以及拍摄照片或视频
+
++ 1. Add the required dependencies
+
+> 需要向应用程序添加三个依赖项：
+> 
+> *camera*
+> 
+> 提供用于处理设备上的相机的工具
+> 
+> *path_provider*
+> 
+> 查找存储图像的正确路径
+> 
+> *path*
+> 
+> 创建在任何平台上工作的路径
+
+```
+dependencies:
+  flutter:
+    sdk: flutter
+  camera:
+  path_provider:
+  path:
+```
+
+> 对于 android，必须将 minSdkVersion 更新为21（或更高版本）
+
++ 2. Get a list of the available cameras
+
+> 接下来，使用camera插件获取可用相机的列表
+
+```
+// Ensure that plugin services are initialized so that `availableCameras()`
+// can be called before `runApp()`
+WidgetsFlutterBinding.ensureInitialized();
+
+// Obtain a list of the available cameras on the device.
+final cameras = await availableCameras();
+
+// Get a specific camera from the list of available cameras.
+final firstCamera = cameras.first;
+```
+
++ 3. Create and initialize the CameraController
+
+> 拥有相机后，请使用以下步骤创建和初始化 CameraController。此过程建立到设备相机的连接，允许您控制相机并显示相机馈送的预览
+> 
+> 1.创建带有伴生 State 类的 StatefulWidget
+> 
+> 2.向 State 类添加变量以存储 CameraController
+> 
+> 3.向 State 类添加一个变量以存储从 CameraController.initialize（）返回的 Future
+> 
+> 4.在 initState（）方法中创建并初始化控制器
+> 
+> 5.在 Dispose（）方法中释放控制器
+
+```
+// A screen that takes in a list of cameras and the Directory to store images.
+class TakePictureScreen extends StatefulWidget {
+  final CameraDescription camera;
+
+  const TakePictureScreen({
+    Key key,
+    @required this.camera,
+  }) : super(key: key);
+
+  @override
+  TakePictureScreenState createState() => TakePictureScreenState();
+}
+
+class TakePictureScreenState extends State<TakePictureScreen> {
+  // Add two variables to the state class to store the CameraController and
+  // the Future.
+  CameraController _controller;
+  Future<void> _initializeControllerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // To display the current output from the camera,
+    // create a CameraController.
+    _controller = CameraController(
+      // Get a specific camera from the list of available cameras.
+      widget.camera,
+      // Define the resolution to use.
+      ResolutionPreset.medium,
+    );
+
+    // Next, initialize the controller. This returns a Future.
+    _initializeControllerFuture = _controller.initialize();
+  }
+
+  @override
+  void dispose() {
+    // Dispose of the controller when the widget is disposed.
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Fill this out in the next steps.
+  }
+}
+```
+
+> 如果未初始化 CameraController，则无法使用相机显示预览并拍摄照片
+
++ 4. Use a CameraPreview to display the camera’s feed
+
+> 接下来，使用 camera 包中的 CameraPreview 小部件显示相机提要的预览
+> 
+> 请记住，在使用相机之前，必须等到控制器完成初始化。因此，在显示 CameraPreview 之前，必须等待上一步中创建的 _initializeControllerFuture（）完成
+> 
+> 为此，请使用 FutureBuilder
+
+```
+// You must wait until the controller is initialized before displaying the
+// camera preview. Use a FutureBuilder to display a loading spinner until the
+// controller has finished initializing.
+FutureBuilder<void>(
+  future: _initializeControllerFuture,
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.done) {
+      // If the Future is complete, display the preview.
+      return CameraPreview(_controller);
+    } else {
+      // Otherwise, display a loading indicator.
+      return Center(child: CircularProgressIndicator());
+    }
+  },
+)
+```
+
++ 5. Take a picture with the CameraController
+
+> 可以使用 CameraController 的 takePicture（）方法拍摄照片。在本例中，创建一个 FloatingActionButton 按钮，当用户点击按钮时，该按钮使用 CameraController 拍摄照片
+> 
+> 保存图片需要3个步骤：
+> 
+> 1.确保摄像机已初始化
+> 
+> 2.构造一个 path 来定义图片应该保存在哪里
+> 
+> 3.使用控制器拍照并将结果保存到 path
+> 
+> 最好将这些操作包装在 try/catch 块中，以便处理可能发生的任何错误
+
+```
+FloatingActionButton(
+  child: Icon(Icons.camera_alt),
+  // Provide an onPressed callback.
+  onPressed: () async {
+    // Take the Picture in a try / catch block. If anything goes wrong,
+    // catch the error.
+    try {
+      // Ensure that the camera is initialized.
+      await _initializeControllerFuture;
+
+      // Construct the path where the image should be saved using the path
+      // package.
+      final path = join(
+        // Store the picture in the temp directory.
+        // Find the temp directory using the `path_provider` plugin.
+        (await getTemporaryDirectory()).path,
+        '${DateTime.now()}.png',
+      );
+
+      // Attempt to take a picture and log where it's been saved.
+      await _controller.takePicture(path);
+    } catch (e) {
+      // If an error occurs, log the error to the console.
+      print(e);
+    }
+  },
+)
+```
+
++ 6. Display the picture with an Image widget
+
+> 如果拍摄成功，则可以使用图像小部件显示保存的图片。在这种情况下，图片作为文件存储在设备上
+> 
+> 因此，必须为 Image.File 构造函数提供一个文件。通过传递在上一步中创建的路径，可以创建文件类的实例
+
+```
+Image.file(File('path/to/my/picture.png'))
+```
+
++ 完整例子
+
+```
+import 'dart:async';
+import 'dart:io';
+
+import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
+import 'package:path/path.dart' show join;
+import 'package:path_provider/path_provider.dart';
+
+Future<void> main() async {
+  // Ensure that plugin services are initialized so that `availableCameras()`
+  // can be called before `runApp()`
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Obtain a list of the available cameras on the device.
+  final cameras = await availableCameras();
+
+  // Get a specific camera from the list of available cameras.
+  final firstCamera = cameras.first;
+
+  runApp(
+    MaterialApp(
+      theme: ThemeData.dark(),
+      home: TakePictureScreen(
+        // Pass the appropriate camera to the TakePictureScreen widget.
+        camera: firstCamera,
+      ),
+    ),
+  );
+}
+
+// A screen that allows users to take a picture using a given camera.
+class TakePictureScreen extends StatefulWidget {
+  final CameraDescription camera;
+
+  const TakePictureScreen({
+    Key key,
+    @required this.camera,
+  }) : super(key: key);
+
+  @override
+  TakePictureScreenState createState() => TakePictureScreenState();
+}
+
+class TakePictureScreenState extends State<TakePictureScreen> {
+  CameraController _controller;
+  Future<void> _initializeControllerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // To display the current output from the Camera,
+    // create a CameraController.
+    _controller = CameraController(
+      // Get a specific camera from the list of available cameras.
+      widget.camera,
+      // Define the resolution to use.
+      ResolutionPreset.medium,
+    );
+
+    // Next, initialize the controller. This returns a Future.
+    _initializeControllerFuture = _controller.initialize();
+  }
+
+  @override
+  void dispose() {
+    // Dispose of the controller when the widget is disposed.
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Take a picture')),
+      // Wait until the controller is initialized before displaying the
+      // camera preview. Use a FutureBuilder to display a loading spinner
+      // until the controller has finished initializing.
+      body: FutureBuilder<void>(
+        future: _initializeControllerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            // If the Future is complete, display the preview.
+            return CameraPreview(_controller);
+          } else {
+            // Otherwise, display a loading indicator.
+            return Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.camera_alt),
+        // Provide an onPressed callback.
+        onPressed: () async {
+          // Take the Picture in a try / catch block. If anything goes wrong,
+          // catch the error.
+          try {
+            // Ensure that the camera is initialized.
+            await _initializeControllerFuture;
+
+            // Construct the path where the image should be saved using the
+            // pattern package.
+            final path = join(
+              // Store the picture in the temp directory.
+              // Find the temp directory using the `path_provider` plugin.
+              (await getTemporaryDirectory()).path,
+              '${DateTime.now()}.png',
+            );
+
+            // Attempt to take a picture and log where it's been saved.
+            await _controller.takePicture(path);
+
+            // If the picture was taken, display it on a new screen.
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DisplayPictureScreen(imagePath: path),
+              ),
+            );
+          } catch (e) {
+            // If an error occurs, log the error to the console.
+            print(e);
+          }
+        },
+      ),
+    );
+  }
+}
+
+// A widget that displays the picture taken by the user.
+class DisplayPictureScreen extends StatelessWidget {
+  final String imagePath;
+
+  const DisplayPictureScreen({Key key, this.imagePath}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Display the Picture')),
+      // The image is stored as a file on the device. Use the `Image.file`
+      // constructor with the given path to display the image.
+      body: Image.file(File(imagePath)),
+    );
+  }
+}
+```
 
 ## Testing
 
