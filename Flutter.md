@@ -9014,15 +9014,824 @@ void main() {
 
 #### [An introduction to unit testing](https://flutter.dev/docs/cookbook/testing/unit/introduction)
 
++ 如何在应用程序添加更多的功能或更改现有功能时确保应用程序继续工作？通过写测试
+
++ 单元测试对于验证单个函数、方法或类的行为很方便。test 包为编写单元测试提供了核心框架，而 flutter_test 包为测试小部件提供了额外的实用程序
+
++ 1. Add the test dependency
+
+> 如果您正在开发一个不依赖 Flutter 的 Dart 包，可以导入 test 包。test 包提供了在 Dart 中编写测试的核心功能。当编写web、服务器和 Flutter 应用程序使用的包时，这是最好的方法
+
+```
+dev_dependencies:
+  test: <latest_version>
+```
+
++ 2. Create a test file
+
+> 在本例中，创建两个文件：counter.dart 和 counter_test.dart
+> 
+> counter.dart 文件包含要测试的类，该类位于 lib 文件夹中。counter_test.dart 文件包含测试本身并位于测试文件夹中
+> 
+> 通常，测试文件应该位于 Flutter 应用程序或包根目录下的测试文件夹中。测试文件应始终以 _test.dar 结尾，这是测试运行程序在搜索测试时使用的约定
+> 
+> 文件夹结构应如下所示：
+
+```
+counter_app/
+  lib/
+    counter.dart
+  test/
+    counter_test.dart
+```
+
++ 3. Create a class to test
+
+> 接下来，你需要一个“单元”来测试。记住：“unit”是函数、方法或类的另一个名称。在本例中，在 lib/Counter.dart 文件中创建一个 Counter 类。它负责递增和递减从0开始的值
+
+```
+class Counter {
+  int value = 0;
+
+  void increment() => value++;
+
+  void decrement() => value--;
+}
+```
+
+> 注意：为了简单起见，本教程不遵循“测试驱动开发”方法。如果你对这种开发方式更满意，你可以一直走这条路
+
++ 4. Write a test for our class
+
+> 在 counter_test.dart 文件中，编写第一个单元测试。测试是使用顶级 test 函数定义的，您可以使用顶级 expect 函数检查结果是否正确。这两个函数都来自 test 包
+
+```
+// Import the test package and Counter class
+import 'package:test/test.dart';
+import 'package:counter_app/counter.dart';
+
+void main() {
+  test('Counter value should be incremented', () {
+    final counter = Counter();
+
+    counter.increment();
+
+    expect(counter.value, 1);
+  });
+}
+```
+
++ 5. Combine multiple tests in a group
+
+> 如果有多个相互关联的测试，请使用 test 包提供的 group 函数组合它们
+
+```
+import 'package:test/test.dart';
+import 'package:counter_app/counter.dart';
+
+void main() {
+  group('Counter', () {
+    test('value should start at 0', () {
+      expect(Counter().value, 0);
+    });
+
+    test('value should be incremented', () {
+      final counter = Counter();
+
+      counter.increment();
+
+      expect(counter.value, 1);
+    });
+
+    test('value should be decremented', () {
+      final counter = Counter();
+
+      counter.decrement();
+
+      expect(counter.value, -1);
+    });
+  });
+}
+```
+
++ 6. Run the tests
+
+> *Run tests using IntelliJ or VSCode*
+> 
+> IntelliJ 和 VSCode 的 Flutter 插件支持运行测试。在编写测试时，这通常是最好的选择，因为它提供了最快的反馈循环以及设置断点的能力
+> 
+> **IntelliJ**
+> 
+> 1.打开 counter_test.dart 文件
+> 
+> 2.选择 Run 菜单
+> 
+> 3.单击 Run 'tests in counter_test.dart' 选项
+> 
+> 4.或者，使用适合平台的键盘快捷键
+> 
+> **VSCode**
+> 
+> 1.打开 counter_test.dart 文件
+> 
+> 2.选择 Debug 菜单
+> 
+> 3.单击 Start Debugging 选项
+> 
+> 4.或者，使用适合平台的键盘快捷键
+> 
+> *Run tests in a terminal*
+> 
+> 也可以使用终端从项目根目录执行以下命令来运行测试：
+
+```
+flutter test test/counter_test.dart
+```
+
 #### [Mock dependencies using Mockito](https://flutter.dev/docs/cookbook/testing/unit/mocking)
+
++ 有时，单元测试可能依赖于从实时web服务或数据库获取数据的类。这很不方便，原因如下：
+
+> 调用实时服务或数据库会减慢测试执行速度
+> 
+> 如果web服务或数据库返回意外结果，则通过测试可能会开始失败。这被称为“flaky 测试”
+> 
+> 使用实时web服务或数据库很难测试所有可能的成功和失败场景
+> 
+> 因此，您可以“模拟”(mock)这些依赖关系，而不是依赖于实时web服务或数据库。mock允许模拟实时web服务或数据库，并根据情况返回特定的结果
+> 
+> 一般来说，可以通过创建类的替代实现来模拟依赖项。手工编写这些替代实现，或者使用 Mockito 包作为快捷方式
+> 
+> 本节演示了 Mockito 包模拟的基础知识
+
++ 1. Add the package dependencies
+
+> 要使用 mockito 包，请将其与 dev_dependencies 部分中的 flutter_test 依赖项一起添加到 pubspec.yaml 文件中
+> 
+> 本例还使用 http 包，因此在 dependencies 部分中定义该依赖项
+
+```
+dependencies:
+  http: <newest_version>
+dev_dependencies:
+  test: <newest_version>
+  mockito: <newest_version>
+```
+
++ 2. Create a function to test
+
+> 在本例中，单元测试 fetchPost 函数，该函数来自于 [Fetch data from the internet](https://flutter.dev/docs/cookbook/networking/fetch-data)。要测试此功能，请进行两项更改：
+> 
+> 1.为函数提供 http.Client 类型的参数。这允许根据情况提供正确的 http.Client。对于 Flutter 和服务器端项目，提供 http.IOClient 。对于浏览器应用程序，提供 http.Browser 客户端。对于测试，提供一个模拟的 http.Client
+> 
+> 2.使用提供的 client 从 internet 获取数据，而不是从难以模拟的静态 http.get（）方法
+
+```
+class Post {
+  dynamic data;
+  Post.fromJson(this.data);
+}
+
+Future<Post> fetchPost(http.Client client) async {
+  final response =
+      await client.get('https://jsonplaceholder.typicode.com/posts/1');
+
+  if (response.statusCode == 200) {
+    // If the call to the server was successful, parse the JSON.
+    return Post.fromJson(json.decode(response.body));
+  } else {
+    // If that call was not successful, throw an error.
+    throw Exception('Failed to load post');
+  }
+}
+```
+
++ 3. Create a test file with a mock http.Client
+
+> 接下来，创建一个测试文件和一个 MockClient 类。按照单元测试简介中的建议，在根测试文件夹中创建一个名为 fetch_post_test.dart 的文件
+> 
+> MockClient 类实现了 http.Client 类。这允许将 MockClient 传递给 fetchPost 函数，并在每个测试中返回不同的 http 响应
+
+```
+// Create a MockClient using the Mock class provided by the Mockito package.
+// Create new instances of this class in each test.
+class MockClient extends Mock implements http.Client {}
+
+main() {
+  // Tests go here
+}
+```
+
++ 4. Write a test for each condition
+
+> fetchPost() 函数的作用是：
+> 
+> 1.如果 http 调用成功，则返回 Post
+> 
+> 2.如果 http 调用失败，则引发异常
+> 
+> 因此，需要测试这两个条件。使用 MockClient 类返回成功测试的“确定”响应和失败测试的错误响应。使用 Mockito 提供的 when（）函数测试这些条件：
+
+```
+// Create a MockClient using the Mock class provided by the Mockito package.
+// Create new instances of this class in each test.
+class MockClient extends Mock implements http.Client {}
+
+main() {
+  group('fetchPost', () {
+    test('returns a Post if the http call completes successfully', () async {
+      final client = MockClient();
+
+      // Use Mockito to return a successful response when it calls the
+      // provided http.Client.
+      when(client.get('https://jsonplaceholder.typicode.com/posts/1'))
+          .thenAnswer((_) async => http.Response('{"title": "Test"}', 200));
+
+      expect(await fetchPost(client), const TypeMatcher<Post>());
+    });
+
+    test('throws an exception if the http call completes with an error', () {
+      final client = MockClient();
+
+      // Use Mockito to return an unsuccessful response when it calls the
+      // provided http.Client.
+      when(client.get('https://jsonplaceholder.typicode.com/posts/1'))
+          .thenAnswer((_) async => http.Response('Not Found', 404));
+
+      expect(fetchPost(client), throwsException);
+    });
+  });
+}
+```
+
++ 5. Run the tests
+
+> 现在已经有了一个fetchPost（）函数，请运行测试
+
+```
+dart test/fetch_post_test.dart
+```
+
++ Summary
+
+> 在本例中，学习了如何使用 Mockito 测试依赖于 web 服务或数据库的函数或类。这只是对 Mockito 库和 mocking 概念的简短介绍。有关更多信息，请参阅 [Mockito package](https://flutter.dev/docs/cookbook/testing/unit/mocking)
 
 ### Widget
 
 #### [An introduction to widget testing](https://flutter.dev/docs/cookbook/testing/widget/introduction)
 
++ 要测试 widget 类，需要 flutter_test 包提供的一些附加工具，Flutter SDK 附带了这些工具
+
++ flutter_test 包为测试小部件提供了以下工具：
+
+> WidgetTester 允许在测试环境中构建小部件和与小部件交互
+> 
+> testWidgets() 函数的作用是：为每个测试用例自动创建一个新的 WidgetTester，并代替普通的 test（）函数
+> 
+> Finder 类允许在测试环境中搜索小部件
+> 
+> 特定于小部件的 Matcher 常量有助于验证 Finder 是否在测试环境中定位一个小部件或多个小部件
+
++ 1. Add the flutter_test dependency
+
+> 在编写测试之前，在 pubspec.yaml 文件的 dev_dependencies 部分中包含flutt_test 依赖项。如果使用命令行工具或代码编辑器创建一个新的 Flutter 项目，那么这个依赖项应该已经存在了
+
+```
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+```
+
++ 2. Create a widget to test
+
+> 接下来，创建一个小部件进行测试。在本节，创建一个显示标题和消息的小部件
+
+```
+class MyWidget extends StatelessWidget {
+  final String title;
+  final String message;
+
+  const MyWidget({
+    Key key,
+    @required this.title,
+    @required this.message,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: Center(
+          child: Text(message),
+        ),
+      ),
+    );
+  }
+}
+```
+
++ 3. Create a testWidgets test
+
+> 要测试小部件，从编写第一个测试开始。使用 flutter_test 包提供的 testWidgets（）函数定义测试。testWidgets 函数允许定义一个 widget 测试并创建一个 WidgetTester 来使用
+> 
+> 此测试验证 MyWidget 是否显示给定的标题和消息
+
+```
+void main() {
+  // Define a test. The TestWidgets function also provides a WidgetTester
+  // to work with. The WidgetTester allows you to build and interact
+  // with widgets in the test environment.
+  testWidgets('MyWidget has a title and message', (WidgetTester tester) async {
+    // Test code goes here.
+  });
+}
+```
+
++ 4. Build the widget using the WidgetTester
+
+> 接下来，使用 WidgetTester 提供的 pumpWidget（）方法在测试环境中构建 MyWidget。pumpWidget 方法构建并呈现提供的小部件
+> 
+> 创建一个 MyWidget 实例，显示“T”作为标题，“M”作为消息
+
+```
+void main() {
+  testWidgets('MyWidget has a title and message', (WidgetTester tester) async {
+    // Create the widget by telling the tester to build it.
+    await tester.pumpWidget(MyWidget(title: 'T', message: 'M'));
+  });
+}
+```
+
+> 在对 pumpWidget（）的初始调用之后，WidgetTester 提供了重建同一小部件的其他方法。如果您使用的是 StatefulWidget 或动画，这将非常有用
+> 
+> 例如，点击按钮调用 setState（），但 Flutter 不会在测试环境中自动重建小部件。使用以下方法之一要求 Flutter 重建小部件
+> 
+> *tester.pump()*
+> 
+> 在给定的持续时间后触发小部件的重新生成
+> 
+> *tester.pumpAndSettle()*
+> 
+> 以给定的持续时间重复调用 pump，直到不再有任何帧被调度。这实际上是等待所有动画完成
+> 
+> 这些方法提供对构建生命周期的细粒度控制，这在测试时特别有用
+
++ 5. Search for our widget using a Finder
+
+> 使用测试环境中的小部件，使用 Finder 在小部件树中搜索标题和消息文本小部件。这允许验证小部件是否正确显示
+> 
+> 为此，使用 flutter_test 包提供的顶级 find（）方法创建查找器。既然您知道您在寻找文本小部件，那么使用 find.Text（）方法
+
+```
+void main() {
+  testWidgets('MyWidget has a title and message', (WidgetTester tester) async {
+    await tester.pumpWidget(MyWidget(title: 'T', message: 'M'));
+
+    // Create the Finders.
+    final titleFinder = find.text('T');
+    final messageFinder = find.text('M');
+  });
+}
+```
+
++ 6. Verify the widget using a Matcher
+
+> 最后，使用 flutter_test 提供的 Matcher 常量验证标题和消息文本小部件是否出现在屏幕上。Matcher 类是测试包的核心部分，它提供了一种验证给定值是否满足期望的通用方法
+> 
+> 确保小部件只出现在屏幕上一次。为此，请使用 findsOneWidget 匹配器
+
+```
+void main() {
+  testWidgets('MyWidget has a title and message', (WidgetTester tester) async {
+    await tester.pumpWidget(MyWidget(title: 'T', message: 'M'));
+    final titleFinder = find.text('T');
+    final messageFinder = find.text('M');
+
+    // Use the `findsOneWidget` matcher provided by flutter_test to verify
+    // that the Text widgets appear exactly once in the widget tree.
+    expect(titleFinder, findsOneWidget);
+    expect(messageFinder, findsOneWidget);
+  });
+}
+```
+
+> *Additional Matchers*
+> 
+> 除了 findsOneWidget，flutter_test 还为常见情况提供了额外的匹配器
+> 
+> **findsNothing**
+> 
+> 验证未找到小部件
+> 
+> **findsWidgets**
+> 
+> 验证是否找到一个或多个小部件
+> 
+> **findsNWidgets**
+> 
+> 验证是否找到特定数量的小部件
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  // Define a test. The TestWidgets function also provides a WidgetTester
+  // to work with. The WidgetTester allows building and interacting
+  // with widgets in the test environment.
+  testWidgets('MyWidget has a title and message', (WidgetTester tester) async {
+    // Create the widget by telling the tester to build it.
+    await tester.pumpWidget(MyWidget(title: 'T', message: 'M'));
+
+    // Create the Finders.
+    final titleFinder = find.text('T');
+    final messageFinder = find.text('M');
+
+    // Use the `findsOneWidget` matcher provided by flutter_test to
+    // verify that the Text widgets appear exactly once in the widget tree.
+    expect(titleFinder, findsOneWidget);
+    expect(messageFinder, findsOneWidget);
+  });
+}
+
+class MyWidget extends StatelessWidget {
+  final String title;
+  final String message;
+
+  const MyWidget({
+    Key key,
+    @required this.title,
+    @required this.message,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        body: Center(
+          child: Text(message),
+        ),
+      ),
+    );
+  }
+}
+```
+
 #### [Find widgets](https://flutter.dev/docs/cookbook/testing/widget/finders)
 
++ 要在测试环境中定位小部件，请使用 Finder 类。虽然可以编写自己的 Finder 类，但是使用 flutter_test 包提供的工具定位小部件通常更方便
+
++ 本节查看 flutter_test 包提供的 find 常量，并演示如何使用它提供的一些 Finder
+
++ 1. Find a Text widget
+
+> 在测试中，通常需要找到包含特定文本的小部件。这正是 find.text（）方法的作用。它创建一个查找器，用于搜索显示特定文本字符串的小部件
+
+```
+testWidgets('finds a Text widget', (WidgetTester tester) async {
+  // Build an app with a Text widget that displays the letter 'H'.
+  await tester.pumpWidget(MaterialApp(
+    home: Scaffold(
+      body: Text('H'),
+    ),
+  ));
+
+  // Find a widget that displays the letter 'H'.
+  expect(find.text('H'), findsOneWidget);
+});
+```
+
++ 2. Find a widget with a specific Key
+
+> 在某些情况下，您可能希望根据提供给它的 Key 来查找小部件。如果显示同一小部件的多个实例，这将非常方便。例如，一个 ListView 可能会显示几个包含相同文本的文本小部件
+> 
+> 在这种情况下，为列表中的每个小部件提供一个 Key。这允许应用程序唯一地标识特定的小部件，从而更容易在测试环境中找到小部件。
+
+```
+testWidgets('finds a widget using a Key', (WidgetTester tester) async {
+  // Define the test key.
+  final testKey = Key('K');
+
+  // Build a MaterialApp with the testKey.
+  await tester.pumpWidget(MaterialApp(key: testKey, home: Container()));
+
+  // Find the MaterialApp widget using the testKey.
+  expect(find.byKey(testKey), findsOneWidget);
+});
+```
+
++ 3. Find a specific widget instance
+
+> 最后，您可能对定位小部件的特定实例感兴趣。例如，当创建具有子属性的小部件时，并且您希望确保呈现子小部件时，这将非常有用
+
+```
+testWidgets('finds a specific instance', (WidgetTester tester) async {
+  final childWidget = Padding(padding: EdgeInsets.zero);
+
+  // Provide the childWidget to the Container.
+  await tester.pumpWidget(Container(child: childWidget));
+
+  // Search for the childWidget in the tree and verify it exists.
+  expect(find.byWidget(childWidget), findsOneWidget);
+});
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  testWidgets('finds a Text widget', (WidgetTester tester) async {
+    // Build an App with a Text widget that displays the letter 'H'.
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Text('H'),
+      ),
+    ));
+
+    // Find a widget that displays the letter 'H'.
+    expect(find.text('H'), findsOneWidget);
+  });
+
+  testWidgets('finds a widget using a Key', (WidgetTester tester) async {
+    // Define the test key.
+    final testKey = Key('K');
+
+    // Build a MaterialApp with the testKey.
+    await tester.pumpWidget(MaterialApp(key: testKey, home: Container()));
+
+    // Find the MaterialApp widget using the testKey.
+    expect(find.byKey(testKey), findsOneWidget);
+  });
+
+  testWidgets('finds a specific instance', (WidgetTester tester) async {
+    final childWidget = Padding(padding: EdgeInsets.zero);
+
+    // Provide the childWidget to the Container.
+    await tester.pumpWidget(Container(child: childWidget));
+
+    // Search for the childWidget in the tree and verify it exists.
+    expect(find.byWidget(childWidget), findsOneWidget);
+  });
+}
+```
+
 #### [Tap, drag, and enter text](https://flutter.dev/docs/cookbook/testing/widget/tap-drag.html)
+
++ 许多小部件不仅显示信息，还响应用户交互。这包括可点击的按钮和用于输入文本的文本字段
+
++ 要测试这些交互，您需要一种方法在测试环境中模拟它们。为此，请使用 WidgetTester 库
+
++ WidgetTester提供了输入文本、点击和拖动的方法
+
+> enterText()
+> 
+> tap()
+> 
+> drag()
+
++ 在许多情况下，用户交互会更新应用程序的状态。在测试环境中，Flutter 不会在状态改变时自动重建小部件。要确保在模拟用户交互后重建小部件树，请调用 WidgetTester 提供的pump（）或 pumpAndSettle（）方法
+
++ 1. Create a widget to test
+
+> 在本例中，创建一个基本的todo应用程序，测试三个功能：
+> 
+> 1.在 TextField 中输入文本
+> 
+> 2.点击 FloatingActionButton 按钮将文本添加到待办事项列表中
+> 
+> 3.滑动以关闭（Swiping-to-dismiss）以从列表中删除项目
+> 
+> 为了将重点放在测试上，本节不会提供如何构建todo应用程序的详细指南
+
+```
+class TodoList extends StatefulWidget {
+  @override
+  _TodoListState createState() => _TodoListState();
+}
+
+class _TodoListState extends State<TodoList> {
+  static const _appTitle = 'Todo List';
+  final todos = <String>[];
+  final controller = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: _appTitle,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(_appTitle),
+        ),
+        body: Column(
+          children: [
+            TextField(
+              controller: controller,
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: todos.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final todo = todos[index];
+
+                  return Dismissible(
+                    key: Key('$todo$index'),
+                    onDismissed: (direction) => todos.removeAt(index),
+                    child: ListTile(title: Text(todo)),
+                    background: Container(color: Colors.red),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            setState(() {
+              todos.add(controller.text);
+              controller.clear();
+            });
+          },
+          child: Icon(Icons.add),
+        ),
+      ),
+    );
+  }
+}
+```
+
++ 2. Enter text in the text field
+
+> 现在您已经有了一个todo应用程序，开始编写测试。首先在文本字段中输入文本
+> 
+> 通过以下方式完成此任务：
+> 
+> 1.在测试环境中构建小部件
+> 
+> 2.使用 WidgetTester 中的 enterText（）方法
+
+```
+testWidgets('Add and remove a todo', (WidgetTester tester) async {
+  // Build the widget
+  await tester.pumpWidget(TodoList());
+
+  // Enter 'hi' into the TextField.
+  await tester.enterText(find.byType(TextField), 'hi');
+});
+```
+
++ 3. Ensure tapping a button adds the todo
+
+> 在文本字段中输入文本后，请确保点击 FloatingActionButton 按钮将项目添加到列表中
+> 
+> 这包括三个步骤：
+> 
+> 1.使用 Tap（）方法点击 add 按钮
+> 
+> 2.使用 pump（）方法在状态更改后重新生成小部件
+> 
+> 3.确保列表项出现在屏幕上
+
+```
+testWidgets('Add and remove a todo', (WidgetTester tester) async {
+  // Enter text code...
+
+  // Tap the add button.
+  await tester.tap(find.byType(FloatingActionButton));
+
+  // Rebuild the widget after the state has changed.
+  await tester.pump();
+
+  // Expect to find the item on screen.
+  expect(find.text('hi'), findsOneWidget);
+});
+```
+
++ 4. Ensure swipe-to-dismiss removes the todo
+
+> 最后，确保对todo项执行 swipe-to-dismiss 操作会将其从列表中删除。这包括三个步骤
+> 
+> 1.使用 drag（）方法执行滑动以取消(swipe-to-dismiss)操作
+> 
+> 2.使用 pumpAndSettle（）方法继续重建小部件树，直到关闭动画完成
+> 
+> 3.确保项目不再出现在屏幕上
+
+```
+testWidgets('Add and remove a todo', (WidgetTester tester) async {
+  // Enter text and add the item...
+
+  // Swipe the item to dismiss it.
+  await tester.drag(find.byType(Dismissible), Offset(500.0, 0.0));
+
+  // Build the widget until the dismiss animation ends.
+  await tester.pumpAndSettle();
+
+  // Ensure that the item is no longer on screen.
+  expect(find.text('hi'), findsNothing);
+});
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  testWidgets('Add and remove a todo', (WidgetTester tester) async {
+    // Build the widget.
+    await tester.pumpWidget(TodoList());
+
+    // Enter 'hi' into the TextField.
+    await tester.enterText(find.byType(TextField), 'hi');
+
+    // Tap the add button.
+    await tester.tap(find.byType(FloatingActionButton));
+
+    // Rebuild the widget with the new item.
+    await tester.pump();
+
+    // Expect to find the item on screen.
+    expect(find.text('hi'), findsOneWidget);
+
+    // Swipe the item to dismiss it.
+    await tester.drag(find.byType(Dismissible), Offset(500.0, 0.0));
+
+    // Build the widget until the dismiss animation ends.
+    await tester.pumpAndSettle();
+
+    // Ensure that the item is no longer on screen.
+    expect(find.text('hi'), findsNothing);
+  });
+}
+
+class TodoList extends StatefulWidget {
+  @override
+  _TodoListState createState() => _TodoListState();
+}
+
+class _TodoListState extends State<TodoList> {
+  static const _appTitle = 'Todo List';
+  final todos = <String>[];
+  final controller = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: _appTitle,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text(_appTitle),
+        ),
+        body: Column(
+          children: [
+            TextField(
+              controller: controller,
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: todos.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final todo = todos[index];
+
+                  return Dismissible(
+                    key: Key('$todo$index'),
+                    onDismissed: (direction) => todos.removeAt(index),
+                    child: ListTile(title: Text(todo)),
+                    background: Container(color: Colors.red),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            setState(() {
+              todos.add(controller.text);
+              controller.clear();
+            });
+          },
+          child: Icon(Icons.add),
+        ),
+      ),
+    );
+  }
+}
+```
 
 # 填坑记录
 ## 第一次运行flutter命令（如flutter doctor）时，它会下载它自己的依赖项并自行编译。以后再运行就会快得多
