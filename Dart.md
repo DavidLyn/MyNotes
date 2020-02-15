@@ -1,4 +1,33 @@
 ---
+# [Bootstrap into Dart](https://flutter.dev/docs/resources/bootstrap-into-dart)
+
++ 对 Dart 语言不熟悉？我们汇编了我们最喜欢的资源，帮助您快速学习 Dart。很多人都说 Dart 学起来既简单又有趣。我们希望这些资源也能让你更容易学习 Dart
+
++ [Language tour](https://dart.dev/guides/language/language-tour)
+
+> 对 Dart 语言最好的介绍。了解 Dart 的特性，如强类型、闭包、库、词法范围、顶层函数、命名参数、异步/等待等等
+
++ [Library tour](https://dart.dev/guides/libraries/library-tour)
+
+> 对 Dart 强大的核心库有一个很好的概述。了解Dart对集合、异步、数学、数字、字符串、JSON等的支持
+
++ [Intro to Dart for Java Developers codelab](https://codelabs.developers.google.com/codelabs/from-java-to-dart)
+
+> 使用您的 Java 知识快速启动和运行 Dart 。通过 Java 教程中的示例了解类、构造函数、参数和接口
+
++ [Effective Dart](https://dart.dev/guides/language/effective-dart)
+
+> 样式、创作文档、用法等指南
+
++ [Asynchronous programming: futures, async, await](https://dart.dev/codelabs/async-await)
+
+> 学习如何使用futures、async 和 await 关键字编写异步代码
+
++ [Asynchronous programming: streams](https://dart.dev/tutorials/language/streams)
+
+> 了解如何使用 stream 执行异步 I/O 和事件处理
+
+---
 # Dart
 + [Dart 官方 Docs](https://dart.dev/guides)
 + [Dart语法学习 -- *good 值得再学习*](https://www.jianshu.com/p/9e5f4c81cc7d)

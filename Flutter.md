@@ -5099,9 +5099,189 @@ version: 1.0.0+1
 
 ## [Bootstrap into Dart](https://flutter.dev/docs/resources/bootstrap-into-dart)
 
++ 对 Dart 语言不熟悉？我们汇编了我们最喜欢的资源，帮助您快速学习 Dart。很多人都说 Dart 学起来既简单又有趣。我们希望这些资源也能让你更容易学习 Dart
+
++ [Language tour](https://dart.dev/guides/language/language-tour)
+
+> 对 Dart 语言最好的介绍。了解 Dart 的特性，如强类型、闭包、库、词法范围、顶层函数、命名参数、异步/等待等等
+
++ [Library tour](https://dart.dev/guides/libraries/library-tour)
+
+> 对 Dart 强大的核心库有一个很好的概述。了解Dart对集合、异步、数学、数字、字符串、JSON等的支持
+
++ [Intro to Dart for Java Developers codelab](https://codelabs.developers.google.com/codelabs/from-java-to-dart)
+
+> 使用您的 Java 知识快速启动和运行 Dart 。通过 Java 教程中的示例了解类、构造函数、参数和接口
+
++ [Effective Dart](https://dart.dev/guides/language/effective-dart)
+
+> 样式、创作文档、用法等指南
+
++ [Asynchronous programming: futures, async, await](https://dart.dev/codelabs/async-await)
+
+> 学习如何使用futures、async 和 await 关键字编写异步代码
+
++ [Asynchronous programming: streams](https://dart.dev/tutorials/language/streams)
+
+> 了解如何使用 stream 执行异步 I/O 和事件处理
+
 ## [Flutter compatibility policy](https://flutter.dev/docs/resources/compatibility)
 
 ## [Inside Flutter](https://flutter.dev/docs/resources/inside-flutter)
+
++ 本文档描述了 Flutter 工具包的内部工作原理，使 Flutter 的 API 成为可能
+
+> 因为 Flutter 小部件是使用积极的(aggressive)组合构建的，所以用 Flutter 构建的用户界面有大量的小部件
+> 
+> 为了支持这种工作负载，Flutter 使用了用于布局和构建小部件的次线性(sublinear)算法以及数据结构，这些数据结构使得树操作更加高效，并且具有许多恒定因素优化
+> 
+> 通过一些额外的细节，这种设计还使得开发人员可以很容易地使用回调创建无限滚动列表，这些回调正好构建用户可见的小部件
+
++ Aggressive composability(富有攻击性的组合性)
+
+> Flutter 最显著的特点之一是它具有侵略性的复合性(Aggressive composability)。widget 是通过组合其他 widget 来构建的，这些 widget 本身是由越来越基本的 widget 构建的
+> 
+> 例如，Padding 是一个 widget，而不是其他 widget 的属性。因此，使用 Flutter 构建的用户界面由许多 widget 组成
+> 
+> 构建递归的小部件时在 RenderObjectWidgets 处见底，RenderObjectWidgets 是在底层呈现树中创建节点的 widget
+> 
+> 渲染树是一种数据结构，用于存储用户界面的几何图形，该几何图形在布局期间计算，并在绘制和命中测试期间使用。大多数Flutter开发人员不直接编写渲染对象（RenderObjectWidgets），而是使用小部件操作渲染树
+
+> 为了在 widget 层支持侵略性的复合性(Aggressive composability)，Flutter 在 widget 层和呈现树层都使用了许多有效的算法和优化，如下小节所述
+
++ Sublinear layout（次线性布局）
+
+> 对于大量的 widget 和 render objects，高效的算法是获得良好性能的关键。最重要的是布局的性能，布局是确定渲染对象（render objects）的几何体（例如，大小和位置）的算法
+> 
+> 其他一些工具包使用的布局算法是 O(N²) 或更差（例如，某些约束域中的定点迭代）
+> 
+> Flutter 的目标是在初始布局时达到线性性能，在一般情况下更新布局时达到次线性性能。通常，在布局中花费的时间应该比渲染对象的数量缩放得慢
+> 
+> Flutter 每帧执行一个布局，布局算法在一个通道（pass）中工作。约束（Constraints）由父对象在树中传递，父对象对其每个子对象调用layout方法。子级递归地执行自己的布局，然后通过从其布局方法返回树上的几何图形。重要的是，一旦呈现对象（render objects）从其布局方法返回，在下一帧的布局之前，将不会再次访问该呈现对象。此方法将单独的度量和布局过程合并为一个过程，因此，在布局过程中，每个渲染对象最多只能访问两次：一次在树下，一次在树上
+> 
+> Flutter 在这方面有一些专门的设计。最常见的特化是 RenderBox，它在二维笛卡尔坐标系中工作。在框布局中，约束是最小和最大宽度以及最小和最大高度。在布局过程中，子对象通过在这些边界内选择大小来确定其几何图形。子元素从布局返回后，父元素决定子元素在父元素坐标系中的位置。注意，子布局不能依赖于它的位置，因为位置是在子布局返回后才确定的。因此，父级可以自由地重新定位子级，而无需重新计算其布局
+> 
+> 通常，在布局过程中，从父对象到子对象的唯一信息是约束，从子对象到父对象的唯一信息是几何体。这些不变量可以减少布局期间所需的工作量：
+> 
+> 如果子对象没有将其自身的布局标记为脏，则子对象可以立即从布局返回，从而切断行走，只要父对象给子对象与在上一个布局期间接收到的子对象相同的约束
+> 
+> 每当父对象调用子对象的布局方法时，父对象指示是否使用从子对象返回的尺寸信息。如果经常发生，父对象不使用大小信息，则如果父对象选择新的大小，则父对象不需要重新计算其布局，因为父对象保证新的大小将符合现有约束
+> 
+> 严格约束是指仅由一个有效几何体满足的约束。例如，如果“最小宽度”和“最大宽度”相等，并且“最小高度”和“最大高度”相等，则满足这些约束的唯一大小是具有该宽度和高度的大小。如果父对象提供了严格的约束，则父对象不必在子对象重新计算其布局时重新计算其布局，即使父对象在其布局中使用子对象的大小，因为如果没有父对象的新约束，子对象无法更改大小
+> 
+> 渲染对象可以声明它仅使用父对象提供的约束来确定其几何体。这样的声明通知框架，当子对象重新计算其布局时，该呈现对象的父对象不需要重新计算其布局，即使约束不紧，即使父对象的布局取决于子对象的大小，因为如果没有父对象的新约束，子对象无法更改大小
+> 
+> 作为这些优化的结果，当呈现对象树包含脏节点时，在布局期间只访问这些节点和它们周围的子树的有限部分
+
++ Sublinear widget building
+
+> 与布局算法类似，Flutter 的 widget 构建算法是次线性的。在构建之后，widget 由元素树保存，元素树保留用户界面的逻辑结构。元素树是必要的，因为 widget 本身是不可变的，这意味着（除其他外）它们无法记住它们与其他 widget 的父或子关系。元素树还保存与 stateful widget 关联的状态对象
+> 
+> 作为对用户输入（或其他刺激）的响应，元素可能变脏，例如，如果开发人员对关联的状态对象调用 setState（）。框架保留脏元素的列表，并在构建阶段直接跳到它们，跳过干净的元素。在构建阶段，信息沿元素树单向流动，这意味着每个元素在构建阶段最多访问一次。一个元素一旦被清除，就不能再次变脏，因为通过归纳，它的所有祖先元素都是干净的
+> 
+> 因为 widget 是不可变的，如果一个元素没有将自己标记为脏的，那么如果父元素使用相同的 widget 重新构建元素，则该元素可以立即从 build 返回，从而停止遍历。此外，元素只需要比较两个 widget 引用的对象标识，以确定新 widget 与旧 widget 相同。开发人员利用此优化来实现 reprojection pattern，其中 widget 包含一个预构建的子 widget，该 widget 存储为其构建中的成员变量
+> 
+> 在构建期间，Flutter 还避免使用 InheritedWidget 遍历父链。如果 widget 通常遍历其父链，例如确定当前主题颜色，则构建阶段将变为树的深度为O（N²），这可能是由于 aggressive composition 而非常大的。为了避免这些父级遍历，框架通过在每个元素上维护 InheritedWidget 的哈希表来向下推送信息。通常，许多元素将引用同一哈希表，该哈希表仅在引入新的 InheritedWidget 的元素处更改
+
++ Linear reconciliation（线性调节）
+
+> 与普遍的看法相反，Flutter 没有采用 tree-diffing 算法。相反，框架通过使用O（N）算法独立检查每个元素的子列表来决定是否重用元素
+> 
+> 子列表协调算法针对以下情况进行优化：
+> 
+> 旧子列表为空
+> 
+> 两个列表是相同的
+> 
+> 在列表的一个位置插入或删除一个或多个小部件
+> 
+> 如果每个列表包含一个具有相同键的小部件，则这两个小部件是匹配的
+> 
+> 一般的方法是通过比较每个小部件的运行时类型和键来匹配两个子列表的开始和结束，可能在每个列表的中间找到一个非空的范围，该范围包含所有不匹配的子列表。然后，框架将旧子列表中范围内的子项根据它们的键放入哈希表中。接下来，框架遍历新子列表中的范围，并按键查询哈希表中的匹配项。不匹配的子项将被丢弃并从头重新生成，而匹配的子项将使用其新的小部件重新生成。
+
++ Tree surgery
+
+> 重用元素对于性能很重要，因为元素拥有两个关键数据：stateful widget 和底层呈现对象（render object）的状态。当框架能够重用一个元素时，用户界面的逻辑部分的状态将被保留，并且先前计算的布局信息可以被重用，这通常避免了整个子树遍历。事实上，重用元素非常有价值，以至于 Flutter 支持保存状态和布局信息的非局部树突变
+> 
+> 开发人员可以通过将 GlobalKey 与其小部件关联来执行非本地树变异。每个全局键在整个应用程序中都是唯一的，并使用特定于线程的哈希表进行注册。在构建阶段，开发人员可以将具有全局键的小部件移动到元素树中的任意位置。框架不是在那个位置建立一个新的元素，而是检查哈希表并将现有元素从它的前一个位置重置到它的新位置，从而保存整个子树
+> 
+> 重新父级的子树中的渲染对象能够保留其布局信息，因为布局约束是渲染树中从父级流向子级的唯一信息。由于新父项的子列表已更改，因此将其标记为“脏”以用于布局，但如果新父项传递给子项的布局约束与从旧父项接收到的子项的布局约束相同，则子项可以立即从布局返回，从而切断漫游
+> 
+> 全局键（Global key）和非局部树突变（non-local tree mutation）被开发人员广泛使用，以实现 hero 转换和导航等效果
+
++ Constant-factor optimizations（常数因子优化）
+
+> 除了这些算法优化之外，实现积极的可组合性(aggressive composability)还依赖于几个重要的常量因子优化。这些优化对上面讨论的主要算法很重要
+> 
+> *Child-model agnostic(子模型不可知论)*
+> 
+> 与大多数使用子列表的工具箱不同，Flutte r的渲染树并不提交给特定的子模型。例如，RenderBox 类有一个抽象的 visitChildren（）方法，而不是一个具体的 firstChild 和 nextSibling 接口。许多子类只支持一个子类，直接作为成员变量持有，而不是子类列表。例如，RenderPadding 只支持一个子级，因此，它有一个更简单的布局方法，执行时间更短
+> 
+> *Visual render tree, logical widget tree（）*
+> 
+> 在 Flutter 中，渲染树在一个独立于设备的视觉坐标系中运行，这意味着x坐标中的较小值总是向左，即使当前的读取方向是从右向左的。窗口小部件树通常在逻辑坐标系中运行，也就是说，它的开始值和结束值的视觉解释取决于读取方向。从逻辑坐标到视觉坐标的转换是在小部件树和呈现树之间的切换中完成的。这种方法更有效，因为渲染树中的布局和绘制计算比用于渲染树切换的小部件更频繁，并且可以避免重复的坐标转换。
+> 
+> *Text handled by a specialized render object（由专用呈现对象处理的文本）*
+> 
+> 绝大多数渲染对象对文本的复杂性一无所知。相反，文本由特定的呈现对象 RenderParagraph 处理，RenderParagraph 是呈现树中的一个叶子。开发人员使用组合将文本合并到用户界面中，而不是子类化文本感知呈现对象。这种模式意味着RenderParagraph可以避免重新计算它的文本布局，只要它的父级提供相同的布局约束，这是常见的，即使在树操作期间也是如此
+> 
+> *Observable objects*
+> 
+> Flutter 同时使用模型观测（ model-observation ）和反应（reactive）范式。显然，反应范式占主导地位，但 Flutter 对某些叶数据结构使用可观察的模型对象。例如，动画在其值更改时通知观察者列表。Flutter 将这些可观察的对象从 widget 树转移到 render 树，render 树直接观察它们，并在它们发生变化时仅使管道的适当阶段失效。例如，对动画的更改可能只触发绘制阶段，而不是生成和绘制阶段
+> 
+> 将这些优化加在一起，并对侵略性组合创建的大型树进行总结，这些优化对性能有着实质性的影响
+
++ Separation of the Element and RenderObject trees（元素树与 RenderObject 树的分离）
+
+> Flutter 中的 RenderObject 和 Element（Widget）树是同构的（严格地说， RenderObject 树是 Element 树的一个子集）。一个明显的简化是将这些树合并成一棵树。但是，在实践中，将这些树分开有许多好处：
+> 
+> *Performance*
+> 
+> 当布局更改时，只需遍历布局树的相关部分。由于组合的原因，元素树经常有许多额外的节点需要跳过
+> 
+> *Clarity*
+> 
+> 在这方面更清晰的分离允许 widget 协议和 render object 协议针对各自的特定需求进行专门化，简化了 API 界面，从而降低了错误风险和测试负担
+> 
+> *Type safety*
+> 
+> render object 树可以更安全地进行类型设置，因为它可以在运行时保证子对象属于适当的类型（每个坐标系，例如，都有自己的渲染对象类型）。组合小部件可以不关心布局期间使用的坐标系（例如，在 box 布局和小片段（sliver）布局中都可以使用相同的小部件来显示应用程序模型的一部分），因此在元素树中，验证呈现对象的类型将需要树遍历
+
++ Infinite scrolling（无限滚动）
+
+> 众所周知，对于工具箱来说，无限滚动列表非常困难。Flutter 支持无限滚动列表，它有一个基于 builder 模式的简单接口，在这个接口中，当它们在滚动过程中对用户可见时，ListView 使用一个回调函数来根据需要构建小部件。支持此功能需要具有视区感知的布局（ viewport-aware layout）和按需构建小部件
+> 
+> *Viewport-aware layout*
+> 
+> 像 Flutter 中的大多数东西一样，可滚动的小部件是使用组合构建的。可滚动小部件的外部是一个 Viewport，它是一个“内部更大”的框，这意味着它的子对象可以超出 Viewport 的边界，并可以滚动到视图中。但是，与 RenderBox 子对象不同，一个 viewport 有 RenderSliver 子对象，称为 slivers，它有一个 viewport-aware 的布局协议
+> 
+> sliver 布局协议与 box 布局协议的结构相匹配，因为父对象向下传递约束给子对象，并接收几何体作为返回值。但是，约束和几何数据在两个协议之间有所不同。在 sliver 协议中，为子对象提供了有关 viewport 的信息，包括剩余的可见空间量。它们返回的几何数据支持多种滚动链接效果，包括可折叠的标题和视差
+> 
+> 不同的 sliver 以不同的方式填充视口（viewport）中可用的空间。例如，生成包含子对象的线性列表的 sliver 按顺序排列每个子对象，直到 sliver 用完子对象或用完空间为止。类似地，生成二维子网格的 sliver 只填充其可见网格部分。因为它们知道有多少空间是可见的，所以即使它们有可能产生无限数量的子对象，sliver 也可以产生有限数量的子对象
+> 
+> 可以组合 sliver 以创建定制的可滚动布局和效果。例如，单个 viewport 可以有一个可折叠的标题，后跟一个线性列表，然后是一个网格。所有三个 sliver 都将通过 sliver 布局协议进行协作，以仅生成那些通过 viewport 实际可见的子对象，而不管这些子对象是属于标题、列表还是网格
+> 
+> *Building widgets on demand*
+> 
+> 如果 Flutter 有一个严格的 build-then-layout-then-paint 处理流程，那么前面的内容将不足以实现一个无限滚动列表，因为只有在布局阶段才可以获得关于通过 viewport 可见的空间大小的信息。如果没有额外的机制，布局阶段就来不及构建填充空间所需的小部件。Flutter 通过交错构建和布局阶段来解决这个问题。在布局阶段的任何时候，只要这些小部件是当前执行布局的 render object 的后代，框架就可以根据需要开始构建新的小部件
+> 
+> 只有在构建和布局算法中严格控制信息传播，才能实现构建和布局的交错。具体来说，在构建阶段，信息只能沿着树传播。当呈现对象正在执行布局时，布局漫游尚未访问该呈现对象下面的子树，这意味着通过在该子树中构建生成的写入不会使迄今为止已输入布局计算的任何信息无效。类似地，一旦布局从呈现对象返回，则在此布局期间将不再访问该呈现对象，这意味着由后续布局计算生成的任何写入都不能使用于构建呈现对象子树的信息无效
+> 
+> 此外，线性协调和树操作对于在滚动期间有效地更新元素以及在元素滚动到 viewport 边缘时修改渲染树是非常重要的
+
++ API Ergonomics（API 人体工程学）
+
+> 只有框架能够有效地使用时，快速才有意义。为了指导 Flutter 的 API 设计走向更高的可用性，Flutter 已经在开发人员的大量用户体验( UX )研究中反复测试。这些研究有时证实预先存在的设计决策，有时有助于指导特征的优先化，有时改变API设计的方向。例如，Flutter 的 api 有大量的文档；UX 研究证实了这种文档的价值，但也特别强调了对示例代码和示例图的需求
+> 
+> 本节讨论了在Flutter的API设计中所做的一些辅助可用性的决策
+> 
+> *专门化 API 以符合开发人员的想法*
+> 
+> Flutter 的 Widget、Element 和 RenderObject 树中节点的基类没有定义子模型。这允许为适用于该节点的子模型专门化每个节点
+> 
+> 大多数 Widget 对象都有一个子Widget，因此只公开一个 child 参数。一些小部件支持任意数量的子部件，并公开一个接受列表的 children 参数。有些小部件根本没有任何子部件，也没有为此预留内存和参数。相似的，RenderObjects 暴露的 APIS 有着各异的子模型。RenderImage 是一个叶节点，没有 children 节点的概念。RenderPadding 接受一个 child 对象，因此它具有指向单个 child 对象的单个指针的存储空间，RenderFlex 接受任意数量的 children 并将其作为链接列表进行管理
+> 
+> 在一些罕见的情况下，使用更复杂的子（child）模型。RenderTable render object 的构造函数接受子数组数组，类公开控制行和列数的 getter 和 setter，并且有特定的方法用x，y坐标替换单个子数组，添加行，提供新的子数组，并用一个数组和一个列计数。在实现中，对象不像大多数渲染对象那样使用链接列表，而是使用可索引数组
 
 ## [Platform specific behaviors and adaptations](https://flutter.dev/docs/resources/platform-adaptations)
 
@@ -7791,23 +7971,1361 @@ class MyApp extends StatelessWidget {
 
 ### [Report errors to a service](https://flutter.dev/docs/cookbook/maintenance/error-reporting)
 
++ 尽管人们总是试图创建没有 bug 的应用程序，但它们肯定会时不时地出现。由于有缺陷的应用程序会导致用户和客户不满意，因此了解用户遇到缺陷的频率以及这些缺陷发生的位置非常重要。这样，您就可以对影响最大的 bug 进行优先级排序并修复它们
+
++ 你如何确定你的用户经历错误的频率？每当发生错误时，创建一个报告，其中包含发生的错误和关联的stacktrace。然后，您可以将报告发送到错误跟踪服务，如Sentry、Fabric或Rollbar
+
++ 错误跟踪服务聚合用户体验的所有崩溃，并将它们组合在一起。这样你就可以知道你的应用程序失败的频率以及用户在哪里遇到麻烦
+
++ 在本节中，学习如何向 Sentry 崩溃报告服务报告错误
+
++ 1. Get a DSN from Sentry
+
+> 在向 Sentry 报告错误之前，您需要一个“DSN”来使用 Sentry.io 服务唯一标识您的应用程序
+> 
+> 要获取DSN，请使用以下步骤：
+> 
+> 1.在 Sentry 上建立帐户
+> 
+> 2.登录到帐户
+> 
+> 3.创建新应用
+> 
+> 4.复制 DSN
+
++ 2. Import the Sentry package
+
+> 将 sentry 包导入应用程序。sentry 包使向 Sentry 错误跟踪服务发送错误报告变得更容易
+
+```
+dependencies:
+  sentry: <latest_version>
+```
+
++ 3.Create a SentryClient
+
+> 创建 SentryClient。使用 SentryClient 向 Sentry 服务发送错误报告
+
+```
+final SentryClient _sentry = SentryClient(dsn: "App DSN goes Here");
+```
+
++ 4. Create a function to report errors
+
+> 设置了 Sentry 后，可以开始报告错误。因为不想在开发期间向 Sentry 报告错误，所以首先创建一个函数，可以知道处于调试模式还是生产模式
+
+```
+bool get isInDebugMode {
+  // Assume you're in production mode.
+  bool inDebugMode = false;
+
+  // Assert expressions are only evaluated during development. They are ignored
+  // in production. Therefore, this code only sets `inDebugMode` to true
+  // in a development environment.
+  assert(inDebugMode = true);
+
+  return inDebugMode;
+}
+```
+
+> 接下来，在应用程序处于生产模式时，将此功能与 SentryClient 结合使用来报告错误
+
+```
+Future<void> _reportError(dynamic error, dynamic stackTrace) async {
+  // Print the exception to the console.
+  print('Caught error: $error');
+  if (isInDebugMode) {
+    // Print the full stacktrace in debug mode.
+    print(stackTrace);
+    return;
+  } else {
+    // Send the Exception and Stacktrace to Sentry in Production mode.
+    _sentry.captureException(
+      exception: error,
+      stackTrace: stackTrace,
+    );
+  }
+}
+```
+
++ 5. Catch and report Dart errors
+
+> 现在您有了一个根据环境报告错误的函数，您需要一种捕获 Dart 错误的方法
+> 
+> 对于此任务，请在自定义 Zone 内运行应用程序。Zone 为代码建立执行上下文。这提供了一种方便的方法，通过提供 onError（）函数来捕获该上下文中发生的所有错误
+> 
+> 在本例中，在新 Zone 中运行应用程序，并通过提供 onError（）回调来捕获所有错误
+
+```
+runZoned<Future<void>>(() async {
+  runApp(CrashyApp());
+}, onError: (error, stackTrace) {
+  // Whenever an error occurs, call the `_reportError` function. This sends
+  // Dart errors to the dev console or Sentry depending on the environment.
+  _reportError(error, stackTrace);
+});
+```
+
++ 6. Catch and report Flutter errors
+
+> 除了 Dart 错误之外，Flutter 还可以抛出诸如调用本机代码时发生的平台异常之类的错误。一定要捕获并报告这些类型的错误
+> 
+> 要捕获 Flutter 错误，请重写 FlutterError.onError 属性。如果您处于调试模式，请使用 Flutter 中的便利函数正确格式化错误。如果您处于生产模式，请将错误发送到上一步中定义的 onError 回调
+
+```
+// This captures errors reported by the Flutter framework.
+FlutterError.onError = (FlutterErrorDetails details) {
+  if (isInDebugMode) {
+    // In development mode, simply print to console.
+    FlutterError.dumpErrorToConsole(details);
+  } else {
+    // In production mode, report to the application zone to report to
+    // Sentry.
+    Zone.current.handleUncaughtError(details.exception, details.stack);
+  }
+};
+```
+
++ 完整例子参见 [Crashy](https://github.com/flutter/crashy)
+
 ## Navigation
 
 ### [Animate a widget across screens](https://flutter.dev/docs/cookbook/navigation/hero-animations)
 
++ 在用户从一个屏幕导航到另一个屏幕时，引导他们浏览应用程序通常是很有帮助的。引导用户通过应用程序的一种常见技术是将小部件从一个屏幕动画到下一个屏幕。这将创建连接两个屏幕的可视锚定。使用Hero小部件将小部件从一个屏幕动画到下一个屏幕
+
++ 1. Create two screens showing the same image
+
+> 在本例中，在两个屏幕上显示相同的图像。当用户点击图像时，设置图像从第一个屏幕到第二个屏幕的动画。现在，创建可视化结构；在接下来的步骤中处理动画
+
+```
+class MainScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Main Screen'),
+      ),
+      body: GestureDetector(
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) {
+            return DetailScreen();
+          }));
+        },
+        child: Image.network(
+          'https://picsum.photos/250?image=9',
+        ),
+      ),
+    );
+  }
+}
+
+class DetailScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: GestureDetector(
+        onTap: () {
+          Navigator.pop(context);
+        },
+        child: Center(
+          child: Image.network(
+            'https://picsum.photos/250?image=9',
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
++ 2. Add a Hero widget to the first screen
+
+> 要将两个屏幕与动画连接在一起，请将两个屏幕上的图像小部件包装在一个 Hero 小部件中。Hero 小部件需要两个参数：
+> 
+> *`tag`*
+> 
+> 标识“Hero”的对象。两个屏幕上必须相同
+> 
+> *`child`*
+> 
+> 在屏幕上设置动画的小部件
+
+```
+Hero(
+  tag: 'imageHero',
+  child: Image.network(
+    'https://picsum.photos/250?image=9',
+  ),
+);
+```
+
++ 3. Add a Hero widget to the second screen
+
+> 若要完成与第一个屏幕的连接，请使用与第一个屏幕中的 Hero 具有相同标记的 Hero 小部件将图像包装在第二个屏幕上
+> 
+> 将 Hero 小部件应用到第二个屏幕后，屏幕之间的动画就可以工作了
+
+```
+Hero(
+  tag: 'imageHero',
+  child: Image.network(
+    'https://picsum.photos/250?image=9',
+  ),
+);
+```
+
+> 注意：此代码与第一个屏幕上的代码相同。作为最佳实践，创建可重用的小部件而不是重复代码。为了简单起见，此示例对两个小部件使用相同的代码
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(HeroApp());
+
+class HeroApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Transition Demo',
+      home: MainScreen(),
+    );
+  }
+}
+
+class MainScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Main Screen'),
+      ),
+      body: GestureDetector(
+        child: Hero(
+          tag: 'imageHero',
+          child: Image.network(
+            'https://picsum.photos/250?image=9',
+          ),
+        ),
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) {
+            return DetailScreen();
+          }));
+        },
+      ),
+    );
+  }
+}
+
+class DetailScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: GestureDetector(
+        child: Center(
+          child: Hero(
+            tag: 'imageHero',
+            child: Image.network(
+              'https://picsum.photos/250?image=9',
+            ),
+          ),
+        ),
+        onTap: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+}
+```
+
 ### [Navigate to a new screen and back](https://flutter.dev/docs/cookbook/navigation/navigation-basics)
+
++ 大多数应用程序都包含几个屏幕，用于显示不同类型的信息。例如，应用程序可能有一个显示产品的屏幕。当用户点击一个产品的图片时，一个新的屏幕显示关于该产品的详细信息
+
+> 术语：在 Flutter 中，screen 和 page 称为路由(route)
+> 
+> 在 Android 中，路由等同于 Activity。在 iOS 中，路由相当于 ViewController。在 Flutter 中，路由只是一个小部件
+> 
+> 使用 Navigator 导航到新路由
+
++ 1. Create two routes
+
+> 首先，创建两个要使用的路由。因为这是一个基本的例子，每个路由只包含一个按钮。点击第一个路由上的按钮导航到第二个路由。点击第二个路由上的按钮返回第一个路由
+> 
+> 首先，设置视觉结构：
+
+```
+class FirstRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('First Route'),
+      ),
+      body: Center(
+        child: RaisedButton(
+          child: Text('Open route'),
+          onPressed: () {
+            // Navigate to second route when tapped.
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class SecondRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Second Route"),
+      ),
+      body: Center(
+        child: RaisedButton(
+          onPressed: () {
+            // Navigate back to first route when tapped.
+          },
+          child: Text('Go back!'),
+        ),
+      ),
+    );
+  }
+}
+```
+
++ 2. Navigate to the second route using Navigator.push()
+
+> 要切换到新路由，请使用 Navigator.push（）方法。push（）方法将路由添加到 Navigator 管理的路由堆栈中。这条路由从哪里来？您可以创建自己的或使用 MaterialPageRoute，这很有用，因为它使用特定于平台的动画过渡到新的路由
+> 
+> 在 FirstRoute 小部件的 build（）方法中，更新 onPressed（）回调：
+
+```
+// Within the `FirstRoute` widget
+onPressed: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => SecondRoute()),
+  );
+}
+```
+
++ 3. Return to the first route using Navigator.pop()
+
+> 如何关闭第二个路由并返回第一个路由？使用 Navigator.pop（）方法。pop（）方法从 Navigator 管理的路由堆栈中删除当前路由
+> 
+> 要实现对原始路由的返回，请更新 SecondRoute 小部件中的 onPressed（）回调：
+
+```
+// Within the SecondRoute widget
+onPressed: () {
+  Navigator.pop(context);
+}
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MaterialApp(
+    title: 'Navigation Basics',
+    home: FirstRoute(),
+  ));
+}
+
+class FirstRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('First Route'),
+      ),
+      body: Center(
+        child: RaisedButton(
+          child: Text('Open route'),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => SecondRoute()),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class SecondRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Second Route"),
+      ),
+      body: Center(
+        child: RaisedButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Go back!'),
+        ),
+      ),
+    );
+  }
+}
+```
 
 ### [Navigate with named routes](https://flutter.dev/docs/cookbook/navigation/named-routes)
 
++ 在导航到新屏幕和返回一节中，您学习了如何通过创建新路由并将其推送到 Navigator 来导航到新屏幕
+
++ 但是，如果您需要在应用程序的许多部分导航到同一屏幕，这种方法可能会导致代码重复。解决方案是定义命名路由，并使用命名路由进行导航。要使用命名路由，请使用 Navigator.pushNamed（）函数
+
++ 1. Create two screens
+
+> 首先，创建两个屏幕。第一个屏幕包含导航到第二个屏幕的按钮。第二个屏幕包含导航回第一个屏幕的按钮
+
+```
+class FirstScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('First Screen'),
+      ),
+      body: Center(
+        child: RaisedButton(
+          child: Text('Launch screen'),
+          onPressed: () {
+            // Navigate to the second screen when tapped.
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class SecondScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Second Screen"),
+      ),
+      body: Center(
+        child: RaisedButton(
+          onPressed: () {
+            // Navigate back to first screen when tapped.
+          },
+          child: Text('Go back!'),
+        ),
+      ),
+    );
+  }
+}
+```
+
++ 2. Define the routes
+
+> 接下来，通过向 MaterialApp 构造函数提供下述属性来定义路由：initialRoute和路由本身
+> 
+> initialRoute 属性定义应用程序应以哪个路由开始。routes 属性定义了可用的命名路由和导航到这些路由时要生成的小部件
+
+```
+MaterialApp(
+  // Start the app with the "/" named route. In this case, the app starts
+  // on the FirstScreen widget.
+  initialRoute: '/',
+  routes: {
+    // When navigating to the "/" route, build the FirstScreen widget.
+    '/': (context) => FirstScreen(),
+    // When navigating to the "/second" route, build the SecondScreen widget.
+    '/second': (context) => SecondScreen(),
+  },
+);
+```
+
+> **警告：使用initialRoute时，不要定义home属性**
+
++ 3. Navigate to the second screen
+
+> 小部件和路由就位后，使用 Navigator.pushNamed（）方法触发导航。这告诉 Flutter 构建 routes 表中定义的小部件并启动屏幕
+> 
+> 在 FirstScreen 小部件的 build（）方法中，更新 onPressed（）回调：
+
+```
+// Within the `FirstScreen` widget
+onPressed: () {
+  // Navigate to the second screen using a named route.
+  Navigator.pushNamed(context, '/second');
+}
+```
+
++ 4. Return to the first screen
+
+> 要导航回第一个屏幕，请使用 Navigator.pop（）函数
+
+```
+// Within the SecondScreen widget
+onPressed: () {
+  // Navigate back to the first screen by popping the current route
+  // off the stack.
+  Navigator.pop(context);
+}
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MaterialApp(
+    title: 'Named Routes Demo',
+    // Start the app with the "/" named route. In this case, the app starts
+    // on the FirstScreen widget.
+    initialRoute: '/',
+    routes: {
+      // When navigating to the "/" route, build the FirstScreen widget.
+      '/': (context) => FirstScreen(),
+      // When navigating to the "/second" route, build the SecondScreen widget.
+      '/second': (context) => SecondScreen(),
+    },
+  ));
+}
+
+class FirstScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('First Screen'),
+      ),
+      body: Center(
+        child: RaisedButton(
+          child: Text('Launch screen'),
+          onPressed: () {
+            // Navigate to the second screen using a named route.
+            Navigator.pushNamed(context, '/second');
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class SecondScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Second Screen"),
+      ),
+      body: Center(
+        child: RaisedButton(
+          onPressed: () {
+            // Navigate back to the first screen by popping the current route
+            // off the stack.
+            Navigator.pop(context);
+          },
+          child: Text('Go back!'),
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Pass arguments to a named route](https://flutter.dev/docs/cookbook/navigation/navigate-with-arguments)
+
++ Navigator 提供使用公共标识符从应用程序的任何部分导航到命名路由的能力。在某些情况下，您可能还需要将参数传递给命名路由。例如，您可能希望导航到 /user 路由并将有关用户的信息传递到该路由
+
++ 可以使用 Navigator.pushNamed（）方法的 arguments 参数来完成此任务。使用 ModalRoute.of（）方法或在提供给 MaterialApp或CupertinoApp构造函数的 onGenerateRoute（）函数中提取参数
+
++ 本节演示如何将参数传递到命名路由，并使用 ModalRoute.of（）和onGenerateRoute（）读取参数
+
++ 1. Define the arguments you need to pass
+
+> 首先，定义需要传递到新路由的参数。在本例中，传递两条数据：屏幕标题和消息
+> 
+> 要传递这两部分数据，创建一个存储此信息的类
+
+```
+// You can pass any object to the arguments parameter.
+// In this example, create a class that contains a customizable
+// title and message.
+class ScreenArguments {
+  final String title;
+  final String message;
+
+  ScreenArguments(this.title, this.message);
+}
+```
+
++ 2. Create a widget that extracts the arguments
+
+> 接下来，创建一个小部件，从 ScreenArguments 中提取并显示标题和消息。要访问 ScreenArguments，使用 ModalRoute.of（）方法。此方法返回带有参数的当前路由
+
+```
+// A widget that extracts the necessary arguments from the ModalRoute.
+class ExtractArgumentsScreen extends StatelessWidget {
+  static const routeName = '/extractArguments';
+
+  @override
+  Widget build(BuildContext context) {
+    // Extract the arguments from the current ModalRoute settings and cast
+    // them as ScreenArguments.
+    final ScreenArguments args = ModalRoute.of(context).settings.arguments;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(args.title),
+      ),
+      body: Center(
+        child: Text(args.message),
+      ),
+    );
+  }
+}
+```
+
++ 3. Register the widget in the routes table
+
+> 接下来，向 MaterialApp 小部件提供的路由添加一个条目。路由根据路由的名称定义应该创建哪个小部件
+
+```
+MaterialApp(
+  routes: {
+    ExtractArgumentsScreen.routeName: (context) => ExtractArgumentsScreen(),
+  },
+);
+```
+
++ 4. Navigate to the widget
+
+> 最后，当用户使用 Navigator.pushNamed（）点击按钮时，导航到 ExtractArgumentScreen。通过 arguments 属性提供路由的参数。 ExtractArgumentScreen从这些参数中提取标题和消息
+
+```
+// A button that navigates to a named route. The named route
+// extracts the arguments by itself.
+RaisedButton(                                                   
+  child: Text("Navigate to screen that extracts arguments"),    
+  onPressed: () {                                               
+    // When the user taps the button, navigate to a named route 
+    // and provide the arguments as an optional parameter.      
+    Navigator.pushNamed(                                        
+      context,                                                  
+      ExtractArgumentsScreen.routeName,                         
+      arguments: ScreenArguments(                               
+        'Extract Arguments Screen',                              
+        'This message is extracted in the build method.',       
+      ),                                                                                                                 
+    );                                                          
+  },                                                            
+),                                                                                                                           
+```
+
++ Alternatively, extract the arguments using onGenerateRoute
+
+> 还可以在 onGenerateRoute（）函数中提取参数并将其传递给小部件，而不是直接在小部件中提取参数
+> 
+> onGenerateRoute（）函数的作用是：根据给定的路由设置创建正确的路由
+
+```
+MaterialApp(
+  // Provide a function to handle named routes. Use this function to
+  // identify the named route being pushed, and create the correct
+  // screen.
+  onGenerateRoute: (settings) {
+    // If you push the PassArguments route
+    if (settings.name == PassArgumentsScreen.routeName) {
+      // Cast the arguments to the correct type: ScreenArguments.
+      final ScreenArguments args = settings.arguments;
+
+      // Then, extract the required data from the arguments and
+      // pass the data to the correct screen.
+      return MaterialPageRoute(
+        builder: (context) {
+          return PassArgumentsScreen(
+            title: args.title,
+            message: args.message,
+          );
+        },
+      );
+    }
+  },
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+        // Provide a function to handle named routes. Use this function to
+        // identify the named route being pushed, and create the correct
+        // Screen.
+        onGenerateRoute: (settings) {
+          // If you push the PassArguments route
+          if (settings.name == PassArgumentsScreen.routeName) {
+            // Cast the arguments to the correct type: ScreenArguments.
+            final ScreenArguments args = settings.arguments;
+
+            // Then, extract the required data from the arguments and
+            // pass the data to the correct screen.
+            return MaterialPageRoute(
+              builder: (context) {
+                return PassArgumentsScreen(
+                  title: args.title,
+                  message: args.message,
+                );
+              },
+            );
+          }
+        },
+        title: 'Navigation with Arguments',
+        home: HomeScreen(),
+        routes: {
+          ExtractArgumentsScreen.routeName: (context) =>
+              ExtractArgumentsScreen(),
+        });
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Home Screen'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            // A button that navigates to a named route that. The named route
+            // extracts the arguments by itself.
+            RaisedButton(
+              child: Text("Navigate to screen that extracts arguments"),
+              onPressed: () {
+                // When the user taps the button, navigate to a named route
+                // and provide the arguments as an optional parameter.
+                Navigator.pushNamed(
+                  context,
+                  ExtractArgumentsScreen.routeName,
+                  arguments: ScreenArguments(
+                    'Extract Arguments Screen',
+                    'This message is extracted in the build method.',
+                  ),
+                );
+              },
+            ),
+            // A button that navigates to a named route. For this route, extract
+            // the arguments in the onGenerateRoute function and pass them
+            // to the screen.
+            RaisedButton(
+              child: Text("Navigate to a named that accepts arguments"),
+              onPressed: () {
+                // When the user taps the button, navigate to a named route
+                // and provide the arguments as an optional parameter.
+                Navigator.pushNamed(
+                  context,
+                  PassArgumentsScreen.routeName,
+                  arguments: ScreenArguments(
+                    'Accept Arguments Screen',
+                    'This message is extracted in the onGenerateRoute function.',
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// A Widget that extracts the necessary arguments from the ModalRoute.
+class ExtractArgumentsScreen extends StatelessWidget {
+  static const routeName = '/extractArguments';
+
+  @override
+  Widget build(BuildContext context) {
+    // Extract the arguments from the current ModalRoute settings and cast
+    // them as ScreenArguments.
+    final ScreenArguments args = ModalRoute.of(context).settings.arguments;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(args.title),
+      ),
+      body: Center(
+        child: Text(args.message),
+      ),
+    );
+  }
+}
+
+// A Widget that accepts the necessary arguments via the constructor.
+class PassArgumentsScreen extends StatelessWidget {
+  static const routeName = '/passArguments';
+
+  final String title;
+  final String message;
+
+  // This Widget accepts the arguments as constructor parameters. It does not
+  // extract the arguments from the ModalRoute.
+  //
+  // The arguments are extracted by the onGenerateRoute function provided to the
+  // MaterialApp widget.
+  const PassArgumentsScreen({
+    Key key,
+    @required this.title,
+    @required this.message,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Center(
+        child: Text(message),
+      ),
+    );
+  }
+}
+
+// You can pass any object to the arguments parameter. In this example,
+// create a class that contains both a customizable title and message.
+class ScreenArguments {
+  final String title;
+  final String message;
+
+  ScreenArguments(this.title, this.message);
+}
+```
 
 ### [Return data from a screen](https://flutter.dev/docs/cookbook/navigation/returning-data)
 
++ 在某些情况下，可能希望从新页面返回数据。例如，假设弹出一个新页面，向用户显示两个选项。当用户点击一个选项时，希望通知前一个页面用户的选择，以便它可以对该信息进行操作
+
++ 1. Define the home screen
+
+> 主屏幕显示一个按钮。点击后，将启动选择屏幕
+
+```
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Returning Data Demo'),
+      ),
+      // Create the SelectionButton widget in the next step.
+      body: Center(child: SelectionButton()),
+    );
+  }
+}
+```
+
++ 2. Add a button that launches the selection screen
+
+> 现在，创建 SelectionButton，它执行以下操作：
+> 
+> 点击后启动 SelectionScreen
+> 
+> 等待 SelectionScreen 返回结果
+
+```
+class SelectionButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return RaisedButton(
+      onPressed: () {
+        _navigateAndDisplaySelection(context);
+      },
+      child: Text('Pick an option, any option!'),
+    );
+  }
+
+  // A method that launches the SelectionScreen and awaits the
+  // result from Navigator.pop.
+  _navigateAndDisplaySelection(BuildContext context) async {
+    // Navigator.push returns a Future that completes after calling
+    // Navigator.pop on the Selection Screen.
+    final result = await Navigator.push(
+      context,
+      // Create the SelectionScreen in the next step.
+      MaterialPageRoute(builder: (context) => SelectionScreen()),
+    );
+  }
+}
+```
+
++ 3. Show the selection screen with two buttons
+
+> 现在，构建一个包含两个按钮的选择屏幕。当用户点击某个按钮时，该应用程序会关闭选择屏幕，并让主屏幕知道点击了哪个按钮
+> 
+> 此步骤定义 UI。下一步将添加返回数据的代码
+
+```
+class SelectionScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pick an option'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: RaisedButton(
+                onPressed: () {
+                  // Pop here with "Yep"...
+                },
+                child: Text('Yep!'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: RaisedButton(
+                onPressed: () {
+                  // Pop here with "Nope"
+                },
+                child: Text('Nope.'),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
++ 4. When a button is tapped, close the selection screen
+
+> 现在，更新两个按钮的 onPressed（）回调。要将数据返回到第一个屏幕，请使用 Navigator.pop（）方法，该方法接受名为 result 的可选第二个参数。任何结果都将在 SelectionButton 中返回给 Future
+> 
+> *Yep button*
+
+```
+RaisedButton(
+  onPressed: () {
+    // The Yep button returns "Yep!" as the result.
+    Navigator.pop(context, 'Yep!');
+  },
+  child: Text('Yep!'),
+);
+```
+
+> *Nope button*
+
+```
+RaisedButton(
+  onPressed: () {
+    // The Nope button returns "Nope!" as the result.
+    Navigator.pop(context, 'Nope!');
+  },
+  child: Text('Nope!'),
+);
+```
+
++ 5. Show a snackbar on the home screen with the selection
+
+> 现在您正在启动一个选择屏幕并等待结果，您将需要对返回的信息执行一些操作
+> 
+> 在这种情况下，显示一个 snackbar，通过在 SelectionButton 中使用 _navigateAndDisplaySelection（）方法显示结果：
+
+```
+_navigateAndDisplaySelection(BuildContext context) async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => SelectionScreen()),
+  );
+
+  // After the Selection Screen returns a result, hide any previous snackbars
+  // and show the new result.
+  Scaffold.of(context)
+    ..removeCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text("$result")));
+}
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MaterialApp(
+    title: 'Returning Data',
+    home: HomeScreen(),
+  ));
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Returning Data Demo'),
+      ),
+      body: Center(child: SelectionButton()),
+    );
+  }
+}
+
+class SelectionButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return RaisedButton(
+      onPressed: () {
+        _navigateAndDisplaySelection(context);
+      },
+      child: Text('Pick an option, any option!'),
+    );
+  }
+
+  // A method that launches the SelectionScreen and awaits the result from
+  // Navigator.pop.
+  _navigateAndDisplaySelection(BuildContext context) async {
+    // Navigator.push returns a Future that completes after calling
+    // Navigator.pop on the Selection Screen.
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => SelectionScreen()),
+    );
+
+    // After the Selection Screen returns a result, hide any previous snackbars
+    // and show the new result.
+    Scaffold.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text("$result")));
+  }
+}
+
+class SelectionScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pick an option'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: RaisedButton(
+                onPressed: () {
+                  // Close the screen and return "Yep!" as the result.
+                  Navigator.pop(context, 'Yep!');
+                },
+                child: Text('Yep!'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: RaisedButton(
+                onPressed: () {
+                  // Close the screen and return "Nope!" as the result.
+                  Navigator.pop(context, 'Nope.');
+                },
+                child: Text('Nope.'),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Send data to a new screen](https://flutter.dev/docs/cookbook/navigation/passing-data)
+
++ 通常，您不仅希望导航到新屏幕，还希望将数据传递到屏幕。例如，您可能希望传递有关已被点击的项的信息
+
++ 记住：屏幕只是小部件。在本例中，创建一个 todo 列表。当点击一个 todo 时，导航到一个显示 todo 信息的新屏幕（小部件）
+
++ 1. Define a todo class
+
+> 首先，需要一种简单的方法来表示 todo。对于本例，创建一个包含两部分数据的类： title 和 description
+
+```
+class Todo {
+  final String title;
+  final String description;
+
+  Todo(this.title, this.description);
+}
+```
+
++ 2. Create a list of todos
+
+> 其次，显示 todo 列表。在本例中，生成20个 todo 并使用ListView显示它们
+> 
+> *Generate the list of todos*
+
+```
+final todos = List<Todo>.generate(
+  20,
+  (i) => Todo(
+        'Todo $i',
+        'A description of what needs to be done for Todo $i',
+      ),
+);
+```
+
+> *Display the list of todos using a ListView*
+
+```
+ListView.builder(
+  itemCount: todos.length,
+  itemBuilder: (context, index) {
+    return ListTile(
+      title: Text(todos[index].title),
+    );
+  },
+);
+```
+
++ 3. Create a detail screen to display information about a todo
+
+> 现在，创建第二个屏幕。屏幕标题包含 todo 的标题，屏幕主体显示描述
+> 
+> 由于 detail 屏幕是一个普通的无状态小部件，因此需要用户在 UI 中输入 Todo。然后，使用给定的 todo 构建 UI
+
+```
+class DetailScreen extends StatelessWidget {
+  // Declare a field that holds the Todo.
+  final Todo todo;
+
+  // In the constructor, require a Todo.
+  DetailScreen({Key key, @required this.todo}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Use the Todo to create the UI.
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(todo.title),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text(todo.description),
+      ),
+    );
+  }
+}
+```
+
++ 4. Navigate and pass data to the detail screen
+
+> 有了 DetailScreen，就可以执行导航了。在本例中，当用户点击列表中的 todo 时，导航到 DetailScreen。将 todo 传递到 DetailScreen
+> 
+> 要捕获用户的点击，请为 ListTile 小部件编写 onTap（）回调。在 onTap（）回调函数中，使用 Navigator.push（）方法
+
+```
+ListView.builder(
+  itemCount: todos.length,
+  itemBuilder: (context, index) {
+    return ListTile(
+      title: Text(todos[index].title),
+      // When a user taps the ListTile, navigate to the DetailScreen.
+      // Notice that you're not only creating a DetailScreen, you're
+      // also passing the current todo to it.
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailScreen(todo: todos[index]),
+          ),
+        );
+      },
+    );
+  },
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+class Todo {
+  final String title;
+  final String description;
+
+  Todo(this.title, this.description);
+}
+
+void main() {
+  runApp(MaterialApp(
+    title: 'Passing Data',
+    home: TodosScreen(
+      todos: List.generate(
+        20,
+        (i) => Todo(
+              'Todo $i',
+              'A description of what needs to be done for Todo $i',
+            ),
+      ),
+    ),
+  ));
+}
+
+class TodosScreen extends StatelessWidget {
+  final List<Todo> todos;
+
+  TodosScreen({Key key, @required this.todos}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Todos'),
+      ),
+      body: ListView.builder(
+        itemCount: todos.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text(todos[index].title),
+            // When a user taps the ListTile, navigate to the DetailScreen.
+            // Notice that you're not only creating a DetailScreen, you're
+            // also passing the current todo through to it.
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailScreen(todo: todos[index]),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class DetailScreen extends StatelessWidget {
+  // Declare a field that holds the Todo.
+  final Todo todo;
+
+  // In the constructor, require a Todo.
+  DetailScreen({Key key, @required this.todo}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Use the Todo to create the UI.
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(todo.title),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text(todo.description),
+      ),
+    );
+  }
+}
+```
 
 ## Networking
 
 ### [Fetch data from the internet](https://flutter.dev/docs/cookbook/networking/fetch-data)
+
++ 大多数应用程序都需要从 internet 获取数据。幸运的是，Dart 和 Flutter 为这类工作提供了工具，比如 http 包
+
++ 1. Add the http package
+
+> http 包提供了从 internet 获取数据的最简单方法
+> 
+> 要安装 http 包，请将其添加到 pubspec.yaml 的 dependencies 部分。可以在 pub.dev 上找到 http 包的最新版本
+
+```
+dependencies:
+  http: <latest_version>
+```
+
+> 导入 http 包
+
+```
+import 'package:http/http.dart' as http;
+```
+
++ 2. Make a network request
+
+> 在本例中，使用 http.get（）方法从 JSONPlaceholder 中获取一篇示例文章
+
+```
+Future<http.Response> fetchPost() {
+  return http.get('https://jsonplaceholder.typicode.com/posts/1');
+}
+```
+
+> http.get（）方法返回包含响应的 Future
+> 
+> Future 是处理异步操作的核心 Dart 类。Future 对象表示将来某个时间可用的潜在值或错误
+> 
+> http.Response 类包含从成功的 http 调用接收的数据
+
++ 3. Convert the response into a custom Dart object
+
+> 虽然发出网络请求很容易，但使用原始的 Future<http.Response> 并不十分方便。为了让您的生活更轻松，将 http.Response 转换为一个Dart对象
+> 
+> *Create a Post class*
+> 
+> 首先，创建一个 Post 类，其中包含来自网络请求的数据。它包括一个工厂构造函数，它从 JSON 创建 Post
+> 
+> 手工转换 JSON 只是一种选择
+
+```
+class Post {
+  final int userId;
+  final int id;
+  final String title;
+  final String body;
+
+  Post({this.userId, this.id, this.title, this.body});
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      userId: json['userId'],
+      id: json['id'],
+      title: json['title'],
+      body: json['body'],
+    );
+  }
+}
+```
+
+> *Convert the http.Response to a Post*
+> 
+> 现在，使用以下步骤更新 fetchPost（）函数以返回 Future <Post>
+> 
+> 1.使用 dart:convert 包将响应体转换为 JSON map
+> 
+> 2.如果服务器返回状态代码为 200 的 OK 响应，那么使用 fromJson（）工厂方法将 JSON map 转换为 Post 对象
 
 ### [Make authenticated requests](https://flutter.dev/docs/cookbook/networking/authenticated-requests)
 
