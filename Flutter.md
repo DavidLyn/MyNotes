@@ -5282,9 +5282,206 @@ version: 1.0.0+1
 > 大多数 Widget 对象都有一个子Widget，因此只公开一个 child 参数。一些小部件支持任意数量的子部件，并公开一个接受列表的 children 参数。有些小部件根本没有任何子部件，也没有为此预留内存和参数。相似的，RenderObjects 暴露的 APIS 有着各异的子模型。RenderImage 是一个叶节点，没有 children 节点的概念。RenderPadding 接受一个 child 对象，因此它具有指向单个 child 对象的单个指针的存储空间，RenderFlex 接受任意数量的 children 并将其作为链接列表进行管理
 > 
 > 在一些罕见的情况下，使用更复杂的子（child）模型。RenderTable render object 的构造函数接受子数组数组，类公开控制行和列数的 getter 和 setter，并且有特定的方法用x，y坐标替换单个子数组，添加行，提供新的子数组，并用一个数组和一个列计数。在实现中，对象不像大多数渲染对象那样使用链接列表，而是使用可索引数组
+> 
+> Chip 小部件和 InputDecoration 对象具有与相关控件上存在的槽相匹配的字段。如果一个“一刀切”的子模型将强制语义分层在子模型列表的顶部，例如，将第一个子模型定义为前缀值，将第二个子模型定义为后缀，则专用子模型允许使用专用命名属性
+> 
+> 这种灵活性允许这些树中的每个节点按照它的角色以最惯用的方式来操作。很少有人希望在表中插入单元格，从而导致所有其他单元格环绕；同样，很少有人希望通过索引而不是引用从flex行中删除子单元格
+> 
+> RenderParagraph 对象是最极端的情况：它有一个完全不同类型的子对象 TextSpan。在 RenderParagraph 边界处，RenderObject 树转换为 TextSpan 树
+> 
+> 专门化 API 以满足开发人员期望的总体方法不仅仅适用于子模型。一旦知道如何使用扩展的小部件和一个大小为零的SizedBox子部件向行或列添加空间，就很容易完成，但是发现该模式是不必要的，因为搜索空间会发现Spacer小部件，它直接使用扩展的和SizedBox来实现效果
+> 
+> 类似地，隐藏小部件子树很容易，因为根本不在构建中包含小部件子树。然而，开发人员通常希望有一个小部件来实现这一点，因此 Visibility 小部件的存在是为了将这个模式封装在一个可重用的小部件中
+> 
+> *Explicit arguments（显式参数）*
+> 
+> UI 框架往往有许多属性，因此开发人员很少能够记住每个类的每个构造函数参数的语义含义。由于 Flutter 使用的是反应式范式，因此 Flutter 中的构建方法对构造函数有很多调用是很常见的。通过利用 Dart 对命名参数的支持，Flutter 的 API 能够保持这样的构建方法清晰易懂
+> 
+> 此模式扩展到具有多个参数的任何方法，特别是扩展到任何布尔参数，因此方法调用中孤立的true或false文本始终是自文档的（self-documenting）。此外，为了避免api中常见的双重否定造成的混淆，布尔参数和属性总是以正数形式命名（例如，enabled:true 而不是disabled:false）
+> 
+> *Paving over pitfalls*
+> 
+> 在 Flutter 框架中的许多地方使用的技术是定义API，使得错误条件不存在。这将从考虑中删除所有类错误。
+> 
+> 例如，插值函数允许插值的一端或两端为空，而不是将其定义为错误情况：两个空值之间的插值始终为空，从空值或空值进行插值等同于对给定类型的零模拟值进行插值。这意味着偶然将空值传递给插值函数的开发人员不会遇到错误情况，而是会得到一个合理的结果
+> 
+> 一个更微妙的例子是 Flex 布局算法。这种布局的概念是，给 Flex 渲染对象的空间在其子对象之间进行划分，因此 Flex 的大小应该是可用空间的全部。在最初的设计中，提供无限的空间会失败：这意味着 Flex 应该是无限大的，一个无用的布局配置。相反，对 API 进行了调整，以便在为 Flex 呈现对象分配无限空间时，呈现对象会调整自身大小以适应子对象的所需大小，从而减少可能出现的错误情况
+> 
+> 该方法还用于避免使用可能创建不一致数据的构造函数。例如，PointerDownEvent 构造函数不允许将 PointerEvent的down 属性设置为 false（这是一种自相矛盾的情况）；相反，构造函数没有 down 字段的参数，并且总是将其设置为 true
+> 
+> 一般来说，该方法是为输入域中的所有值定义有效的解释。最简单的例子是颜色构造器，默认构造函数不采用四个整数，一个表示红色，一个表示绿色，一个表示蓝色，一个表示alpha，每个整数都可能超出范围，而是采用一个整数值，并定义每个位的含义（例如，底部的八位定义了红色分量），因此任何输入值都是有效的颜色值。一个更详细的例子是 paintImage（）函数。这个函数有11个参数，有些参数有很宽的输入域，但是它们经过精心设计，基本上是正交的，这样就很少有无效的组合
+> 
+> *Reporting error cases aggressively（积极报告错误案例）*
+> 
+> 并非所有的错误条件都可以设计出来。对于那些仍然存在的，在调试构建中，Flutter 通常会很早地捕捉错误并立即报告它们。断言被广泛使用。详细检查构造函数参数的完整性。监视生命周期，当检测到不一致时，它们会立即引发异常
+> 
+> 在某些情况下，这是极端的：例如，当运行单元测试时，不管测试在做什么，每个RenderBox子类都会积极地检查其内部大小调整方法是否满足内部大小调整契约。这有助于捕获 API 中可能无法执行的错误
+> 
+> 当抛出异常时，它们包含尽可能多的可用信息。Flutter 的一些错误消息会主动探测相关的堆栈跟踪，以确定实际 bug 的最可能位置。其他人则通过遍历相关的树来确定坏数据的来源。最常见的错误包括详细的说明，在某些情况下包括避免错误的示例代码，或者指向进一步文档的链接
+> 
+> *Reactive paradigm（反应范式）*
+> 
+> 基于树的可变 API 有一个二分访问模式：创建树的原始状态通常使用与后续更新截然不同的操作集。Flutter 的渲染层使用了这种模式，因为它是维护持久树的有效方法，而持久树是高效布局和绘制的关键。然而，这意味着与渲染层的直接交互充其量是笨拙的，充其量是容易出错的。
+> 
+> Flutter 的 widget 层引入了一种组合机制，使用反应式范式来操作底层的呈现树。这个API通过将树的创建和树的变异步骤合并为一个树的描述（build）步骤来抽象出树的操作，在每次更改系统状态之后，用户界面的新配置由开发人员描述，框架计算出反映这种新配置所需的一系列树突变
+> 
+> *Interpolation（插值）*
+> 
+> 由于 Flutter 框架鼓励开发人员描述与当前应用程序状态匹配的接口配置，因此存在一种机制来在这些配置之间隐式动画化。
+> 
+> 例如，假设在状态S1中，接口由圆组成，而在状态S2中，接口由正方形组成。如果没有动画机制，状态更改将产生一个刺耳的接口更改。隐式动画允许圆在多个帧上平滑地变为正方形
+> 
+> 每个可以隐式设置动画的特性都有一个状态小部件，它记录输入的当前值，并在输入值更改时开始动画序列，在指定的持续时间内从当前值转换为新值
+> 
+> 这是通过使用不可变对象的lerp（线性插值）函数实现的。每个状态（在本例中是圆形和正方形）都表示为一个不可变的对象，该对象配置了适当的设置（颜色、笔划宽度等），并且知道如何绘制自己。当在动画期间绘制中间步骤时，开始值和结束值将与表示动画上的点的t值一起传递给相应的 lerp 函数，其中0.0表示开始，1.0表示结束，并且函数返回表示中间阶段的第三个不可变对象
+> 
+> 对于圆到正方形的转换，lerp 函数将返回一个对象，该对象表示半径为从t值派生的分数的“圆形正方形”，使用 lerp 函数对颜色进行插值的颜色，以及使用 lerp 函数对双浮点数进行插值的笔划宽度。该对象实现了与圆和正方形相同的接口，然后可以在请求时绘制自己
+> 
+> 该技术允许状态机制、状态到配置的映射、动画机制、插值机制以及与如何绘制每个帧完全分离的特定逻辑
+> 
+> 这种方法是广泛适用的。在 Flutter 中，基本类型（如 Color 和 Shape ）可以进行插值，但更精细的类型（如 Decoration、TextStyle 或 Theme ）也可以进行插值。它们通常是由可以自己插值的组件构造的，而插值更复杂的对象通常和递归地插值描述复杂对象的所有值一样简单
+> 
+> 一些可插值对象由类层次定义。例如，形状由 SabeEngEnter 接口表示，并且存在多种形状，包括 BeveledRectangleBorder、BoxBorder、CircleBorder、RoundedRectangleBorder 和 StadiumBorder。一个 lerp 函数不能预先知道所有可能的类型，因此接口定义了 lerpFrom 和 lerpTo 方法，而静态 lerp 方法遵从这些方法。当要求从形状A插值到形状B时，首先询问B是否可以从A进行插值，如果不能，则改为询问A是否可以从B进行插值（如果两者都不可能，则函数从t小于0.5的值返回A，否则返回B）
+> 
+> 这允许类层次结构被任意扩展，随后的添加可以在先前已知的值和它们自己之间进行插值
+> 
+> 在某些情况下，插值本身不能由任何可用类来描述，并且定义了一个私有类来描述中间阶段。例如，当在 CircleBorder 和 RoundedRectangleBorder 之间进行插值时
+> 
+> 这种机制还有一个额外的优点：它可以处理从中间阶段到新值的插值。例如，在圆到正方形过渡的中途，可以再次更改形状，从而使动画需要插值到三角形。只要三角形类可以从圆角正方形中间类中提取，就可以无缝地执行转换
+> 
+> *结论*
+> 
+> Flutter 的口号是“一切都是一个小部件”，它围绕构建用户界面而展开，通过组成小部件，而这些小部件又由越来越基本的小部件组成。这种激进组合（aggressive composition）的结果是大量的小部件需要精心设计的算法和数据结构才能有效地处理。通过一些额外的设计，这些数据结构还使开发人员可以轻松地创建无限滚动列表，当小部件变得可见时，可以根据需要构建它们
 
 ## [Platform specific behaviors and adaptations](https://flutter.dev/docs/resources/platform-adaptations)
 
++ Adaptation philosophy（适应哲学）
+
+> 平台适应性一般有两种情况：
+> 
+> 1.操作系统环境中的行为（如文本编辑和滚动），如果发生了不同的行为，那将是“错误的”
+> 
+> 2.通常在使用 OEM 的 SDK 的应用程序中实现的东西（例如在iOS上使用并行选项卡或在android上显示android.app.AlertDialog）
+> 
+> 本文主要介绍 Flutter 在 Android 和 iOS 的情形一中提供的自动适应功能
+> 
+> 对于情形二，Flutter捆绑了产生平台约定的适当效果的方法，但在需要应用程序设计选择时不能自动适应
+> 
+> 一个应用程序在 Android 和 iOS 上使用不同的信息架构结构，但共享相同内容代码的例子参见 [platform_design code samples](https://github.com/flutter/samples/tree/master/platform_design)
+
++ Page navigation
+
+> Flutter 提供了在 Android 和 iOS 上看到的导航模式，并自动调整导航动画以适应当前平台
+> 
+> *Navigation transitions(导航转换)*
+> 
+> 在 Android 上，默认的 Navigator.push（）转换是在 startActivity（）之后建模的，它通常有一个自下而上的动画变体
+> 
+> 在 iOS 上：
+> 
+> 默认的 Navigator.push（）API 生成一个 iOS Show/push 样式转换，该转换根据区域设置的 RTL 设置从一端到开始设置动画。新路由后面的页面的视差也与iOS中的相同方向滑动
+> 
+> 当  PageRoute.fullscreenDialog 为真时，存在一种独立的自下而上转换风格。这表示iOS的当前/模式样式转换，通常用于全屏模式页面
+> 
+> *Platform-specific transition details（特定于平台的转换详细信息）*
+> 
+> 在 Android 上，两个页面转换动画风格取决于你的操作系统版本：
+> 
+> Pre-API 28使用自下而上的动画，向上滑动并淡入（slides up and fades in）
+> 
+> 在API28和更高版本上，自下而上的动画幻灯片和剪辑向上显示（slides and clip-reveals up）
+> 
+> 在iOS上，当使用push样式转换时，Flutter的捆绑式CupertinoNavigationBar和CupertinoSliverNavigationBar导航栏会自动为下一页或上一页的CupertinoNavigationBar或CupertinoSliverNavigationBar上的每个子组件设置相应子组件的动画
+> 
+> *Back navigation*
+> 
+> 在 Android 上，默认情况下，OS back 按钮被发送到 Flutter 并弹出 WidgetsApp 导航器的顶部路由
+> 
+> 在 iOS 上，边缘滑动手势可用于弹出顶部路由
+
++ Scrolling
+
+> 滚动是平台外观的重要组成部分，Flutter 自动调整滚动行为以匹配当前平台
+> 
+> *Physics simulation(物理模拟)*
+> 
+> Android 和 iOS 都有复杂的滚动物理模拟，难以用语言描述。一般来说，iOS 的可滚动功能有更大的重量和动态摩擦，但 Android 有更多的静态摩擦。因此，iOS 可以更快地获得高速，但不会突然停止，而且在低速时会更滑
+> 
+> *Overscroll behavior(越界行为)*
+> 
+> 在 Android 上，滚动到可滚动条的边缘会显示一个越界发光指示器（基于当前 Material theme 的颜色）
+> 
+> 在iOS上，滚动过可滚动的覆盖屏幕的边缘，阻力增大，然后快速返回
+> 
+> *Momentum(动量)*
+> 
+> 在 iOS 上，在同一个方向上重复的快速划动会累积动量，并且每次连续的快速划动都会增加速度。在 Android 上没有类似的行为
+> 
+> *Return to top*
+> 
+> 在 iOS 上，点击 OS 状态栏将主滚动控制器滚动到顶部位置。在 Android 上没有类似的行为
+
++ Typography（印刷术）
+
+> 使用 Material 包时，排版自动默认为适合平台的字体系列。在 Android 上，使用 Roboto 字体。在 iOS 上，使用OS的 San Francisco 字体系列
+> 
+> 当使用 Cupertino 包时，默认的主题总是使用 San Francisco 字体
+> 
+> San Francisco 字体许可证仅限于在 iOS、macOS 或 tvOS 上运行的软件。因此，如果平台被调试覆盖为iOS或使用默认的Cupertino主题，则在Android上运行时使用回退字体
+
++ Iconography(图像学)
+
+> 使用 Material 包时，某些图标会根据平台自动显示不同的图形。例如，overflow 按钮的三个点在 iOS 上是水平的，在 Android 上是垂直的。后退按钮是 iOS 上的一个简单的符号，在 Android 上有一个杆/轴
+
++ Haptic feedback(触觉反馈)
+
+> 在某些情况下，Material 和 Cupertino 包会自动触发平台相应的触觉反馈
+> 
+> 例如，在 Android 而不是 iOS 上，通过文本字段长按选择一个单词会触发“buzz”振动
+> 
+> 在 iOS 上滚动 picker 条目会触发“light impact”敲门声，而在 Android 上没有反馈
+
++ Text editing
+
+> Flutter在编辑文本字段的内容时采用下述方式匹配当前平台：
+> 
+> *Keyboard gesture navigation*
+> 
+> 在 Android 上，可以在软键盘的空格键上进行水平滑动，以在 Material 和 Cupertino 文本字段中移动光标
+> 
+> 在具有3D触摸功能的 iOS 设备上，可以在软键盘上进行强制按下拖动手势，通过浮动光标在2D中移动光标。这对 Material 和 Cupertino 文本字段都有效
+> 
+> *Text selection toolbar*
+> 
+> 对于 Android 上的 Material，当在文本字段中进行文本选择时，会显示 Android 样式选择工具栏
+> 
+> 在iOS上使用 Material 或使用 Cupertino 时，当在文本字段中进行文本选择时，将显示iOS样式选择工具栏
+> 
+> *Single tap gesture*
+> 
+> 在 Android 上使用 Material 时，只需在文本字段中点击一次，光标就会放在点击的位置
+> 
+> 折叠的文本选择还显示一个可拖动的句柄，用于随后移动光标
+> 
+> 对于 iOS 上的 Material 或使用 Cupertino 时，只需在文本字段中轻敲一次，光标就会放在所轻敲单词的最近边缘
+> 
+> 折叠的文本选择在iOS上没有可拖动的句柄
+> 
+> *Long-press gesture*
+> 
+> 对于 Android 上的 Material，长按可以选择长按下的单词。释放时显示选择工具栏
+> 
+> 对于 iOS 上的 Material 或使用 Cupertino 时，长按会将光标放在长按的位置。释放时显示选择工具栏
+> 
+> *Long-press drag gesture*
+> 
+> 在 Android 上使用 Material 时，按住长按的同时拖动可以扩展选定的单词
+> 
+> 在iOS上使用 Material 或使用 Cupertino 时，按住长按可拖动光标
+> 
+> *Double tap gesture*
+> 
+> 在 Android 和 iOS 上，双击选择接收双击的单词并显示选择工具栏
 
 ---
 # [*Cookbook*](https://flutter.dev/docs/cookbook)
@@ -9329,9 +9526,416 @@ class Post {
 
 ### [Make authenticated requests](https://flutter.dev/docs/cookbook/networking/authenticated-requests)
 
++ 要从许多 web 服务获取数据，需要提供授权。有很多方法可以做到这一点，但最常见的可能是使用授权 HTTP 头
+
++ Add authorization headers
+
+> http 包提供了一种向请求添加头的方便方法。或者，使用 dart:io 库中的 HttpHeaders 类
+
+```
+Future<http.Response> fetchAlbum() {
+  return http.get(
+    'https://jsonplaceholder.typicode.com/albums/1',
+    // Send authorization headers to the backend.
+    headers: {HttpHeaders.authorizationHeader: "Basic your_api_token_here"},
+  );
+}
+```
+
++ 完整例子
+
+```
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+
+Future<Album> fetchAlbum() async {
+  final response = await http.get(
+    'https://jsonplaceholder.typicode.com/albums/1',
+    headers: {HttpHeaders.authorizationHeader: "Basic your_api_token_here"},
+  );
+  final responseJson = json.decode(response.body);
+
+  return Album.fromJson(responseJson);
+}
+
+class Album {
+  final int userId;
+  final int id;
+  final String title;
+
+  Album({this.userId, this.id, this.title});
+
+  factory Album.fromJson(Map<String, dynamic> json) {
+    return Album(
+      userId: json['userId'],
+      id: json['id'],
+      title: json['title'],
+    );
+  }
+}
+```
+
 ### [Parse JSON in the background](https://flutter.dev/docs/cookbook/networking/background-parsing)
 
++ 默认情况下，Dart 应用程序在一个线程上完成所有工作。在许多情况下，这个模型简化了编码，并且速度足够快，不会导致应用程序性能差或动画断断续续，通常称为“jank”
+
+> 但是，您可能需要执行昂贵的计算，例如解析非常大的 JSON 文档。如果这项工作花费超过16毫秒，您的用户将体验 jank
+> 
+> 为了避免 jank，您需要在后台执行这样昂贵的计算。在 Android 上，这意味着在不同的线程上调度工作。在颤振，你可以使用一个单独的 Isolate
+
++ 1. Add the http package
+
+> 首先，将 http 包添加到项目中。http 包使执行网络请求更容易，例如从 JSON 端点获取数据
+
+```
+dependencies:
+  http: <latest_version>
+```
+
++ 2. Make a network request
+
+> 在本例中，使用 http.get（）方法从 JSONPlaceholder REST API 获取一个包含5000个照片对象列表的 JSON 大型文档
+
+```
+Future<http.Response> fetchPhotos(http.Client client) async {
+  return client.get('https://jsonplaceholder.typicode.com/photos');
+}
+```
+
+> 注意：在本例中，为函数提供了一个 http.Client。这使得在不同的环境中测试和使用该功能更加容易
+
++ 3. Parse and convert the JSON into a list of photos
+
+> *Create a Photo class*
+> 
+> 首先，创建一个包含照片数据的 Photo 类。包含一个 fromJson（）工厂方法，使创建以 JSON 开头的照片对象变得容易
+
+```
+class Photo {
+  final int id;
+  final String title;
+  final String thumbnailUrl;
+
+  Photo({this.id, this.title, this.thumbnailUrl});
+
+  factory Photo.fromJson(Map<String, dynamic> json) {
+    return Photo(
+      id: json['id'] as int,
+      title: json['title'] as String,
+      thumbnailUrl: json['thumbnailUrl'] as String,
+    );
+  }
+}
+```
+
+> *Convert the response into a list of photos*
+> 
+> 现在，使用以下说明更新 fetchPhotos（）函数，以便它返回 Future <List<Photo>>：
+> 
+> 1.创建 parsePhotos（）函数，将 response 转换为 List<Photo>
+> 
+> 2.在 fetchPhotos（）函数中使用 parsePhotos（）函数
+
+```
+// A function that converts a response body into a List<Photo>.
+List<Photo> parsePhotos(String responseBody) {
+  final parsed = json.decode(responseBody).cast<Map<String, dynamic>>();
+
+  return parsed.map<Photo>((json) => Photo.fromJson(json)).toList();
+}
+
+Future<List<Photo>> fetchPhotos(http.Client client) async {
+  final response =
+      await client.get('https://jsonplaceholder.typicode.com/photos');
+
+  return parsePhotos(response.body);
+}
+```
+
++ 4. Move this work to a separate isolate
+
+> 如果在速度较慢的设备上运行 fetchPhotos（）函数，会注意到应用程序在解析和转换 JSON 时会暂时冻结。这是应该避免的 jank
+> 
+> 可以通过使用 Flutter 提供的 compute（）函数将解析和转换移动到后台的 isolate 来避免 jank
+> 
+> compute（）函数在后台 isolate 中运行昂贵的函数并返回结果。在本例中，在后台运行parsePhotos（）函数
+
+```
+Future<List<Photo>> fetchPhotos(http.Client client) async {
+  final response =
+      await client.get('https://jsonplaceholder.typicode.com/photos');
+
+  // Use the compute function to run parsePhotos in a separate isolate.
+  return compute(parsePhotos, response.body);
+}
+```
+
++ 关于处理 isolate 的说明
+
+> Isolate 通过前后传递消息来进行通讯。这些消息可以是原始值，如 null、num、bool、double 或 String，也可以是简单对象，如本例中的 List<Photo>
+> 
+> 如果试图传递更复杂的对象（如 Future 或 http.Response ），则可能会遇到错误
+
++ 完整例子
+
+```
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+Future<List<Photo>> fetchPhotos(http.Client client) async {
+  final response =
+      await client.get('https://jsonplaceholder.typicode.com/photos');
+
+  // Use the compute function to run parsePhotos in a separate isolate.
+  return compute(parsePhotos, response.body);
+}
+
+// A function that converts a response body into a List<Photo>.
+List<Photo> parsePhotos(String responseBody) {
+  final parsed = jsonDecode(responseBody).cast<Map<String, dynamic>>();
+
+  return parsed.map<Photo>((json) => Photo.fromJson(json)).toList();
+}
+
+class Photo {
+  final int albumId;
+  final int id;
+  final String title;
+  final String url;
+  final String thumbnailUrl;
+
+  Photo({this.albumId, this.id, this.title, this.url, this.thumbnailUrl});
+
+  factory Photo.fromJson(Map<String, dynamic> json) {
+    return Photo(
+      albumId: json['albumId'] as int,
+      id: json['id'] as int,
+      title: json['title'] as String,
+      url: json['url'] as String,
+      thumbnailUrl: json['thumbnailUrl'] as String,
+    );
+  }
+}
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final appTitle = 'Isolate Demo';
+
+    return MaterialApp(
+      title: appTitle,
+      home: MyHomePage(title: appTitle),
+    );
+  }
+}
+
+class MyHomePage extends StatelessWidget {
+  final String title;
+
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: FutureBuilder<List<Photo>>(
+        future: fetchPhotos(http.Client()),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) print(snapshot.error);
+
+          return snapshot.hasData
+              ? PhotosList(photos: snapshot.data)
+              : Center(child: CircularProgressIndicator());
+        },
+      ),
+    );
+  }
+}
+
+class PhotosList extends StatelessWidget {
+  final List<Photo> photos;
+
+  PhotosList({Key key, this.photos}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+      ),
+      itemCount: photos.length,
+      itemBuilder: (context, index) {
+        return Image.network(photos[index].thumbnailUrl);
+      },
+    );
+  }
+}
+```
+
 ### [Work with WebSockets](https://flutter.dev/docs/cookbook/networking/web-sockets)
+
++ 除了普通的 HTTP 请求之外，您还可以使用 WebSockets 连接到服务器。WebSockets 允许与服务器进行双向通信，而无需轮询
+
+> 在本例中，连接到 [websocket.org](websocket.org) 提供的测试服务器。服务器发回与您发送给它的消息相同的消息
+
++ 1. Connect to a WebSocket server
+
+> web_socket_channel 包提供了连接 WebSocket 服务器所需的工具
+> 
+> 包提供了一个 WebSocketChannel，允许您监听来自服务器的消息并将消息推送到服务器
+> 
+> 在 Flutter 中，创建一个 WebSocketChannel，在一行中连接到服务器：
+
+```
+final channel = IOWebSocketChannel.connect('ws://echo.websocket.org');
+```
+
++ 2. Listen for messages from the server
+
+> 现在已经建立了连接，收听来自服务器的消息
+> 
+> 将消息发送到测试服务器后，它会将相同的消息发送回
+> 
+> 在本例中，使用 StreamBuilder 小部件侦听新消息，并使用 Text 小部件显示它们
+
+```
+StreamBuilder(
+  stream: widget.channel.stream,
+  builder: (context, snapshot) {
+    return Text(snapshot.hasData ? '${snapshot.data}' : '');
+  },
+);
+```
+
+> *How this works*
+> 
+> WebSocketChannel 提供来自服务器的消息流
+> 
+> Stream 类是 dart:async 包的基本部分。它提供了一种从数据源侦听异步事件的方法。与返回单个异步响应的 Future 不同，Stream 类可以随时间传递许多事件
+> 
+>  StreamBuilder 小部件连接到流，并要求 Flutter 在每次使用给定的 builder（）函数接收到事件时重新生成
+> 
+> 3. Send data to the server
+> 
+> 要向服务器发送数据，使用 add（）将消息添加到 WebSocketChannel 提供的接收器
+
+```
+channel.sink.add('Hello!');
+```
+
+> *How this works*
+> 
+> WebSocketChannel 提供了一个 StreamSink 来将消息推送到服务器
+> 
+> StreamSink 类提供了向数据源添加同步或异步事件的常规方法
+
++ 4. Close the WebSocket connection
+
+> 使用完 WebSocket 后，关闭连接：
+
+```
+channel.sink.close();
+```
+
++ 完整例子
+
+```
+import 'package:flutter/foundation.dart';
+import 'package:web_socket_channel/io.dart';
+import 'package:flutter/material.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = 'WebSocket Demo';
+    return MaterialApp(
+      title: title,
+      home: MyHomePage(
+        title: title,
+        channel: IOWebSocketChannel.connect('ws://echo.websocket.org'),
+      ),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  final String title;
+  final WebSocketChannel channel;
+
+  MyHomePage({Key key, @required this.title, @required this.channel})
+      : super(key: key);
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  TextEditingController _controller = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Form(
+              child: TextFormField(
+                controller: _controller,
+                decoration: InputDecoration(labelText: 'Send a message'),
+              ),
+            ),
+            StreamBuilder(
+              stream: widget.channel.stream,
+              builder: (context, snapshot) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                  child: Text(snapshot.hasData ? '${snapshot.data}' : ''),
+                );
+              },
+            )
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _sendMessage,
+        tooltip: 'Send message',
+        child: Icon(Icons.send),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+
+  void _sendMessage() {
+    if (_controller.text.isNotEmpty) {
+      widget.channel.sink.add(_controller.text);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.channel.sink.close();
+    super.dispose();
+  }
+}
+```
 
 ## Persistence
 
