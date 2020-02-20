@@ -5490,11 +5490,873 @@ version: 1.0.0+1
 
 ### [Animate a page route transition](https://flutter.dev/docs/cookbook/animation/page-route-animation)
 
++ 设计语言（如 Material ）定义了在路由（或屏幕）之间转换时的标准行为。不过，屏幕之间的自定义转换可以使应用程序更加独特。为了提供帮助，PageRouteBuilder 提供了一个动画对象。此动画可与 Tween 和C urve 对象一起用于自定义过渡动画。本节通过描述一个新界面如何从底部进入来说明路由之间的转换
+
++ 1. Set up a PageRouteBuilder
+
+> 首先，使用 PageRouteBuilder 创建路由。PageRouteBuilder 有两个回调，一个用于构建路由内容（pageBuilder），另一个用于构建路由的转换（transitionsBuilder）
+> 
+> 注意：transitionsBuilder 中的子参数是从 pageBuilder 返回的小部件。 pageBuilder 函数只在第一次构建路由时调用。框架可以避免额外的工作，因为在整个转换过程中，child 保持不变
+> 
+> 下面的示例创建了两条路由：带有“Go！按钮的根路由，以及标题为“Page 2”的第二个路由
+
+```
+import 'package:flutter/material.dart';
+
+main() {
+  runApp(MaterialApp(
+    home: Page1(),
+  ));
+}
+
+class Page1 extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: RaisedButton(
+          child: Text('Go!'),
+          onPressed: () {
+            Navigator.of(context).push(_createRoute());
+          },
+        ),
+      ),
+    );
+  }
+}
+
+Route _createRoute() {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => Page2(),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return child;
+    },
+  );
+}
+
+class Page2 extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Text('Page 2'),
+      ),
+    );
+  }
+}
+```
+
++ 2. Create a Tween
+
+> 要使新页面从底部动画化，它应该从 Offset（0,1）到 Offset（0，0）动画化（通常使用 Offset.zero 构造函数定义）。在这种情况下，Offset 是“FractionalTranslation”小部件的二维向量。将 dy 参数设置为1表示页面的一个完整高度的垂直转换
+> 
+> transitionsBuilder 回调有一个 animation 参数。这是一个 Animation <double> 产生0到1之间的值。使用 Tween 对 Animation 进行转换
+
+```
+transitionsBuilder: (context, animation, secondaryAnimation, child) {
+  var begin = Offset(0.0, 1.0);
+  var end = Offset.zero;
+  var tween = Tween(begin: begin, end: end);
+  var offsetAnimation = animation.drive(tween);
+  return child;
+},
+```
+
++ 3. Use an AnimatedWidget
+
+> Flutter 有一组扩展 AnimatedWidget 的小部件，这些小部件在动画值改变时会自动重建。例如，SlideTransition 接受一个 Animation <Offset> 并在动画值更改时转换其子级（使用 FractionalTranslation 小部件）
+> 
+> AnimatedWidget 返回带有 Animation<Offset> 和子 widget 的 SlideTransition
+
+```
+transitionsBuilder: (context, animation, secondaryAnimation, child) {
+  var begin = Offset(0.0, 1.0);
+  var end = Offset.zero;
+  var tween = Tween(begin: begin, end: end);
+  var offsetAnimation = animation.drive(tween);
+
+  return SlideTransition(
+    position: offsetAnimation,
+    child: child,
+  );
+},
+```
+
++ 4. Use a CurveTween
+
+> Flutter 提供了随时间调整动画速率的缓和曲线选择。Curves 类提供了一组预定义的常用曲线。例如，Curves.easeOut 使动画快速开始，缓慢结束
+> 
+> 要使用 Curve，请在 Curve 之间创建一条新 Curve 并将其传递给 Curve：
+
+```
+var curve = Curves.ease;
+var curveTween = CurveTween(curve: curve);
+```
+
+> 这个新的 Tween 仍然产生从0到1的值。在下一步中，它将与步骤2的 Tween<Offset> 组合
+
++ 5. Combine the two Tweens
+
+> 使用 chain（）组合 tweens：
+
+```
+var begin = Offset(0.0, 1.0);
+var end = Offset.zero;
+var curve = Curves.ease;
+
+var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+```
+
+> 然后使用这个 tween 将其传递给 animation.drive（）。这将创建一个新的 Animation <Offset>，可以提供给 SlideTransition 小部件：
+
+```
+return SlideTransition(
+  position: animation.drive(tween),
+  child: child,
+);
+```
+
+> 这个新的 Tween（或可设置动画的 Tween）通过首先计算曲线之间的值，然后计算 Tween<Offset> 来生成偏移值。当动画运行时，将按以下顺序计算值：
+> 
+> 1.动画（提供给 transitionsBuilder 回调）生成从0到1的值
+> 
+> 2. CurveTween 基于其曲线将这些值映射到0到1之间的新值
+> 
+> 3.Tween<Offset> 将浮点值映射到偏移值
+> 
+> 使用缓和曲线创建动画的另一种方法是使用 CurvedAnimation：
+
+```
+transitionsBuilder: (context, animation, secondaryAnimation, child) {
+  var begin = Offset(0.0, 1.0);
+  var end = Offset.zero;
+  var curve = Curves.ease;
+
+  var tween = Tween(begin: begin, end: end);
+  var curvedAnimation = CurvedAnimation(
+   parent: animation,
+   curve: curve,
+  );
+
+  return SlideTransition(
+   position: tween.animate(curvedAnimation),
+   child: child,
+  );
+}
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+main() {
+  runApp(MaterialApp(
+    home: Page1(),
+  ));
+}
+
+class Page1 extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: RaisedButton(
+          child: Text('Go!'),
+          onPressed: () {
+            Navigator.of(context).push(_createRoute());
+          },
+        ),
+      ),
+    );
+  }
+}
+
+Route _createRoute() {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => Page2(),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      var begin = Offset(0.0, 1.0);
+      var end = Offset.zero;
+      var curve = Curves.ease;
+
+      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+      return SlideTransition(
+        position: animation.drive(tween),
+        child: child,
+      );
+    },
+  );
+}
+
+class Page2 extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Text('Page 2'),
+      ),
+    );
+  }
+}
+```
+
 ### [Animate a widget using a physics simulation](https://flutter.dev/docs/cookbook/animation/physics-simulation)
+
++ 物理模拟可以让应用程序交互感觉真实。例如，您可能希望设置一个小部件的动画，使其看起来像是附着在弹簧上或是随着重力下落。本节演示了如何使用弹性模拟将小部件从拖动点移回中心
+
++ Step 1: Set up an animation controller
+
+> 从一个名为 DraggableCard 的有状态小部件开始：
+
+```
+import 'package:flutter/material.dart';
+
+main() {
+  runApp(MaterialApp(home: PhysicsCardDragDemo()));
+}
+
+class PhysicsCardDragDemo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: DraggableCard(
+        child: FlutterLogo(
+          size: 128,
+        ),
+      ),
+    );
+  }
+}
+
+class DraggableCard extends StatefulWidget {
+  final Widget child;
+  DraggableCard({this.child});
+
+  @override
+  _DraggableCardState createState() => _DraggableCardState();
+}
+
+class _DraggableCardState extends State<DraggableCard> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      child: Card(
+        child: widget.child,
+      ),
+    );
+  }
+}
+```
+
+> 使 _DraggableCardState 类从 SingleTickerProviderStateMixin 扩展。然后在initState 中构造一个 AnimationController 并将 vsync 设置为 this
+> 
+> 注意：扩展 SingleTickerProviderStateMixin 允许状态对象成为AnimationController 的 TickerProvider
+
+```
+class _DraggableCardState extends State<DraggableCard>
+    with SingleTickerProviderStateMixin {
+  AnimationController _controller;
+
+  @override
+  void initState() {
+    _controller =
+        AnimationController(vsync: this, duration: Duration(seconds: 1));
+    super.initState();
+  }
+
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  //...
+```
+
++ Step 2: Move the widget using gestures
+
+> 拖动小部件时移动它，并将 Alignment 字段添加到 _DraggableCardState 类：
+
+```
+Alignment _dragAlignment = Alignment.center;
+```
+
+> 添加处理 onPanDown、onPanUpdate 和 onPanEnd 回调的 GestureDetector。要调整对齐方式，请使用 MediaQuery 获取小部件的大小，然后除以2。（这会将“拖动像素”的单位转换为Align使用的坐标。）然后，将 Align 小部件的 alignment 设置为 _dragAlignment：
+
+```
+@override
+Widget build(BuildContext context) {
+  var size = MediaQuery.of(context).size;
+  return GestureDetector(
+    onPanDown: (details) {},
+    onPanUpdate: (details) {
+      setState(() {
+        _dragAlignment += Alignment(
+          details.delta.dx / (size.width / 2),
+          details.delta.dy / (size.height / 2),
+        );
+      });
+    },
+    onPanEnd: (details) {},
+    child: Align(
+      alignment: _dragAlignment,
+      child: Card(
+        child: widget.child,
+      ),
+    ),
+  );
+}
+```
+
++ Step 3: Animate the widget
+
+> 当小部件被释放时，它应该会弹回到中心
+> 
+> 添加 Animation <Alignment> 字段和 _runAnimation 方法。此方法定义了一个中间值，该中间值在小部件被拖动到的点与中间点之间进行插值
+
+```
+  Animation<Alignment> _animation;
+
+  void _runAnimation() {
+    _animation = _controller.drive(
+      AlignmentTween(
+        begin: _dragAlignment,
+        end: Alignment.center,
+      ),
+    );
+   _controller.reset();
+   _controller.forward();
+  }
+```
+
+> 接下来，在 AnimationController 生成值时更新 _dragAlignment：
+
+```
+@override
+void initState() {
+  super.initState();
+  _controller = AnimationController(vsync: this, duration: Duration(seconds: 1));
+  _controller.addListener(() {
+    setState(() {
+      _dragAlignment = _animation.value;
+    });
+  });
+}
+```
+
+> 接下来，让 Align 小部件使用 _dragAlignment 字段：
+
+```
+child: Align(
+  alignment: _dragAlignment,
+  child: Card(
+    child: widget.child,
+  ),
+),
+```
+
+> 最后，更新 GestureDetector 以管理动画控制器：
+
+```
+onPanDown: (details) {
+ _controller.stop();
+},
+onPanUpdate: (details) {
+ setState(() {
+   _dragAlignment += Alignment(
+     details.delta.dx / (size.width / 2),
+     details.delta.dy / (size.height / 2),
+   );
+ });
+},
+onPanEnd: (details) {
+ _runAnimation();
+},
+```
+
++ Step 4: Calculate the velocity to simulate a springing motion
+
+> 最后一步是做一点数学运算，计算小部件被拖动后的速度。这使得小部件在被拍回之前以实际的速度继续。（ _runAnimation 方法已经通过设置动画的开始和结束对齐来设置方向。）
+> 
+> 首先，导入 physics 包：
+
+```
+import 'package:flutter/physics.dart';
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
+
+main() {
+  runApp(MaterialApp(home: PhysicsCardDragDemo()));
+}
+
+class PhysicsCardDragDemo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: DraggableCard(
+        child: FlutterLogo(
+          size: 128,
+        ),
+      ),
+    );
+  }
+}
+
+/// A draggable card that moves back to [Alignment.center] when it's
+/// released.
+class DraggableCard extends StatefulWidget {
+  final Widget child;
+  DraggableCard({this.child});
+
+  @override
+  _DraggableCardState createState() => _DraggableCardState();
+}
+
+class _DraggableCardState extends State<DraggableCard>
+    with SingleTickerProviderStateMixin {
+  AnimationController _controller;
+
+  /// The alignment of the card as it is dragged or being animated.
+  ///
+  /// While the card is being dragged, this value is set to the values computed
+  /// in the GestureDetector onPanUpdate callback. If the animation is running,
+  /// this value is set to the value of the [_animation].
+  Alignment _dragAlignment = Alignment.center;
+
+  Animation<Alignment> _animation;
+
+  /// Calculates and runs a [SpringSimulation].
+  void _runAnimation(Offset pixelsPerSecond, Size size) {
+    _animation = _controller.drive(
+      AlignmentTween(
+        begin: _dragAlignment,
+        end: Alignment.center,
+      ),
+    );
+    // Calculate the velocity relative to the unit interval, [0,1],
+    // used by the animation controller.
+    final unitsPerSecondX = pixelsPerSecond.dx / size.width;
+    final unitsPerSecondY = pixelsPerSecond.dy / size.height;
+    final unitsPerSecond = Offset(unitsPerSecondX, unitsPerSecondY);
+    final unitVelocity = unitsPerSecond.distance;
+
+    const spring = SpringDescription(
+      mass: 30,
+      stiffness: 1,
+      damping: 1,
+    );
+
+    final simulation = SpringSimulation(spring, 0, 1, -unitVelocity);
+
+    _controller.animateWith(simulation);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+
+    _controller.addListener(() {
+      setState(() {
+        _dragAlignment = _animation.value;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return GestureDetector(
+      onPanDown: (details) {
+        _controller.stop();
+      },
+      onPanUpdate: (details) {
+        setState(() {
+          _dragAlignment += Alignment(
+            details.delta.dx / (size.width / 2),
+            details.delta.dy / (size.height / 2),
+          );
+        });
+      },
+      onPanEnd: (details) {
+        _runAnimation(details.velocity.pixelsPerSecond, size);
+      },
+      child: Align(
+        alignment: _dragAlignment,
+        child: Card(
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+```
 
 ### [Animate the properties of a container](https://flutter.dev/docs/cookbook/animation/animated-container)
 
++ Container 类提供了一种方便的方法来创建具有特定属性的小部件：宽度、高度、背景色、填充、边框等
+
+> 简单的动画通常需要随着时间的推移更改这些属性。例如，您可能希望将背景颜色从灰色设置为绿色，以指示用户已选择某个项目
+> 
+> 要设置这些属性的动画，Flutter 提供了 AnimatedContainer 小部件。与 Container 小部件一样，AnimatedContainer 允许您定义宽度、高度、背景色等。但是，当用新属性重建 AnimatedContainer 时，它会自动在新旧值之间设置动画。在 Flutter 中，这些类型的动画被称为“隐式动画”
+> 
+> 本节描述了当用户点击一个按钮时，如何使用一个 AnimatedContainer 来设置大小、背景颜色和边框半径的动画
+
++ 1. Create a StatefulWidget with default properties
+
+> 首先，创建 StatefulWidget 和 State 类。使用自定义状态类定义随时间变化的属性。在本例中，包括宽度、高度、颜色和边框半径。还可以定义每个属性的默认值
+> 
+> 这些属性属于自定义状态类，因此可以在用户点击按钮时更新它们
+
+```
+class AnimatedContainerApp extends StatefulWidget {
+  @override
+  _AnimatedContainerAppState createState() => _AnimatedContainerAppState();
+}
+
+class _AnimatedContainerAppState extends State<AnimatedContainerApp> {
+  // Define the various properties with default values. Update these properties
+  // when the user taps a FloatingActionButton.
+  double _width = 50;
+  double _height = 50;
+  Color _color = Colors.green;
+  BorderRadiusGeometry _borderRadius = BorderRadius.circular(8);
+
+  @override
+  Widget build(BuildContext context) {
+    // Fill this out in the next steps.
+  }
+}
+```
+
++ 2. Build an AnimatedContainer using the properties
+
+> 接下来，使用上一步中定义的属性构建 AnimatedContainer。此外，提供定义动画应运行多长时间的持续时间
+
+```
+AnimatedContainer(
+  // Use the properties stored in the State class.
+  width: _width,
+  height: _height,
+  decoration: BoxDecoration(
+    color: _color,
+    borderRadius: _borderRadius,
+  ),
+  // Define how long the animation should take.
+  duration: Duration(seconds: 1),
+  // Provide an optional curve to make the animation feel smoother.
+  curve: Curves.fastOutSlowIn,
+);
+```
+
++ 3. Start the animation by rebuilding with new properties
+
+> 最后，使用新属性重新生成 AnimatedContainer 来启动动画。如何触发重建？使用setState（）方法
+> 
+> 向应用程序添加按钮。当用户点击按钮时，在对 setState（）的调用中使用新的宽度、高度、背景色和边框半径更新属性
+> 
+> 真正的应用程序通常在固定值之间转换（例如，从灰色背景转换为绿色背景）。对于这个应用程序，每次用户点击按钮时生成新值
+
+```
+FloatingActionButton(
+  child: Icon(Icons.play_arrow),
+  // When the user taps the button
+  onPressed: () {
+    // Use setState to rebuild the widget with new values.
+    setState(() {
+      // Create a random number generator.
+      final random = Random();
+
+      // Generate a random width and height.
+      _width = random.nextInt(300).toDouble();
+      _height = random.nextInt(300).toDouble();
+
+      // Generate a random color.
+      _color = Color.fromRGBO(
+        random.nextInt(256),
+        random.nextInt(256),
+        random.nextInt(256),
+        1,
+      );
+
+      // Generate a random border radius.
+      _borderRadius =
+          BorderRadius.circular(random.nextInt(100).toDouble());
+    });
+  },
+);
+```
+
++ 完整例子
+
+```
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+
+void main() => runApp(AnimatedContainerApp());
+
+class AnimatedContainerApp extends StatefulWidget {
+  @override
+  _AnimatedContainerAppState createState() => _AnimatedContainerAppState();
+}
+
+class _AnimatedContainerAppState extends State<AnimatedContainerApp> {
+  // Define the various properties with default values. Update these properties
+  // when the user taps a FloatingActionButton.
+  double _width = 50;
+  double _height = 50;
+  Color _color = Colors.green;
+  BorderRadiusGeometry _borderRadius = BorderRadius.circular(8);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('AnimatedContainer Demo'),
+        ),
+        body: Center(
+          child: AnimatedContainer(
+            // Use the properties stored in the State class.
+            width: _width,
+            height: _height,
+            decoration: BoxDecoration(
+              color: _color,
+              borderRadius: _borderRadius,
+            ),
+            // Define how long the animation should take.
+            duration: Duration(seconds: 1),
+            // Provide an optional curve to make the animation feel smoother.
+            curve: Curves.fastOutSlowIn,
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          child: Icon(Icons.play_arrow),
+          // When the user taps the button
+          onPressed: () {
+            // Use setState to rebuild the widget with new values.
+            setState(() {
+              // Create a random number generator.
+              final random = Random();
+
+              // Generate a random width and height.
+              _width = random.nextInt(300).toDouble();
+              _height = random.nextInt(300).toDouble();
+
+              // Generate a random color.
+              _color = Color.fromRGBO(
+                random.nextInt(256),
+                random.nextInt(256),
+                random.nextInt(256),
+                1,
+              );
+
+              // Generate a random border radius.
+              _borderRadius =
+                  BorderRadius.circular(random.nextInt(100).toDouble());
+            });
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
 ### [Fade a widget in and out](https://flutter.dev/docs/cookbook/animation/opacity-animation)
+
++ UI 开发人员通常需要在屏幕上显示和隐藏元素。然而，在屏幕上快速弹出元素会让最终用户感到不安。相反，使用不透明动画淡入淡出元素以创建平滑体验。AnimatedOpacity 小部件使执行不透明动画变得容易
+
++ 1. Create a box to fade in and out
+
+> 首先，创造一些淡入淡出的东西。在本例中，在屏幕上画一个绿色框
+
+```
+Container(
+  width: 200.0,
+  height: 200.0,
+  color: Colors.green,
+);
+```
+
++ 2. Define a StatefulWidget
+
+> 现在您有一个绿色的框要设置动画，您需要一种方法来知道该框是否应该可见。要实现这一点，请使用 StatefulWidget
+> 
+> StatefulWidget 是创建状态对象的类。State 对象保存一些关于应用程序的数据，并提供一种更新这些数据的方法。更新数据时，还可以要求 Flutter 使用这些更改重新构建 UI
+> 
+> 在本例中，有一个状态数据：一个表示按钮是否可见的布尔值
+> 
+> 要构造 StatefulWidget，请创建两个类：StatefulWidget 和相应的 State 类。Android Studio 和 VSCode 的 Flutter 插件包含了快速生成此代码的 stful 片段
+
+```
+// The StatefulWidget's job is to take data and create a State class.
+// In this case, the widget takes a title, and creates a _MyHomePageState.
+class MyHomePage extends StatefulWidget {
+  final String title;
+
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+// The State class is responsible for two things: holding some data you can
+// update and building the UI using that data.
+class _MyHomePageState extends State<MyHomePage> {
+  // Whether the green box should be visible.
+  bool _visible = true;
+
+  @override
+  Widget build(BuildContext context) {
+    // The green box goes here with some other Widgets.
+  }
+}
+```
+
++ 3. Display a button that toggles the visibility
+
+> 现在您有了一些数据来确定绿色框是否应该可见，您需要一种方法来更新该数据。在本例中，如果该框可见，请将其隐藏。如果该框是隐藏的，就展示出来
+> 
+> 要处理此问题，请显示一个按钮。当用户按下按钮时，将布尔值从 true 翻到 false，或从 false 翻到 true。使用 setState（）进行此更改，它是 State 类上的一个方法。这告诉 Flutter 重新构建小部件
+
+```
+FloatingActionButton(
+  onPressed: () {
+    // Call setState. This tells Flutter to rebuild the
+    // UI with the changes.
+    setState(() {
+      _visible = !_visible;
+    });
+  },
+  tooltip: 'Toggle Opacity',
+  child: Icon(Icons.flip),
+);
+```
+
++ 4. Fade the box in and out
+
+> 屏幕上有一个绿色框和一个按钮，用于将可见性切换为 true 或 false。如何淡入淡出盒子？使用 AnimatedOpacity 小部件
+> 
+> AnimatedOpacity 小部件需要三个参数：
+> 
+> opacity ：从0.0（不可见）到1.0（完全可见）的值
+> 
+> duration ：动画需要多长时间才能完成
+> 
+> child：要设置动画的小部件。在这种情况下，绿色框
+
+```
+AnimatedOpacity(
+  // If the widget is visible, animate to 0.0 (invisible).
+  // If the widget is hidden, animate to 1.0 (fully visible).
+  opacity: _visible ? 1.0 : 0.0,
+  duration: Duration(milliseconds: 500),
+  // The green box must be a child of the AnimatedOpacity widget.
+  child: Container(
+    width: 200.0,
+    height: 200.0,
+    color: Colors.green,
+  ),
+);
+```
+
++ 完整例子
+
+```
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final appTitle = 'Opacity Demo';
+    return MaterialApp(
+      title: appTitle,
+      home: MyHomePage(title: appTitle),
+    );
+  }
+}
+
+// The StatefulWidget's job is to take data and create a State class.
+// In this case, the widget takes a title, and creates a _MyHomePageState.
+class MyHomePage extends StatefulWidget {
+  final String title;
+
+  MyHomePage({Key key, this.title}) : super(key: key);
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+// The State class is responsible for two things: holding some data you can
+// update and building the UI using that data.
+class _MyHomePageState extends State<MyHomePage> {
+  // Whether the green box should be visible
+  bool _visible = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: AnimatedOpacity(
+          // If the widget is visible, animate to 0.0 (invisible).
+          // If the widget is hidden, animate to 1.0 (fully visible).
+          opacity: _visible ? 1.0 : 0.0,
+          duration: Duration(milliseconds: 500),
+          // The green box must be a child of the AnimatedOpacity widget.
+          child: Container(
+            width: 200.0,
+            height: 200.0,
+            color: Colors.green,
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Call setState. This tells Flutter to rebuild the
+          // UI with the changes.
+          setState(() {
+            _visible = !_visible;
+          });
+        },
+        tooltip: 'Toggle Opacity',
+        child: Icon(Icons.flip),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+```
 
 ## Design
 
