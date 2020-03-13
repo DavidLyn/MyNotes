@@ -3009,6 +3009,1551 @@ class Llama {
 ---
 # [Library tour](https://dart.dev/guides/libraries/library-tour)
 
++ 此页显示如何使用 Dart 核心库中的主要功能。这只是一个概述，绝不是全面的。每当需要有关类的更多详细信息时，请参阅 [Dart API 参考资料](https://api.dart.dev/stable/2.7.1/index.html)
+
++ [dart:core](https://dart.dev/guides/libraries/library-tour#dartcore---numbers-collections-strings-and-more)
+
+> 内置类型、集合和其他核心功能。此库自动导入到每个 Dart 程序中
+
++ [dart:async](https://dart.dev/guides/libraries/library-tour#dartasync---asynchronous-programming)
+
+> 支持异步编程，包括 Future 和 Stream 等类
+
++ [dart:math](https://dart.dev/guides/libraries/library-tour#dartmath---math-and-random)
+
+> 数学常数和函数，加上随机数发生器
+
++ [dart:convert](https://dart.dev/guides/libraries/library-tour#dartconvert---decoding-and-encoding-json-utf-8-and-more)
+
+> 用于在不同数据表示形式（包括 JSON 和 UTF-8 ）之间转换的编码器和解码器
+
++ [dart:html](https://dart.dev/guides/libraries/library-tour#darthtml)
+
+> 基于浏览器的应用程序的 DOM 和其他 API
+
++ [dart:io](https://dart.dev/guides/libraries/library-tour#dartio)
+
+> 可使用 Dart 虚拟机的程序的 I/O，包括 Flutter 应用程序、服务器和命令行脚本
+
++ 此页只是一个概述；它只包含几个 dart:* 库，而没有第三方库
+
+> 其他查找库信息的地方是 [pub.dev站点](https://pub.dev) 和 [Dart web developer库指南](https://dart.dev/web/libraries)。您可以在 [Dart API 参考资料](https://api.dart.dev/stable/2.7.1/index.html) 中找到所有 Dart 的 API 文档：*库，或者，如果您使用的是 [Flutter API 参考资料](https://api.flutter.dev)
+
+## dart:core - numbers, collections, strings, and more
+
++ [dart:core 库](https://api.dart.dev/stable/2.7.1/dart-core/dart-core-library.html) 提供了一组小而关键的内置功能。此库自动导入到每个 Dart 程序中
+
++ 打印到控制台
+
+> 顶级 print（）方法接受单个参数（任何对象）并在控制台中显示该对象的字符串值（由 toString（）返回）
+
+```
+print(anObject);
+print('I drink $tea.');
+```
+
++ Numbers
+
+> dart:core 库定义了 num、int 和 double 类，这些类具有一些处理数字的基本实用程序
+> 
+> 可以分别使用 int 和 double 的 parse（）方法将字符串转换为整数或 double：
+
+```
+assert(int.parse('42') == 42);
+assert(int.parse('0x42') == 66);
+assert(double.parse('0.50') == 0.5);
+```
+
+> 或者使用 num 的 parse（）方法，如果可能的话创建一个整数，否则创建一个 double：
+
+```
+assert(num.parse('42') is int);
+assert(num.parse('0x42') is int);
+assert(num.parse('0.50') is double);
+```
+
+> 要指定整数的基数，请添加基数参数：
+
+```
+assert(int.parse('42', radix: 16) == 66);
+```
+
+> 使用 toString（）方法将 int 或 double 转换为字符串。要指定小数点右侧的位数，请使用 toStringAsFixed（）。要指定字符串中的有效位数，请使用 toStringsPrecision（）：
+
+```
+// Convert an int to a string.
+assert(42.toString() == '42');
+
+// Convert a double to a string.
+assert(123.456.toString() == '123.456');
+
+// Specify the number of digits after the decimal.
+assert(123.456.toStringAsFixed(2) == '123.46');
+
+// Specify the number of significant figures.
+assert(123.456.toStringAsPrecision(2) == '1.2e+2');
+assert(double.parse('1.2e+2') == 120.0);
+```
+
++ 字符串和正则表达式
+
+> Dart 中的字符串是不可变的 UTF-16 代码单元序列。可以使用正则表达式（ RegExp 对象）在字符串中搜索并替换字符串的部分。String 类定义了 split（）、contains（）、startsWith（）、endsWith（）等方法
+> 
+> *在字符串中搜索*
+> 
+> 您可以在字符串中找到特定的位置，并检查字符串是以特定模式开始还是以特定模式结束。例如：
+
+```
+// Check whether a string contains another string.
+assert('Never odd or even'.contains('odd'));
+
+// Does a string start with another string?
+assert('Never odd or even'.startsWith('Never'));
+
+// Does a string end with another string?
+assert('Never odd or even'.endsWith('even'));
+
+// Find the location of a string inside a string.
+assert('Never odd or even'.indexOf('odd') == 6);
+```
+
+> *从字符串中提取数据*
+> 
+> 您可以从字符串中分别获取字符串或 int 形式的单个字符。准确地说，您实际上得到了单独的 UTF-16 代码单元；高编号字符（如高音谱号（'\u{1D11E}'）是每个代码单元的两个代码单元
+> 
+> 也可以提取子字符串或将字符串拆分为子字符串列表：
+
+```
+// Grab a substring.
+assert('Never odd or even'.substring(6, 9) == 'odd');
+
+// Split a string using a string pattern.
+var parts = 'structured web apps'.split(' ');
+assert(parts.length == 3);
+assert(parts[0] == 'structured');
+
+// Get a UTF-16 code unit (as a string) by index.
+assert('Never odd or even'[0] == 'N');
+
+// Use split() with an empty string parameter to get
+// a list of all characters (as Strings); good for
+// iterating.
+for (var char in 'hello'.split('')) {
+  print(char);
+}
+
+// Get all the UTF-16 code units in the string.
+var codeUnitList =
+    'Never odd or even'.codeUnits.toList();
+assert(codeUnitList[0] == 78);
+```
+
+> *转换为大写或小写*
+> 
+> 您可以轻松地将字符串转换为其大小写变体：
+
+```
+// Convert to uppercase.
+assert('structured web apps'.toUpperCase() ==
+    'STRUCTURED WEB APPS');
+
+// Convert to lowercase.
+assert('STRUCTURED WEB APPS'.toLowerCase() ==
+    'structured web apps');
+```
+
+> 注意：这些方法并不适用于所有语言。例如，土耳其字母的dotless I转换错误
+> 
+> *修剪和检查空字符串*
+> 
+> 使用 trim（）删除所有前导和尾随空白。要检查字符串是否为空（长度为零），请使用 isEmpty
+
+```
+// Trim a string.
+assert('  hello  '.trim() == 'hello');
+
+// Check whether a string is empty.
+assert(''.isEmpty);
+
+// Strings with only white space are not empty.
+assert('  '.isNotEmpty);
+```
+
+> *替换字符串的一部分*
+> 
+> 字符串是不可变的对象，这意味着您可以创建它们，但不能更改它们。如果仔细查看字符串API引用，您会注意到没有一个方法实际更改了字符串的状态。例如，方法 replaceAll（）返回一个新字符串，而不更改原始字符串：
+
+```
+var greetingTemplate = 'Hello, NAME!';
+var greeting =
+    greetingTemplate.replaceAll(RegExp('NAME'), 'Bob');
+
+// greetingTemplate didn't change.
+assert(greeting != greetingTemplate);
+```
+
+> *建立一个字符串*
+> 
+> 要以编程方式生成字符串，可以使用 StringBuffer。在调用 toString（）之前，StringBuffer 不会生成新的字符串对象。writeAll（）方法有一个可选的第二个参数，用于指定分隔符（在本例中为空格）
+
+```
+var sb = StringBuffer();
+sb
+  ..write('Use a StringBuffer for ')
+  ..writeAll(['efficient', 'string', 'creation'], ' ')
+  ..write('.');
+
+var fullString = sb.toString();
+
+assert(fullString ==
+    'Use a StringBuffer for efficient string creation.');
+```
+
++ 正则表达式
+
+> RegExp 类提供与 JavaScript 正则表达式相同的功能。使用正则表达式进行字符串的高效搜索和模式匹配
+
+```
+// Here's a regular expression for one or more digits.
+var numbers = RegExp(r'\d+');
+
+var allCharacters = 'llamas live fifteen to twenty years';
+var someDigits = 'llamas live 15 to 20 years';
+
+// contains() can use a regular expression.
+assert(!allCharacters.contains(numbers));
+assert(someDigits.contains(numbers));
+
+// Replace every match with another string.
+var exedOut = someDigits.replaceAll(numbers, 'XX');
+assert(exedOut == 'llamas live XX to XX years');
+```
+
+> 您也可以直接使用 RegExp 类。Match 类提供对正则表达式匹配的访问
+
+```
+var numbers = RegExp(r'\d+');
+var someDigits = 'llamas live 15 to 20 years';
+
+// Check whether the reg exp has a match in a string.
+assert(numbers.hasMatch(someDigits));
+
+// Loop through all matches.
+for (var match in numbers.allMatches(someDigits)) {
+  print(match.group(0)); // 15, then 20
+}
+```
+
+> *更多信息*
+> 
+> 
+> [StringBuffer](https://api.dart.dev/stable/2.7.1/dart-core/StringBuffer-class.html)
+> 
+> [Pattern](https://api.dart.dev/stable/2.7.1/dart-core/Pattern-class.html)
+> 
+> [RegExp](https://api.dart.dev/stable/2.7.1/dart-core/RegExp-class.html)
+> 
+> [Match](https://api.dart.dev/stable/2.7.1/dart-core/Match-class.html)
+
++ Collections
+
+> Dart 附带了一个核心集合 API，其中包括列表、集合和映射的类
+> 
+> *Lists*
+> 
+> 如语言教程所示，您可以使用字面量创建和初始化列表。或者，使用列表构造函数之一。List 类还定义了几种向列表中添加项和从列表中删除项的方法
+
+```
+// Use a List constructor.
+var vegetables = List();
+
+// Or simply use a list literal.
+var fruits = ['apples', 'oranges'];
+
+// Add to a list.
+fruits.add('kiwis');
+
+// Add multiple items to a list.
+fruits.addAll(['grapes', 'bananas']);
+
+// Get the list length.
+assert(fruits.length == 5);
+
+// Remove a single item.
+var appleIndex = fruits.indexOf('apples');
+fruits.removeAt(appleIndex);
+assert(fruits.length == 4);
+
+// Remove all elements from a list.
+fruits.clear();
+assert(fruits.isEmpty);
+```
+
+> 使用 index of（）查找列表中对象的索引
+
+```
+var fruits = ['apples', 'oranges'];
+
+// Access a list item by index.
+assert(fruits[0] == 'apples');
+
+// Find an item in a list.
+assert(fruits.indexOf('apples') == 0);
+```
+
+> 使用 Sort（）方法对列表排序。可以提供比较两个对象的排序函数。此排序函数必须返回 <0 表示较小，0 表示相同，>0 表示较大。下面的示例使用 compareTo（），compareTo 由Comparable 定义，并由 String 实现
+
+```
+var fruits = ['bananas', 'apples', 'oranges'];
+
+// Sort a list.
+fruits.sort((a, b) => a.compareTo(b));
+assert(fruits[0] == 'apples');
+```
+
+> 列表是参数化类型，因此可以指定列表应包含的类型：
+
+```
+// This list should contain only strings.
+var fruits = List<String>();
+
+fruits.add('apples');
+var fruit = fruits[0];
+assert(fruit is String);
+```
+
+```
+fruits.add(5); // Error: 'int' can't be assigned to 'String'
+```
+
+> 参考：[List API reference](https://api.dart.dev/stable/2.7.1/dart-core/List-class.html)
+> 
+> *Sets*
+> 
+> set 在 Dart 是一个唯一项目的无序集合。因为集合是无序的，所以不能按索引（位置）获取集合的项
+
+```
+var ingredients = Set();
+ingredients.addAll(['gold', 'titanium', 'xenon']);
+assert(ingredients.length == 3);
+
+// Adding a duplicate item has no effect.
+ingredients.add('gold');
+assert(ingredients.length == 3);
+
+// Remove an item from a set.
+ingredients.remove('gold');
+assert(ingredients.length == 2);
+```
+
+> 使用 contains（）和 containsAll（）检查一个或多个对象是否在一个 set 中：
+
+```
+var ingredients = Set();
+ingredients.addAll(['gold', 'titanium', 'xenon']);
+
+// Check whether an item is in the set.
+assert(ingredients.contains('titanium'));
+
+// Check whether all the items are in the set.
+assert(ingredients.containsAll(['titanium', 'xenon']));
+```
+
+> 交集是其项在其他两个集合中的集合
+
+```
+var ingredients = Set();
+ingredients.addAll(['gold', 'titanium', 'xenon']);
+
+// Create the intersection of two sets.
+var nobleGases = Set.from(['xenon', 'argon']);
+var intersection = ingredients.intersection(nobleGases);
+assert(intersection.length == 1);
+assert(intersection.contains('xenon'));
+```
+
+> 参考：[Set API reference](https://api.dart.dev/stable/2.7.1/dart-core/Set-class.html)
+> 
+> *Maps*
+> 
+> 映射（通常称为字典或哈希）是键-值对的无序集合。映射将一个键与某个值相关联，以便于检索。与 JavaScript 不同，Dart 对象不是映射
+> 
+> 可以使用简洁的文字语法声明映射，也可以使用传统的构造函数：
+
+```
+// Maps often use strings as keys.
+var hawaiianBeaches = {
+  'Oahu': ['Waikiki', 'Kailua', 'Waimanalo'],
+  'Big Island': ['Wailea Bay', 'Pololu Beach'],
+  'Kauai': ['Hanalei', 'Poipu']
+};
+
+// Maps can be built from a constructor.
+var searchTerms = Map();
+
+// Maps are parameterized types; you can specify what
+// types the key and value should be.
+var nobleGases = Map<int, String>();
+```
+
+> 您可以使用括号语法添加、获取和设置映射项。使用remove（）从映射中移除键及其值
+
+```
+var nobleGases = {54: 'xenon'};
+
+// Retrieve a value with a key.
+assert(nobleGases[54] == 'xenon');
+
+// Check whether a map contains a key.
+assert(nobleGases.containsKey(54));
+
+// Remove a key and its value.
+nobleGases.remove(54);
+assert(!nobleGases.containsKey(54));
+```
+
+> 可以从映射中检索所有值或所有键：
+
+```
+var hawaiianBeaches = {
+  'Oahu': ['Waikiki', 'Kailua', 'Waimanalo'],
+  'Big Island': ['Wailea Bay', 'Pololu Beach'],
+  'Kauai': ['Hanalei', 'Poipu']
+};
+
+// Get all the keys as an unordered collection
+// (an Iterable).
+var keys = hawaiianBeaches.keys;
+
+assert(keys.length == 3);
+assert(Set.from(keys).contains('Oahu'));
+
+// Get all the values as an unordered collection
+// (an Iterable of Lists).
+var values = hawaiianBeaches.values;
+assert(values.length == 3);
+assert(values.any((v) => v.contains('Waikiki')));
+```
+
+> 要检查映射是否包含键，请使用 containsKey（）。因为映射值可以为 null，所以不能仅仅依靠获取键的值并检查 null 来确定键的存在
+
+```
+var hawaiianBeaches = {
+  'Oahu': ['Waikiki', 'Kailua', 'Waimanalo'],
+  'Big Island': ['Wailea Bay', 'Pololu Beach'],
+  'Kauai': ['Hanalei', 'Poipu']
+};
+
+assert(hawaiianBeaches.containsKey('Oahu'));
+assert(!hawaiianBeaches.containsKey('Florida'));
+```
+
+> 如果且仅当键在映射中不存在时，要为键分配值，请使用 putIfAbsent（）方法。必须提供返回值的函数
+
+```
+var teamAssignments = {};
+teamAssignments.putIfAbsent(
+    'Catcher', () => pickToughestKid());
+assert(teamAssignments['Catcher'] != null);
+```
+
+> 参考：[Map API reference](https://api.dart.dev/stable/2.7.1/dart-core/Map-class.html)
+> 
+> *常用的 collection 方法*
+> 
+> 列表、集合和映射共享许多集合中的常见功能。一些常见功能由 Iterable 类定义，该类列出并设置实现
+> 
+> 注意：虽然 Map 没有实现 Iterable，但是可以使用 Map keys 和 values 属性从中获取 Iterable
+> 
+> 使用 isEmpty 或 isNotEmpty 检查列表、集合或映射是否包含项：
+
+```
+var coffees = [];
+var teas = ['green', 'black', 'chamomile', 'earl grey'];
+assert(coffees.isEmpty);
+assert(teas.isNotEmpty);
+```
+
+> 要将函数应用于列表、集或映射中的每个项，可以使用 forEach（）：
+
+```
+var teas = ['green', 'black', 'chamomile', 'earl grey'];
+
+teas.forEach((tea) => print('I drink $tea'));
+```
+
+> 在映射上调用 forEach（）时，函数必须有两个参数（键和值）：
+
+```
+hawaiianBeaches.forEach((k, v) {
+  print('I want to visit $k and swim at $v');
+  // I want to visit Oahu and swim at
+  // [Waikiki, Kailua, Waimanalo], etc.
+});
+```
+
+> Iterables 提供了 map（）方法，该方法为您提供单个对象中的所有结果：
+
+```
+var teas = ['green', 'black', 'chamomile', 'earl grey'];
+
+var loudTeas = teas.map((tea) => tea.toUpperCase());
+loudTeas.forEach(print);
+```
+
+> 注意：map（）返回的对象是一个延迟计算的 Iterable：只有从返回的对象中请求一个项，才能调用函数
+> 
+> 要强制在每个项上立即调用函数，请使用map（）.toList（）或map（）.toSet（）：
+
+```
+var loudTeas =
+    teas.map((tea) => tea.toUpperCase()).toList();
+```
+
+> 使用 Iterable 的 where（）方法获取与条件匹配的所有项。使用 Iterable 的 any（）和 every（）方法检查某些项或所有项是否与条件匹配
+
+```
+var teas = ['green', 'black', 'chamomile', 'earl grey'];
+
+// Chamomile is not caffeinated.
+bool isDecaffeinated(String teaName) =>
+    teaName == 'chamomile';
+
+// Use where() to find only the items that return true
+// from the provided function.
+var decaffeinatedTeas =
+    teas.where((tea) => isDecaffeinated(tea));
+// or teas.where(isDecaffeinated)
+
+// Use any() to check whether at least one item in the
+// collection satisfies a condition.
+assert(teas.any(isDecaffeinated));
+
+// Use every() to check whether all the items in a
+// collection satisfy a condition.
+assert(!teas.every(isDecaffeinated));
+```
+
+> 参考：[Iterable API reference](https://api.dart.dev/stable/2.7.1/dart-core/Iterable-class.html)
+
++ URIs
+
+> Uri 类提供了在 Uri（您可能知道的 url）中使用的对字符串进行编码和解码的函数。这些函数处理特定于 uri 的字符，如 & 和 =。Uri 类还解析并公开 Uri 主机、端口、scheme 等的组件
+> 
+> *编码和解码完全限定的 URI*
+> 
+> 要对除 URI 中具有特殊含义的字符（如/、：、&、#）之外的字符进行编码和解码，请使用 encodeFull（）和 decodeFull（）方法。这些方法适合于对完全限定的 URI 进行编码或解码，保留完整的特殊 URI 字符
+
+```
+var uri = 'https://example.org/api?foo=some message';
+
+var encoded = Uri.encodeFull(uri);
+assert(encoded ==
+    'https://example.org/api?foo=some%20message');
+
+var decoded = Uri.decodeFull(encoded);
+assert(uri == decoded);
+```
+
+> 注意，只有 some 和 message 之间的空间是如何编码的
+> 
+> *编码和解码URI组件*
+> 
+> 要对 URI 中具有特殊含义的字符串的所有字符（包括（但不限于）/、&、和：）进行编码和解码，请使用 encodeComponent（）和 decodeComponent（）方法
+
+```
+var uri = 'https://example.org/api?foo=some message';
+
+var encoded = Uri.encodeComponent(uri);
+assert(encoded ==
+    'https%3A%2F%2Fexample.org%2Fapi%3Ffoo%3Dsome%20message');
+
+var decoded = Uri.decodeComponent(encoded);
+assert(uri == decoded);
+```
+
+> 注意每个特殊字符是如何编码的。例如， / 被编码为 %2F
+> 
+> *解析 URI*
+> 
+> 如果您有一个 Uri 对象或 Uri 字符串，则可以使用诸如 path 之类的 Uri 字段来获取其部分。要从字符串创建 Uri，请使用 parse（）静态方法：
+
+```
+var uri =
+    Uri.parse('https://example.org:8080/foo/bar#frag');
+
+assert(uri.scheme == 'https');
+assert(uri.host == 'example.org');
+assert(uri.path == '/foo/bar');
+assert(uri.fragment == 'frag');
+assert(uri.origin == 'https://example.org:8080');
+```
+
+> 参考：[ Uri API reference](https://api.dart.dev/stable/2.7.1/dart-core/Uri-class.html)
+> 
+> *构建 URI*
+> 
+> 可以使用 URI（）构造函数从各个部分构建 URI：
+
+```
+var uri = Uri(
+    scheme: 'https',
+    host: 'example.org',
+    path: '/foo/bar',
+    fragment: 'frag');
+assert(
+    uri.toString() == 'https://example.org/foo/bar#frag');
+```
+
++ 日期和时间
+
+> DateTime 对象是时间点。时区为 UTC 或本地时区
+> 
+> 可以使用多个构造函数创建 DateTime 对象：
+
+```
+// Get the current date and time.
+var now = DateTime.now();
+
+// Create a new DateTime with the local time zone.
+var y2k = DateTime(2000); // January 1, 2000
+
+// Specify the month and day.
+y2k = DateTime(2000, 1, 2); // January 2, 2000
+
+// Specify the date as a UTC time.
+y2k = DateTime.utc(2000); // 1/1/2000, UTC
+
+// Specify a date and time in ms since the Unix epoch.
+y2k = DateTime.fromMillisecondsSinceEpoch(946684800000,
+    isUtc: true);
+
+// Parse an ISO 8601 date.
+y2k = DateTime.parse('2000-01-01T00:00:00Z');
+```
+
+> 日期的 millisecondsSinceEpoch 属性返回自“Unix epoch”以来的毫秒数—1970年1月1日，UTC:
+
+```
+// 1/1/2000, UTC
+var y2k = DateTime.utc(2000);
+assert(y2k.millisecondsSinceEpoch == 946684800000);
+
+// 1/1/1970, UTC
+var unixEpoch = DateTime.utc(1970);
+assert(unixEpoch.millisecondsSinceEpoch == 0);
+```
+
+> 使用 Duration 类计算两个日期之间的差异并向前或向后移动日期：
+
+```
+var y2k = DateTime.utc(2000);
+
+// Add one year.
+var y2001 = y2k.add(Duration(days: 366));
+assert(y2001.year == 2001);
+
+// Subtract 30 days.
+var december2000 = y2001.subtract(Duration(days: 30));
+assert(december2000.year == 2000);
+assert(december2000.month == 12);
+
+// Calculate the difference between two dates.
+// Returns a Duration object.
+var duration = y2001.difference(y2k);
+assert(duration.inDays == 366); // y2k was a leap year.
+```
+
+> 警告：使用 Duration 按天移动日期时间可能会有问题，这是由于时钟移动（例如夏令时）。如果必须移动天数，请使用 UTC 日期
+> 
+> 参考：[DateTime](https://api.dart.dev/stable/2.7.1/dart-core/DateTime-class.html)  [Duration](https://api.dart.dev/stable/2.7.1/dart-core/Duration-class.html)
+
++ 实用工具类
+
+> 核心库包含各种实用程序类，用于排序、映射值和迭代
+> 
+> *比较对象*
+> 
+> 实现 Comparable 接口以指示一个对象可以与另一个对象进行比较，通常用于排序。compareTo（）方法返回 <0 表示较小，0 表示相同，>0 表示较大
+
+```
+class Line implements Comparable<Line> {
+  final int length;
+  const Line(this.length);
+
+  @override
+  int compareTo(Line other) => length - other.length;
+}
+
+void main() {
+  var short = const Line(1);
+  var long = const Line(100);
+  assert(short.compareTo(long) < 0);
+}
+```
+
+> *实现映射键(map key)*
+> 
+> Dart 中的每个对象自动提供一个整数哈希代码，因此可以用作映射中的键。但是，可以重写 hashCode getter 以生成自定义哈希代码。如果您这样做了，您可能还需要重写 == 运算符。相等的对象（via==）必须具有相同的哈希代码。哈希代码不必是唯一的，但应该是分布良好的
+
+```
+class Person {
+  final String firstName, lastName;
+
+  Person(this.firstName, this.lastName);
+
+  // Override hashCode using strategy from Effective Java,
+  // Chapter 11.
+  @override
+  int get hashCode {
+    int result = 17;
+    result = 37 * result + firstName.hashCode;
+    result = 37 * result + lastName.hashCode;
+    return result;
+  }
+
+  // You should generally implement operator == if you
+  // override hashCode.
+  @override
+  bool operator ==(dynamic other) {
+    if (other is! Person) return false;
+    Person person = other;
+    return (person.firstName == firstName &&
+        person.lastName == lastName);
+  }
+}
+
+void main() {
+  var p1 = Person('Bob', 'Smith');
+  var p2 = Person('Bob', 'Smith');
+  var p3 = 'not a person';
+  assert(p1.hashCode == p2.hashCode);
+  assert(p1 == p2);
+  assert(p1 != p3);
+}
+```
+
+> *迭代(Iteration)*
+> 
+> Iterable 和 Iterator 类支持 for-in 循环。只要创建一个类，该类可以提供迭代器供 for-in 循环使用，就可以扩展（如果可能）或实现 Iterable。实现迭代器来定义实际的迭代能力
+
+```
+class Process {
+  // Represents a process...
+}
+
+class ProcessIterator implements Iterator<Process> {
+  @override
+  Process get current => ...
+  @override
+  bool moveNext() => ...
+}
+
+// A mythical class that lets you iterate through all
+// processes. Extends a subclass of [Iterable].
+class Processes extends IterableBase<Process> {
+  @override
+  final Iterator<Process> iterator = ProcessIterator();
+}
+
+void main() {
+  // Iterable objects can be used with for-in.
+  for (var process in Processes()) {
+    // Do something with the process.
+  }
+}
+```
+
++ 异常
+
+> Dart 核心库定义了许多常见的异常和错误。异常被认为是可以提前计划并捕获的条件。错误是你不期望或不计划的情况
+> 
+> 最常见的错误有：
+> 
+> *NoSuchMethodError*
+> 
+> 当接收对象（可能为空）未实现方法时引发
+> 
+> *ArgumentError*
+> 
+> 可以由遇到意外参数的方法引发
+> 
+> 引发特定于应用程序的异常是指示发生错误的常见方法。可以通过实现异常接口定义自定义异常：
+
+```
+class FooException implements Exception {
+  final String msg;
+
+  const FooException([this.msg]);
+
+  @override
+  String toString() => msg ?? 'FooException';
+}
+```
+
+## dart:async - asynchronous programming
+
++ 异步编程通常使用回调函数，但 Dart 提供了替代方法：Future 和 Stream 对象
+
+> Future 就像是对未来某个时候所能提供的结果的承诺
+> 
+> Stream 是获取一系列值（如事件）的方法
+> 
+> Future、Stream 和更多都在 dart:async 库中
+> 
+> 注意：您并不总是需要直接使用 Future 或 Stream API。Dart 语言支持使用 async 和 await 等关键字进行异步编码
+> 
+> dart:async 库可以在 web 应用程序和命令行应用程序中工作。要使用它，请导入 dart:async：
+
+```
+import 'dart:async';
+```
+
+> 版本说明：从 Dart 2.1 开始，您不需要导入 Dart:async 来使用 Future 和 Stream  API，因为 Dart:core 导出这些类
+
++ Future
+
+> Future 作为异步方法的返回对象，出现在整个 Dart 库中。future 完成之时就是数据可用之时
+> 
+> *使用 await*
+> 
+> 在直接使用 Future 的 API 之前，请考虑改用 await。使用 await 表达式的代码比使用 Future API 的代码更容易理解
+> 
+> 考虑下面的函数。它使用 Future 的 then（）方法连续执行三个异步函数，在执行下一个之前等待每个函数完成
+
+```
+runUsingFuture() {
+  // ...
+  findEntryPoint().then((entryPoint) {
+    return runExecutable(entryPoint, args);
+  }).then(flushThenExit);
+}
+```
+
+> 等效的 await 表达式代码更像是同步代码：
+
+```
+runUsingAsyncAwait() async {
+  // ...
+  var entryPoint = await findEntryPoint();
+  var exitCode = await runExecutable(entryPoint, args);
+  await flushThenExit(exitCode);
+}
+```
+
+> async 函数可以捕获 Future 的异常。例如：
+
+```
+var entryPoint = await findEntryPoint();
+try {
+  var exitCode = await runExecutable(entryPoint, args);
+  await flushThenExit(exitCode);
+} catch (e) {
+  // Handle the error...
+}
+```
+
+> 重要提示：async 函数返回 Future。如果不希望函数返回 Future，请使用其他解决方案。例如，可以从函数中调用 async 函数
+> 
+> *基本用法*
+> 
+> 可以使用 then（）来调度 Future 完成时运行的代码。例如，HttpRequest.getString（）返回 Future，因为 HTTP 请求可能需要一段时间。使用 then（）可以在 Future 完成且承诺的字符串值可用时运行一些代码：
+
+```
+HttpRequest.getString(url).then((String result) {
+  print(result);
+});
+```
+
+> 使用 catchError（）处理 Future 对象可能引发的任何错误或异常
+
+```
+HttpRequest.getString(url).then((String result) {
+  print(result);
+}).catchError((e) {
+  // Handle or ignore the error.
+});
+```
+
+> then（）.catchError（）模式是 try catch 的异步版本
+> 
+> 重要提示：请确保对 then（）的结果调用 catchError（）— 而不是对原始 Future 的结果。否则，catchError（）只能处理来自原始 Future 计算的错误，而不能处理由then（）注册的处理程序的错误
+> 
+> *链接多个异步方法*
+> 
+> then（）方法返回一个 Future，提供了按特定顺序运行多个异步函数的有用方法。如果使用then（）注册的回调返回一个 Future，then（）返回一个等价的 Future。如果回调返回任何其他类型的值，then（）将创建一个新的 Future，并用该值完成
+
+```
+Future result = costlyQuery(url);
+result
+    .then((value) => expensiveWork(value))
+    .then((_) => lengthyComputation())
+    .then((_) => print('Done!'))
+    .catchError((exception) {
+  /* Handle exception... */
+});
+```
+
+> 在前面的示例中，方法按以下顺序运行：
+> 
+> 1.costlyQuery()
+> 
+> 2.expensiveWork()
+> 
+> 3.lengthyComputation()
+> 
+> 下面是使用 await 编写的相同代码：
+
+```
+try {
+  final value = await costlyQuery(url);
+  await expensiveWork(value);
+  await lengthyComputation();
+  print('Done!');
+} catch (e) {
+  /* Handle exception... */
+}
+```
+
+> *等待多重 Future*
+> 
+> 有时，您的算法需要调用许多异步函数，并等待它们全部完成后再继续。使用 Future.wait（）静态方法管理多个 Future 并等待它们完成：
+
+```
+Future deleteLotsOfFiles() async =>  ...
+Future copyLotsOfFiles() async =>  ...
+Future checksumLotsOfOtherFiles() async =>  ...
+
+await Future.wait([
+  deleteLotsOfFiles(),
+  copyLotsOfFiles(),
+  checksumLotsOfOtherFiles(),
+]);
+print('Done with all the long steps!');
+```
+
++ Stream
+
+> Stream 对象出现在整个 Dart API 中，表示数据序列。例如，诸如按钮单击之类的 HTML 事件是使用 stream 传递的。也可以将文件作为 stream 读取
+> 
+> *使用异步 for 循环*
+> 
+> 有时您可以使用异步 for 循环（await for），而不是使用 stream API
+> 
+> 考虑下面的函数。它使用 Stream 的 listen（）方法订阅一个文件列表，传递一个搜索每个文件或目录的函数文本
+
+```
+void main(List<String> arguments) {
+  // ...
+  FileSystemEntity.isDirectory(searchPath).then((isDir) {
+    if (isDir) {
+      final startingDir = Directory(searchPath);
+      startingDir
+          .list(
+              recursive: argResults[recursive],
+              followLinks: argResults[followLinks])
+          .listen((entity) {
+        if (entity is File) {
+          searchFile(entity, searchTerms);
+        }
+      });
+    } else {
+      searchFile(File(searchPath), searchTerms);
+    }
+  });
+}
+```
+
+> 等效的 await 表达式代码，且包含异步 for 循环 (await for)如下（类似同步代码）：
+
+```
+Future main(List<String> arguments) async {
+  // ...
+  if (await FileSystemEntity.isDirectory(searchPath)) {
+    final startingDir = Directory(searchPath);
+    await for (var entity in startingDir.list(
+        recursive: argResults[recursive],
+        followLinks: argResults[followLinks])) {
+      if (entity is File) {
+        searchFile(entity, searchTerms);
+      }
+    }
+  } else {
+    searchFile(File(searchPath), searchTerms);
+  }
+}
+```
+
+> 重要提示：在使用 await for 之前，请确保它使代码更清晰，并且您确实希望等待 Stream 的所有结果。例如，您通常不应该对 DOM 事件监听器使用 await For，因为 DOM 发送无止境的事件流。如果使用 await for 在一行中注册两个 DOM 事件侦听器，则永远不会处理第二种事件
+> 
+> *监听流数据*
+> 
+> 要在到达时获取每个值，请使用 await for 或使用 listen（）方法订阅流：
+
+```
+// Find a button by ID and add an event handler.
+querySelector('#submitInfo').onClick.listen((e) {
+  // When the button is clicked, it runs this code.
+  submitData();
+});
+```
+
+> 在本例中，onClick 属性是由 submitInfo 按钮提供的流对象
+> 
+> 如果只关心一个事件，可以使用 first、last 或 single 等属性获取它。要在处理事件之前测试该事件，请使用诸如 firstWhere（）、lastWhere（）或 singleWhere（）等方法
+> 
+> 如果关心事件的子集，可以使用 skip（）、skipWhile（）、take（）、takeWhile（）和where（）等方法
+> 
+> *转换流数据*
+> 
+> 通常，在使用流数据之前，需要更改流数据的格式。使用 transform（）方法生成具有不同类型数据的流：
+
+```
+var lines = inputStream
+    .transform(utf8.decoder)
+    .transform(LineSplitter());
+```
+
+> 本例使用两个转换器。首先，它使用 utf8.decoder 将整数流转换为字符串流。然后它使用一个行拆分器将字符串流转换为单独的行流。这些转换器来自 dart:convert 库
+> 
+> *处理错误和完成*
+> 
+> 如何指定错误和完成处理代码取决于是使用异步 for 循环（await for）还是流API
+> 
+> 如果使用异步 for 循环，则使用 try catch 处理错误。流关闭后执行的代码在异步 for 循环之后执行
+
+```
+Future readFileAwaitFor() async {
+  var config = File('config.txt');
+  Stream<List<int>> inputStream = config.openRead();
+
+  var lines = inputStream
+      .transform(utf8.decoder)
+      .transform(LineSplitter());
+  try {
+    await for (var line in lines) {
+      print('Got ${line.length} characters from stream');
+    }
+    print('file is now closed');
+  } catch (e) {
+    print(e);
+  }
+}
+```
+
+> 如果使用流 API，则通过注册 onError 侦听器来处理错误。通过注册 onDone 侦听器在流关闭后运行代码
+
+```
+var config = File('config.txt');
+Stream<List<int>> inputStream = config.openRead();
+
+inputStream
+    .transform(utf8.decoder)
+    .transform(LineSplitter())
+    .listen((String line) {
+  print('Got ${line.length} characters from stream');
+}, onDone: () {
+  print('file is now closed');
+}, onError: (e) {
+  print(e);
+});
+```
+
+## dart:math - math and random
+
++ dart:math 库提供了常见的功能，如正弦和余弦、最大值和最小值，以及常量，如 pi 和 e
+
+> 数学库中的大多数功能都是作为顶级函数实现的
+> 
+> 若要在应用程序中使用此库，请导入 dart:math
+
+```
+import 'dart:math';
+```
+
++ 三角函数
+
+> Math 库提供基本的三角函数：
+
+```
+// Cosine
+assert(cos(pi) == -1.0);
+
+// Sine
+var degrees = 30;
+var radians = degrees * (pi / 180);
+// radians is now 0.52359.
+var sinOf30degrees = sin(radians);
+// sin 30° = 0.5
+assert((sinOf30degrees - 0.5).abs() < 0.01);
+```
+
+> 注意：这些函数使用弧度，而不是度数！
+
++ 最大值和最小值
+
+> Math 库提供 max（）和 min（）方法：
+
+```
+assert(max(1, 1000) == 1000);
+assert(min(1, -1000) == -1000);
+```
+
++ 数学常数
+
+> 在 Math 库中查找您最喜欢的常量 pi、e 等：
+
+```
+// See the Math library for additional constants.
+print(e); // 2.718281828459045
+print(pi); // 3.141592653589793
+print(sqrt2); // 1.4142135623730951
+```
+
++ 随机数
+
+> 用 Random 类生成随机数。您可以选择为随机构造函数提供种子
+
+```
+var random = Random();
+random.nextDouble(); // Between 0.0 and 1.0: [0, 1)
+random.nextInt(10); // Between 0 and 9.
+```
+
+> 甚至可以生成随机布尔值：
+
+```
+var random = Random();
+random.nextBool(); // true or false
+```
+
+## dart:convert - 解码和编码 JSON、UTF-8 等
+
++ dart:convert 库具有 JSON 和 UTF-8 的转换器，以及创建其他转换器的支持。JSON 是一种表示结构化对象和集合的简单文本格式。UTF-8 是一种常见的可变宽度编码，可以表示 Unicode 字符集中的每个字符
+
+> dart:convert 库在web应用程序和命令行应用程序中都可以工作。要使用它，导入 dart:convert
+
+```
+import 'dart:convert';
+```
+
++ 解码和编码 JSON
+
+> 使用 jsonDecode（）将 JSON 编码的字符串解码为 Dart 对象：
+
+```
+// NOTE: Be sure to use double quotes ("),
+// not single quotes ('), inside the JSON string.
+// This string is JSON, not Dart.
+var jsonString = '''
+  [
+    {"score": 40},
+    {"score": 80}
+  ]
+''';
+
+var scores = jsonDecode(jsonString);
+assert(scores is List);
+
+var firstScore = scores[0];
+assert(firstScore is Map);
+assert(firstScore['score'] == 40);
+```
+
+> 使用 jsonEncode（）将受支持的 Dart 对象编码为 JSON 格式的字符串：
+
+```
+var scores = [
+  {'score': 40},
+  {'score': 80},
+  {'score': 100, 'overtime': true, 'special_guest': null}
+];
+
+var jsonText = jsonEncode(scores);
+assert(jsonText ==
+    '[{"score":40},{"score":80},'
+        '{"score":100,"overtime":true,'
+        '"special_guest":null}]');
+```
+
+> 只有 int、double、String、bool、null、List 或 Map（带字符串键）类型的对象可以直接编码为 JSON。List 和 Map 对象是递归编码的
+> 
+> 对于不能直接编码的对象，有两个编码选项。第一个是用第二个参数调用 encode（）：返回可直接编码的对象的函数。第二个选项是省略第二个参数，在这种情况下，编码器调用对象的toJson（）方法
+
++ UTF-8 字符的解码与编码
+
+> 使用 utf8.decode（）将 utf8 编码的字节解码为 Dart 字符串：
+
+```
+List<int> utf8Bytes = [
+  0xc3, 0x8e, 0xc3, 0xb1, 0xc5, 0xa3, 0xc3, 0xa9,
+  0x72, 0xc3, 0xb1, 0xc3, 0xa5, 0xc5, 0xa3, 0xc3,
+  0xae, 0xc3, 0xb6, 0xc3, 0xb1, 0xc3, 0xa5, 0xc4,
+  0xbc, 0xc3, 0xae, 0xc5, 0xbe, 0xc3, 0xa5, 0xc5,
+  0xa3, 0xc3, 0xae, 0xe1, 0xbb, 0x9d, 0xc3, 0xb1
+];
+
+var funnyWord = utf8.decode(utf8Bytes);
+
+assert(funnyWord == 'Îñţérñåţîöñåļîžåţîờñ');
+```
+
+> 要将 UTF-8 字符流转换为 Dart 字符串，请将 utf8.decoder 指定为 stream transform（）方法：
+
+```
+var lines =
+    utf8.decoder.bind(inputStream).transform(LineSplitter());
+try {
+  await for (var line in lines) {
+    print('Got ${line.length} characters from stream');
+  }
+  print('file is now closed');
+} catch (e) {
+  print(e);
+}
+```
+
+> 使用 utf8.encode（）将 Dart 字符串编码为 utf8 编码字节列表：
+
+```
+List<int> encoded = utf8.encode('Îñţérñåţîöñåļîžåţîờñ');
+
+assert(encoded.length == utf8Bytes.length);
+for (int i = 0; i < encoded.length; i++) {
+  assert(encoded[i] == utf8Bytes[i]);
+}
+```
+
++ 其他功能
+
+> dart:convert 库也有用于 ASCII 和 ISO-8859-1（Latin1） 的转换器
+
+## dart:html ：基于浏览器的应用程序
+
++ 使用 dart:html 库对浏览器进行编程，操作 DOM 中的对象和元素，并访问 HTML5 API。DOM 代表文档对象模型，它描述 HTML 页面的层次结构
+
+> dart:html 的其他常见用途包括操作样式（CSS）、使用 HTTP 请求获取数据以及使用 WebSockets 交换数据。HTML5（和 dart:html）有许多附加的 API，本节不涉及这些 API。只有 web 应用程序可以使用 dart:html，而不是命令行应用程序
+> 
+> 要在 web 应用程序中使用HTML库，请导入 dart:html：
+
+```
+import 'dart:html';
+```
+
++ 操纵 DOM
+
+> 要使用 DOM，您需要了解windows、文档(document)、元素(element)和节点(node)
+> 
+> Window 对象表示 web 浏览器的实际窗口。每个 Window 都有一个 Document 对象，该对象指向当前加载的文档。Window 对象还具有对各种 API 的访问器，如 IndexedDB（用于存储数据）、requestAnimationFrame（用于动画）等。在选项卡式浏览器中，每个选项卡都有自己的 Window 对象
+> 
+> 使用 Document 对象，可以在文档中创建和操作元素对象。请注意，Document 本身是一个元素，可以对其进行操作
+> 
+> DOM 为节点树建模。这些节点通常是元素，但也可以是属性、文本、注释和其他 DOM 类型。除了没有父节点的根节点之外，DOM 中的每个节点都有一个父节点，并且可能有许多子节点
+> 
+> *查找元素*
+> 
+> 要操作元素，首先需要一个表示它的对象。可以使用查询获取此对象
+> 
+> 使用顶级函数 querySelector（）和 querySelectorAll（）查找一个或多个元素。您可以按 ID、类、标记、名称或它们的任意组合进行查询。[CSS选择器规范指南](https://www.w3.org/TR/selectors-3/)定义选择器的格式，例如使用 # 前缀指定 id 和句点（.）指定类
+> 
+> querySelector() 函数的作用是：返回与选择器匹配的第一个元素，而querySelectorAll（）返回与选择器匹配的元素集合
+
+```
+// Find an element by id (an-id).
+Element elem1 = querySelector('#an-id');
+
+// Find an element by class (a-class).
+Element elem2 = querySelector('.a-class');
+
+// Find all elements by tag (<div>).
+List<Element> elems1 = querySelectorAll('div');
+
+// Find all text inputs.
+List<Element> elems2 = querySelectorAll(
+  'input[type="text"]',
+);
+
+// Find all elements with the CSS class 'class'
+// inside of a <p> that is inside an element with
+// the ID 'id'.
+List<Element> elems3 = querySelectorAll('#id p.class');
+```
+
+> *操作元素*
+> 
+> 可以使用属性更改元素的状态。节点及其子类型元素定义所有元素都具有的属性。例如，所有元素都有 classes、hidden、id、style 和 title 属性，您可以使用这些属性来设置状态。元素的子类定义其他属性，例如 anchoreElement 的 href 属性
+> 
+> 考虑这个在 HTML 中指定 anchor 元素的例子：
+
+```
+<a id="example" href="/another/example">link text</a>
+```
+
+> 这个 <a> 标签指定一个具有一个 href 属性的元素和一个包含字符串 “linktext” 的文本节点（可通过 text 属性访问）。要更改链接指向的 URL，可以使用 AnchoreElement 的 href 属性：
+
+```
+var anchor = querySelector('#example') as AnchorElement;
+anchor.href = 'https://dart.dev';
+```
+
+> 通常需要在多个元素上设置属性。例如，下面的代码设置类为“mac”、“win”或“linux”的所有元素的 hidden 属性。将 hidden 属性设置为 true 与向 CSS 添加 display:none 具有相同的效果
+
+```
+<!-- In HTML: -->
+<p>
+  <span class="linux">Words for Linux</span>
+  <span class="macos">Words for Mac</span>
+  <span class="windows">Words for Windows</span>
+</p>
+```
+
+```
+// In Dart:
+final osList = ['macos', 'windows', 'linux'];
+final userOs = determineUserOs();
+
+// For each possible OS...
+for (var os in osList) {
+  // Matches user OS?
+  bool shouldShow = (os == userOs);
+
+  // Find all elements with class=os. For example, if
+  // os == 'windows', call querySelectorAll('.windows')
+  // to find all elements with the class "windows".
+  // Note that '.$os' uses string interpolation.
+  for (var elem in querySelectorAll('.$os')) {
+    elem.hidden = !shouldShow; // Show or hide.
+  }
+}
+```
+
+> 当合适的属性不可用或不方便时，可以使用元素的 attributes 属性。此属性是 Map <String，String>，其中键是属性名。下面是设置属性值的示例：
+
+```
+elem.attributes['someAttribute'] = 'someValue';
+```
+
+> *创建元素*
+> 
+> 可以通过创建新元素并将它们附加到 DOM 来添加到现有的 HTML 页面。下面是创建段落（<p>）元素的示例：
+
+```
+var elem = ParagraphElement();
+elem.text = 'Creating is easy!';
+```
+
+> 还可以通过解析HTML文本来创建元素。任何子元素也会被解析和创建
+
+```
+var elem2 = Element.html(
+  '<p>Creating <em>is</em> easy!</p>',
+);
+```
+
+> 注意 elem2 是上例中的 ParagraphElement
+> 
+> 通过为新创建的元素分配父元素，将其附加到文档。可以将元素添加到任何现有元素的子元素中。在下面的示例中，body 是一个元素，可以从 children 属性访问它的子元素（作为List<element>）
+
+```
+document.body.children.add(elem2);
+```
+
+> *添加、替换和删除节点*
+> 
+> 回想一下，元素只是一种节点。使用 Node 的 nodes 属性可以找到节点的所有子节点，该属性返回一个List<Node>（与忽略非元素节点的子节点不同）。拥有此列表后，可以使用常用的列表方法和运算符来操作节点的子节点
+> 
+> 要将节点添加为其父节点的最后一个子节点，请使用 List add（）方法：
+
+```
+querySelector('#inputs').nodes.add(elem);
+```
+
+> 要替换节点，请使用 Node replaceWith（）方法：
+
+```
+querySelector('#status').replaceWith(elem);
+```
+
+> 要删除节点，请使用 Node remove（）方法：
+
+```
+// Find a node by ID, and remove it from the DOM.
+querySelector('#expendable').remove();
+```
+
+> *操作CSS样式*
+> 
+> CSS 或层叠样式表定义了 DOM 元素的表示样式。可以通过将ID和类属性附加到元素来更改元素的外观
+> 
+> 每个元素都有一个 classes 字段，它是一个列表。只需在此集合中添加和移除字符串，即可添加和移除CSS类。例如，以下示例将警告类添加到元素：
+
+```
+var elem = querySelector('#message');
+elem.classes.add('warning');
+```
+
+> 按 ID 查找元素通常非常有效。可以使用 ID 属性动态设置元素 ID：
+
+```
+var message = DivElement();
+message.id = 'message2';
+message.text = 'Please subscribe to the Dart mailing list.';
+```
+
+> 通过使用方法级联，可以减少此示例中的冗余文本：
+
+```
+var message = DivElement()
+  ..id = 'message2'
+  ..text = 'Please subscribe to the Dart mailing list.';
+```
+
+> 虽然使用 ID 和 classes 将元素与一组样式关联是最佳实践，但有时您希望将特定样式直接附加到元素：
+
+```
+message.style
+  ..fontWeight = 'bold'
+  ..fontSize = '3em';
+```
+
+> *处理事件*
+> 
+> 要响应外部事件，如单击、焦点更改和选择，请添加事件侦听器。您可以将事件侦听器添加到页面上的任何元素。事件分派和传播是一个复杂的主题；如果您是web编程新手，请研究细节
+> 
+> 使用 element.onEvent.listen（function）添加事件处理程序，其中 event 是事件名，function 是事件处理程序
+> 
+> 例如，以下是如何处理单击按钮的操作：
+
+```
+// Find a button by ID and add an event handler.
+querySelector('#submitInfo').onClick.listen((e) {
+  // When the button is clicked, it runs this code.
+  submitData();
+});
+```
+
+> 事件可以通过 DOM 树上下传播。要发现最初触发事件的元素，请使用 e.target:
+
+```
+document.body.onClick.listen((e) {
+  final clickedElem = e.target;
+  // ...
+});
+```
+
+> 要查看可以注册事件侦听器的所有事件，请在元素及其子类的 API 文档中查找“onEventType”属性。一些常见事件包括：
+> 
+> change
+> 
+> blur
+> 
+> keyDown
+> 
+> keyUp
+> 
+> mouseDown
+> 
+> mouseUp
+
++ 通过 HttpRequest 使用 HTTP 资源
+
+> 以前称为 XMLHttpRequest，HttpRequest 类允许您从基于浏览器的应用程序中访问 HTTP 资源。传统上，AJAX 风格的应用程序大量使用 HttpRequest。使用 HttpRequest 从 web 服务器动态加载 JSON 数据或任何其他资源。您还可以动态地将数据发送到 web 服务器
+> 
+> *从服务器获取数据*
+> 
+> HttpRequest 静态方法 getString（）是从 web 服务器获取数据的简单方法。对 getString（）调用使用 await 以确保在继续执行之前拥有数据
+
+```
+Future main() async {
+  String pageHtml = await HttpRequest.getString(url);
+  // Do something with pageHtml...
+}
+```
+
+> 使用 try-catch 指定错误处理程序：
+
+```
+try {
+  var data = await HttpRequest.getString(jsonUri);
+  // Process data...
+} catch (e) {
+  // Handle exception...
+}
+```
+
+> 如果需要访问 HttpRequest，而不仅仅是它检索的文本数据，那么可以使用 request（）静态方法而不是 getString（）。下面是一个读取 XML 数据的示例：
+
+```
+Future main() async {
+  HttpRequest req = await HttpRequest.request(
+    url,
+    method: 'HEAD',
+  );
+  if (req.status == 200) {
+    // Successful URL access...
+  }
+  // ···
+}
+```
+
+> 您还可以使用完整的 API 来处理更有趣的情况。例如，可以设置任意 header
+> 
+> 使用 HttpRequest 的完整 API 的一般流程如下：
+> 
+> 1.创建 HttpRequest 对象
+> 
+> 2.使用 GET 或 POST 打开 URL
+> 
+> 3.附加事件处理程序
+> 
+> 4.发送请求
+> 
+> 例如：
+
+```
+var request = HttpRequest();
+request
+  ..open('POST', url)
+  ..onLoadEnd.listen((e) => requestComplete(request))
+  ..send(encodedData);
+```
+
+> *向服务器发送数据*
+> 
+> HttpRequest 可以使用 HTTP 方法 POST 向服务器发送数据。例如，您可能希望将数据动态提交给表单处理程序。向 RESTful web 服务发送 JSON 数据是另一个常见的示例
+> 
+> 将数据提交到表单处理程序需要以 URI 编码字符串的形式提供名称-值对。如果要将数据发送到表单处理程序，还必须将内容类型头设置为 application/x-www-form-urlencode
+
+```
+String encodeMap(Map<String, String> data) => data.keys
+    .map((k) => '${Uri.encodeComponent(k)}=${Uri.encodeComponent(data[k])}')
+    .join('&');
+
+Future main() async {
+  var data = {'dart': 'fun', 'angular': 'productive'};
+
+  var request = HttpRequest();
+  request
+    ..open('POST', url)
+    ..setRequestHeader(
+      'Content-type',
+      'application/x-www-form-urlencoded',
+    )
+    ..send(encodeMap(data));
+
+  await request.onLoadEnd.first;
+
+  if (request.status == 200) {
+    // Successful URL access...
+  }
+  // ···
+}
+```
+
++ 使用 WebSocket 发送、接收实时数据
+
+
+
 ---
 # [Intro to Dart for Java Developers codelab](https://codelabs.developers.google.com/codelabs/from-java-to-dart)
 
