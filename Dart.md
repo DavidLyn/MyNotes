@@ -4552,7 +4552,271 @@ Future main() async {
 
 + 使用 WebSocket 发送、接收实时数据
 
+> WebSocket 允许您的 web 应用与服务器交互地交换数据，无需轮询。服务器创建 WebSocket 并侦听以 ws:// - 例如，ws://127.0.0.1:1337/ws 开头的 URL 上的请求。通过 WebSocket 传输的数据可以是字符串或 blob。通常，数据是 JSON 格式的字符串
+> 
+> 要在 web 应用中使用 WebSocket，请首先创建 WebSocket 对象，并将 WebSocket URL 作为参数传递：
 
+```
+var ws = WebSocket('ws://echo.websocket.org');
+```
+
+> *发送数据*
+> 
+> 要在 WebSocket 上发送字符串数据，请使用 send（）方法：
+
+```
+ws.send('Hello from Dart!');
+```
+
+> 接收数据
+> 
+> 要在 WebSocket 上接收数据，请为消息事件注册侦听器：
+
+```
+ws.onMessage.listen((MessageEvent e) {
+  print('Received message: ${e.data}');
+});
+```
+
+> 消息事件处理程序接收消息事件对象。此对象的数据字段包含来自服务器的数据
+> 
+> *处理 WebSocket 事件*
+> 
+> 您的应用程序可以处理以下 WebSocket 事件：打开、关闭、错误和（如前所示）消息。下面是一个创建 WebSocket 对象并为打开、关闭、错误和消息事件注册处理程序的方法示例：
+
+```
+void initWebSocket([int retrySeconds = 1]) {
+  var reconnectScheduled = false;
+
+  print("Connecting to websocket");
+
+  void scheduleReconnect() {
+    if (!reconnectScheduled) {
+      Timer(Duration(seconds: retrySeconds),
+          () => initWebSocket(retrySeconds * 2));
+    }
+    reconnectScheduled = true;
+  }
+
+  ws.onOpen.listen((e) {
+    print('Connected');
+    ws.send('Hello from Dart!');
+  });
+
+  ws.onClose.listen((e) {
+    print('Websocket closed, retrying in ' + '$retrySeconds seconds');
+    scheduleReconnect();
+  });
+
+  ws.onError.listen((e) {
+    print("Error connecting to ws");
+    scheduleReconnect();
+  });
+
+  ws.onMessage.listen((MessageEvent e) {
+    print('Received message: ${e.data}');
+  });
+}
+```
+
+## dart:io - 服务器和命令行应用程序的 I/O
+
++ dart:io 库提供了处理文件、目录、进程、套接字、WebSockets 以及 HTTP 客户端和服务器的 API
+
+> 重要提示：只有 Flutter 移动应用程序、命令行脚本和服务器可以导入和使用 dart:io，而不是 web 应用程序
+> 
+> 通常，dart:io 库实现并提升异步 API。同步方法很容易阻塞应用程序，使其难以扩展。因此，大多数操作通过 Future 或 Stream 对象返回结果，这是 Node.js 等现代服务器平台常见的模式
+> 
+> dart:io 库中的少数同步方法在方法名上清楚地标记了 Sync 后缀。这里不包括同步方法
+> 
+> 要使用 dart:io 库，必须导入它：
+
+```
+import 'dart:io';
+```
+
++ 文件和目录
+
+> I/O 库允许命令行应用程序读写文件和浏览目录。您有两种读取文件内容的选择：一次全部读取或流式处理。同时读取一个文件需要足够的内存来存储文件的所有内容。如果文件非常大，或者您希望在读取时对其进行处理，则应使用流，如流文件内容中所述
+> 
+> *以文本形式读取文件*
+> 
+> 读取使用 UTF-8 编码的文本文件时，可以使用 readAsString（）读取整个文件内容。当单独的行很重要时，可以使用 readAsLines（）。在这两种情况下，都会返回一个 Future 对象，该对象将文件内容作为一个或多个字符串提供
+
+```
+Future main() async {
+  var config = File('config.txt');
+  var contents;
+
+  // Put the whole file in a single string.
+  contents = await config.readAsString();
+  print('The file is ${contents.length} characters long.');
+
+  // Put each line of the file into its own string.
+  contents = await config.readAsLines();
+  print('The file is ${contents.length} lines long.');
+}
+```
+
+> *二进制方式读取文件*
+> 
+> 下面的代码将整个文件作为字节读入 int 列表。对 readAsBytes（）的调用返回一个 Future，该 Future 在可用时提供结果
+
+```
+Future main() async {
+  var config = File('config.txt');
+
+  var contents = await config.readAsBytes();
+  print('The file is ${contents.length} bytes long.');
+}
+```
+
+> *处理错误*
+> 
+> 要捕获错误以避免导致未捕获的异常，可以在将来注册 catchError 处理程序，或者（在异步函数中）使用 try-catch：
+
+```
+Future main() async {
+  var config = File('config.txt');
+  try {
+    var contents = await config.readAsString();
+    print(contents);
+  } catch (e) {
+    print(e);
+  }
+}
+```
+
+> *流文件内容*
+> 
+> 使用流读取文件，一次读取一点。您可以使用流 API 或 await for，这是 Dart 异步支持的一部分
+
+```
+import 'dart:io';
+import 'dart:convert';
+
+Future main() async {
+  var config = File('config.txt');
+  Stream<List<int>> inputStream = config.openRead();
+
+  var lines =
+      utf8.decoder.bind(inputStream).transform(LineSplitter());
+  try {
+    await for (var line in lines) {
+      print('Got ${line.length} characters from stream');
+    }
+    print('file is now closed');
+  } catch (e) {
+    print(e);
+  }
+}
+```
+
+> *写入文件内容*
+> 
+> 可以使用 IOSink 将数据写入文件。使用 File openWrite（）方法获取可以写入的 IOSink。默认模式 FileMode.write 完全覆盖文件中的现有数据
+
+```
+var logFile = File('log.txt');
+var sink = logFile.openWrite();
+sink.write('FILE ACCESSED ${DateTime.now()}\n');
+await sink.flush();
+await sink.close();
+```
+
+> 要添加到文件末尾，请使用可选的 mode 参数指定 FileMode.append：
+
+```
+var sink = logFile.openWrite(mode: FileMode.append);
+```
+
+> 要写入二进制数据，请使用 add（List<int>data）
+> 
+> *在目录中列出文件*
+> 
+> 查找目录的所有文件和子目录是一个异步操作。list（）方法返回在遇到文件或目录时发出对象的流
+
+```
+Future main() async {
+  var dir = Directory('tmp');
+
+  try {
+    var dirList = dir.list();
+    await for (FileSystemEntity f in dirList) {
+      if (f is File) {
+        print('Found file ${f.path}');
+      } else if (f is Directory) {
+        print('Found dir ${f.path}');
+      }
+    }
+  } catch (e) {
+    print(e.toString());
+  }
+}
+```
+
+> *其他常见功能*
+> 
+> File 和 Directory 类包含其他功能，包括但不限于：
+> 
+> 创建文件或目录：File 和 Directory 的 create()
+> 
+> 删除文件或目录：File 和 Directory 的 delete()
+> 
+> 获取文件的长度：length（）in File
+> 
+> 获取对文件的随机访问：File 中的 open（）
+
++ HTTP 客户端和服务器
+
+> dart:io 库提供了命令行应用程序可以用来访问 HTTP 资源以及运行 HTTP 服务器的类
+> 
+> *HTTP 服务器*
+> 
+> HttpServer 类提供了构建 web 服务器的低级功能。您可以匹配请求处理程序、设置头、流数据等
+> 
+> 下面的示例 web 服务器返回简单的文本信息。此服务器侦听端口 8888 和地址 127.0.0.1（本地主机），响应路径 /dart 的请求。对于任何其他路径，响应为状态代码404（找不到页面）
+
+```
+Future main() async {
+  final requests = await HttpServer.bind('localhost', 8888);
+  await for (var request in requests) {
+    processRequest(request);
+  }
+}
+
+void processRequest(HttpRequest request) {
+  print('Got request for ${request.uri.path}');
+  final response = request.response;
+  if (request.uri.path == '/dart') {
+    response
+      ..headers.contentType = ContentType(
+        'text',
+        'plain',
+      )
+      ..write('Hello from the server');
+  } else {
+    response.statusCode = HttpStatus.notFound;
+  }
+  response.close();
+}
+```
+
+> *HTTP 客户端*
+> 
+> HttpClient 类帮助您从 Dart 命令行或服务器端应用程序连接到 HTTP 资源。您可以设置头、使用 HTTP 方法以及读写数据。HttpClient 类在基于浏览器的应用程序中不起作用。在浏览器中编程时，请使用 dart:html HttpRequest 类。下面是使用 HttpClient 的示例：
+
+```
+Future main() async {
+  var url = Uri.parse('http://localhost:8888/dart');
+  var httpClient = HttpClient();
+  var request = await httpClient.getUrl(url);
+  var response = await request.close();
+  var data = await utf8.decoder.bind(response).toList();
+  print('Response ${response.statusCode}: $data');
+  httpClient.close();
+}
+```
 
 ---
 # [Intro to Dart for Java Developers codelab](https://codelabs.developers.google.com/codelabs/from-java-to-dart)
@@ -4560,8 +4824,151 @@ Future main() async {
 ---
 # [Effective Dart](https://dart.dev/guides/language/effective-dart)
 
++ 在过去的几年中，我们已经编写了大量的 Dart 代码，并了解了很多关于哪些代码工作良好，哪些不工作的信息。我们将与您共享这些信息，以便您也可以编写一致、健壮、快速的代码。有两大主题：
+
+> *始终如一*
+> 
+> 当涉及到格式和大小写时，关于哪个更好的争论是主观的，不可能解决。我们所知道的是，保持一致在客观上是有帮助的
+> 
+> 如果两段代码看起来不同，那应该是因为它们在某种意义上是不同的。当一点代码突出并吸引了您的注意时，它应该这样做是因为一个有用的原因
+> 
+> *简短*
+> 
+> Dart 被设计得很熟悉，所以它继承了许多与 C、Java、JavaScript 和其他语言相同的语句和表达式。但我们创建 Dart 是因为在这些语言的基础上还有很大的改进空间。我们添加了一系列功能，从字符串插值到初始化表单，以帮助您更简单、更容易地表达您的意图
+> 
+> 如果有多种表达方式，你通常应该选择最简洁的一种。这并不是说你应该自己编写高尔夫代码，把整个程序塞进一行。目标是经济的代码，而不是密集的代码
+> 
+> Dart analyzer 有一个 linter 来帮助您编写良好的、一致的代码。如果存在可以帮助您遵循准则的 linter 规则，则准则链接到该规则。
+
+## 指南
+
++ 为了便于消化，我们将指南分成了几页：
+
++ 款式指南
+
+> 这定义了布局和组织代码的规则，或者至少定义了 dartfmt 不能为您处理的部分。样式指南还指定标识符的格式：camelCase、使用下划线等
+
++ 文档指南
+
+> 这会告诉你所有你需要知道的关于注释的信息。文档注释和常规运行代码注释
+
++ 使用指南
+
+> 这教你如何充分利用语言特性来实现行为。如果是在一个语句或表达式中，就在这里讨论
+
++ 设计指南
+
+> 这是最软的指南，但却是范围最广的指南。它涵盖了我们在为库设计一致、可用的 API 方面所学到的知识。如果它在类型签名或声明中，则会忽略它
+
+## 如何阅读指南
+
++ DO
+
+> 指南描述了应始终遵循的实践。几乎永远不会有正当的理由离开他们
+
++ DON’T
+
+> 指导方针是相反的：几乎从来不是好主意的事情。希望我们没有其他语言那么多，因为我们有更少的历史包袱
+
++ PREFER
+
+> 准则是你应该遵循的实践。然而，在某些情况下，这样做是有意义的。当你这样做的时候，确保你理解忽略准则的全部含义
+
++ AVOID
+
+> 准则是“偏好”的双重因素：你不应该做的事情，但在少数情况下可能有充分的理由去做
+
++ CONSIDER
+
+> 指导原则是您可能希望或不希望遵循的实践，具体取决于环境、先例和您自己的偏好
+
++ 一些准则描述了规则不适用的例外情况。列出的例外情况可能并不详尽，您可能仍需要对其他情况作出判断
+
++ 听起来如果你的鞋带系不好，警察会打你的门。事情没那么糟。这里的指导原则大多是常识，我们都是通情达理的人。我们的目标，一如既往，是好的、可读的和可维护的代码
+
 ---
 # [Asynchronous programming: futures, async, await](https://dart.dev/codelabs/async-await)
+
++ 这个 codelab 教你如何使用 futures 和 async 和 await 关键字编写异步代码。使用嵌入式 DartPad 编辑器，您可以通过运行示例代码和完成练习来测试您的知识
+
+> 要充分利用这个 codelab，您应该具备以下条件：
+> 
+> 基本的 Dart 语法知识
+> 
+> 用另一种语言编写异步代码的一些经验
+> 
+> 该代码实验室包括以下材料：
+> 
+> 如何以及何时使用 async 和 await 关键字
+> 
+> 使用 async 和 await 如何影响执行顺序
+> 
+> 如何在异步函数中使用 try-catch 表达式处理异步调用中的错误
+
+## 为什么异步代码很重要
+
++ 异步操作允许程序在等待另一个操作完成时完成工作。以下是一些常见的异步操作：
+
+> 通过网络获取数据
+> 
+> 写入数据库
+> 
+> 从文件读取数据
+> 
+> 要在 Dart 中执行异步操作，可以使用 Future 类以及 async 和 await 关键字
+
++ 示例：错误地使用异步函数
+
+> 下面的示例显示了使用异步函数（fetchUserOrder（））的错误方法。稍后您将使用 async 和 await 修复该示例。在运行此示例之前，请尝试找出问题所在—您认为输出将是什么？
+
+```
+
+```
+
+> 下面是示例无法打印 fetchUserOrder（）最终生成的值的原因：
+> 
+> fetchUserOrder（）是一个异步函数，它在延迟之后提供一个描述用户顺序的字符串：“Large Latte”
+> 
+> 要获取用户的订单，createOrderMessage（）应该调用 fetchUserOrder（）并等待其完成。由于 createOrderMessage（）不等待fetchUserOrder（）完成， createOrderMessage（）无法获取 fetchUserOrder（）最终提供的字符串值
+> 
+> 相反，createOrderMessage（）获取待完成工作的表示：未完成的 future。你将在下一节学习更多关于 future 的知识
+> 
+> 由于 createOrderMessage（）无法获取描述用户订单的值，因此示例无法将“Large Latte”打印到控制台，而是打印“Your order is:Instance of''u Future'”
+> 
+> 在接下来的部分中，您将学习关于 futures、async 和 await，以便能够编写必要的代码，使 fetchUserOrder（）将所需的值（“Large Latte”）打印到控制台
+> 
+> *关键条款：*
+> 
+> 同步操作：同步操作阻止其他操作在完成之前执行
+> 
+> 同步函数：同步函数只执行同步操作
+> 
+> 异步操作：一旦启动，异步操作就允许在完成之前执行其他操作
+> 
+> 异步函数：异步函数至少执行一个异步操作，还可以执行同步操作
+
+## 什么是 Future？
+
++ future（小写“f”）是 Future（大写“F”）类的实例。future表示异步操作的结果，可以有两种状态：未完成或已完成
+
+> 注：Uncompleted 是一个 Dart 术语，指的是 Future 在产生价值之前的状态
+
++ Uncompleted
+
+> 当调用异步函数时，它返回一个 Uncompleted Future。Future 正在等待函数的异步操作完成或引发错误
+
++ Completed
+
+> 如果异步操作成功，则 Future 将使用一个值完成。否则它将以错误结束
+
++ Completing with a value
+
+> Future <T> 类型的 Future 以 T 类型的值结束。例如，Future <String>类型的 Future 生成字符串值。如果 Future 不产生可用值，那么 Future 的类型是 Future <void>
+
++ Completing with an error
+
+> 如果函数执行的异步操作由于任何原因而失败，则以后的操作将完成并出现错误
+
 
 ---
 # [Asynchronous programming: streams](https://dart.dev/tutorials/language/streams)
