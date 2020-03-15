@@ -736,7 +736,7 @@ Hero(
 
 ### [区分短暂状态和应用程序状态](https://flutter.dev/docs/development/data-and-backend/state-mgmt/ephemeral-vs-app)
 
-+ 广义上讲，app状态包括app运行时内存中所有的信息。但有些状态又框架帮助处理，不需自己处理
++ 广义上讲，app状态包括app运行时内存中所有的信息。但有些状态由框架帮助处理，不需自己处理
 
 + 状态可以理解为 ： 为了在任何时候重建UI而需要的任何数据
 
@@ -7006,9 +7006,9 @@ class MyHomePage extends StatelessWidget {
 
 ### [Use themes to share colors and font styles](https://flutter.dev/docs/cookbook/design/themes)
 
-+ 要在应用程序中共享颜色和字体样式，请使用主题。可以定义应用程序范围的主题，也可以使用主题小部件来定义应用程序特定部分的颜色和字体样式。实际上，应用程序范围的主题只是MaterialApp在应用程序根目录下创建的主题小部件
++ 要在应用程序中共享颜色和字体样式，请使用主题。可以定义应用程序范围的主题，也可以使用主题小部件来定义应用程序特定部分的颜色和字体样式。实际上，应用程序范围的主题只是 MaterialApp 在应用程序根目录下创建的主题小部件
 
-+ 定义主题后，在自己的小部件中使用它。Flutter 的Material widgets还使用您的主题设置appbar、按钮、复选框等的背景颜色和字体样式
++ 定义主题后，在自己的小部件中使用它。Flutter 的 Material widgets 还使用您的主题设置appbar、按钮、复选框等的背景颜色和字体样式
 
 + Creating an app theme
 
@@ -9508,7 +9508,7 @@ MaterialApp(
 );
 ```
 
-> **警告：使用initialRoute时，不要定义home属性**
+> **警告：使用 initialRoute 时，不要定义 home 属性**
 
 + 3. Navigate to the second screen
 
