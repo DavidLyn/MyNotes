@@ -5490,7 +5490,7 @@ version: 1.0.0+1
 
 ### [Animate a page route transition](https://flutter.dev/docs/cookbook/animation/page-route-animation)
 
-+ 设计语言（如 Material ）定义了在路由（或屏幕）之间转换时的标准行为。不过，屏幕之间的自定义转换可以使应用程序更加独特。为了提供帮助，PageRouteBuilder 提供了一个动画对象。此动画可与 Tween 和C urve 对象一起用于自定义过渡动画。本节通过描述一个新界面如何从底部进入来说明路由之间的转换
++ 设计语言（如 Material ）定义了在路由（或屏幕）之间转换时的标准行为。不过，屏幕之间的自定义转换可以使应用程序更加独特。为了提供帮助，PageRouteBuilder 提供了一个动画对象。此动画可与 Tween 和 Curve 对象一起用于自定义过渡动画。本节通过描述一个新界面如何从底部进入来说明路由之间的转换
 
 + 1. Set up a PageRouteBuilder
 

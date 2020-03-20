@@ -1,6 +1,12 @@
 ---
 # 概述
 
+## 特别有用的参考资料
+
++ [awesome-flutter](https://github.com/Solido/awesome-flutter)
+
++ [一个很棒的Flutter学习资源列表](https://blog.csdn.net/sinat_17775997/article/details/82835143?depth_1-utm_source=distribute.pc_relevant.none-task&utm_source=distribute.pc_relevant.none-task)
+
 ## 项目概述
 
 + [产品级Flutter开源项目，FunAndroid](https://www.wanandroid.com/blog/show/2660)
@@ -44,6 +50,12 @@ maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
 + 参考资料
 
 > [Flutter中fluro使用](https://www.jianshu.com/p/e575787d173c)
+> 
+> [theyakka/fluro](https://github.com/theyakka/fluro)
+> 
+> [对Flutter路由管理库Fluro的封装](https://www.wandouip.com/t5i418363/) - 此代码值得借鉴
+> 
+> [Flutter入门之（fluro路由跳转框架)](https://www.jianshu.com/p/1987cc9b714a) - 提供了 fluro 的路由跳转工具类，值得借鉴
 
 ## jpush_flutter 极光推送 ???
 
@@ -51,6 +63,16 @@ maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
 ## dio 封装全局请求 拦截登录 打通webview与app交互 ???
 
 ## flutter_webview_plugin 接 webview
+
+## SQLite flutter plugin
+
++ [SQLite flutter plugin](https://github.com/tekartik/sqflite)
+
+
+## Zefyr 富文本编辑器
+
++ [Zefyr](https://github.com/memspace/zefyr)
+
 
 ---
 # 延伸技术点
@@ -95,6 +117,51 @@ class MyApp extends StatelessWidget {
 
 ## pull_to_refresh
 
++ 参考：[README_CN.md](https://github.com/peng8350/flutter_pulltorefresh/blob/master/README_CN.md) 或 [pull_to_refresh 1.5.8](https://pub.dev/packages/pull_to_refresh)
+
++ 全局配置 RefreshConfiguration,配置子树下的所有 SmartRefresher 表现,一般存放于 MaterialApp 的根部,用法和 ScrollConfiguration 是类似的。 另外,假如你某一个 SmartRefresher 表现和全局不一样的情况,你可以使用 RefreshConfiguration.copyAncestor 从祖先 RefreshConfiguration 复制属性过来并替换不为空的属性
+
+```
+    // 全局配置子树下的SmartRefresher,下面列举几个特别重要的属性
+     RefreshConfiguration(
+         headerBuilder: () => WaterDropHeader(),        // 配置默认头部指示器,假如你每个页面的头部指示器都一样的话,你需要设置这个
+         footerBuilder:  () => ClassicFooter(),        // 配置默认底部指示器
+         headerTriggerDistance: 80.0,        // 头部触发刷新的越界距离
+         springDescription:SpringDescription(stiffness: 170, damping: 16, mass: 1.9),         // 自定义回弹动画,三个属性值意义请查询flutter api
+         maxOverScrollExtent :100, //头部最大可以拖动的范围,如果发生冲出视图范围区域,请设置这个属性
+         maxUnderScrollExtent:0, // 底部最大可以拖动的范围
+         enableScrollWhenRefreshCompleted: true, //这个属性不兼容PageView和TabBarView,如果你特别需要TabBarView左右滑动,你需要把它设置为true
+         enableLoadingWhenFailed : true, //在加载失败的状态下,用户仍然可以通过手势上拉来触发加载更多
+         hideFooterWhenNotFull: false, // Viewport不满一屏时,禁用上拉加载更多功能
+         enableBallisticLoad: true, // 可以通过惯性滑动触发加载更多
+        child: MaterialApp(
+            ........
+        )
+    );
+```
+
++ 1.5.6新增国际化处理特性,你可以在MaterialApp或者CupertinoApp追加如下代码:
+
+```
+    MaterialApp(
+            localizationsDelegates: [
+              // 这行是关键
+              RefreshLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate
+            ],
+            supportedLocales: [
+              const Locale('en'),
+              const Locale('zh'),
+            ],
+            localeResolutionCallback:
+                (Locale locale, Iterable<Locale> supportedLocales) {
+              //print("change language");
+              return locale;
+            },
+    )
+```
+
 
 ## 状态管理 Provider
 
@@ -102,8 +169,659 @@ class MyApp extends StatelessWidget {
 
 + Provider 的目标就是完全替代 StatefulWidget
 
-## i8n ???
+## 国际化插件 Flutter i18n
 
++ 参考
+
+> [Flutter-国际化适配终结者](https://juejin.im/post/5c701379f265da2d9b5e196a#heading-1)
+> 
+> [Flutter i18n官网](https://github.com/long1eu/flutter_i18n)
+
++ 在 Android Studio 中安装插件
+
+> 菜单 : [Android Studio] -> [Preferences] -> [Plugins] -> 
+> 
+> 然后点击插件列表下面的 `Browe repositories`,然后在弹出的界面中输入 `Flutter i18n`
+
++ **可能是在 Android Studio 中只能安装版本很低的插件，生成的 i18n.dart 文件与原有文件差异较大，且存在编译错误，无奈由将该插件卸载，且恢复 i18n.dart 后，才能正常编译**
+
+## 路由和导航
+
++ 参考 : [Flutter 路由和导航](https://www.jianshu.com/p/3b105658728e)
+
++ 使用 PageRouteBuilder 自定义路由
+
+> 参考 : [关于 Flutter 页面路由过渡动画，你所需要知道的一切](https://blog.csdn.net/weixin_33871366/article/details/91377406)
+
++ 下述的 MaterialPageRoute 方式没有动画效果
+
+```
+Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => SecondRoute()),
+  );
+
+```
+
++ 如果想要一个像 iOS 上那样的滑动页面切换，可以用 CupertinoPageRoute
+
+```
+Navigator.push(
+    context, CupertinoPageRoute(builder: (context) => Screen2()))
+```
+
+## flutter Swiper
+
++ 参考
+
+> [flutter_swiper](https://github.com/best-flutter/flutter_swiper/blob/master/README-ZH.md)
+
+## flutter 导航返回拦截WillPopScope(防误触)
+
++ [flutter 导航返回拦截WillPopScope(防误触)](https://www.jianshu.com/p/858ea277675f)
+
+## Flutter 基础Widgets
+
+### Container
+
++ 参考
+
+> [Flutter Container](https://www.jianshu.com/p/f4ca9a937034)
+
++ Container 构成以及绘制过程
+
+> Container 作为 Flutter 中的用来布局的 Widget，可以对子 widget 进行绘制(painting)、定位(positioning)、调整大小(sizing)等操作
+
++ Container 的构成
+
+> 从内至外：子widget -> padding -> constraints -> margin
+
++ 调整大小(sizing)
+
+```
+Container({
+    Key key,
+    this.alignment,
+    this.padding,
+    Color color,
+    Decoration decoration,
+    this.foregroundDecoration,
+    double width,
+    double height,
+    BoxConstraints constraints,
+    this.margin,
+    this.transform,
+    this.child,
+  })
+```
+
+> 没有子节点的 Container 试图尽可能大，除非传入的约束(constraints)是无限制(unbounded)的，在这种情况下，它们尽可能地小
+> 
+> 拥有子节点的 Container，大小会按照子节点的大小进行适应。如果 Container 设置了大小参数（例如：width, height, constraints），则按照 Container 的大小参数来
+
++ 布局行为
+
+> 由于 Container 包含了一系列其他的 Widget，所以 Container 的布局行为是由一系列其他的 Widget 的布局行为组合而成
+> 
+> *布局顺序*
+> 
+> Container 会按照下面的这个顺序去进行布局操作：
+> 
+> 对齐（alignment）
+> 
+> 调节自身大小去适应子节点
+> 
+> 优先使用 width 、 height、constraints
+> 
+> 放大自己去填充父节点
+> 
+> 尽可能的变小
+
++ 属性
+
+> *Alignment - 约束 child 的位置*
+
+```
+class FlutterContainer extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+        child: Container(
+          width: 300,
+          height: 200,
+          alignment: Alignment.centerRight,
+          color: Colors.blue,
+          child: Text("Hello"),
+        )
+    );
+  }
+}
+```
+
+> *Constraints - 控件占用的空间大小*
+> 
+> 一般使用 BoxConstraints
+
+```
+Center(
+      child: Container(
+        color: Colors.blue,
+        alignment: Alignment.center,
+        child: Container(
+          color: Colors.brown,
+          constraints: BoxConstraints(
+              maxHeight: 300.0,
+              maxWidth: 200.0,
+              minWidth: 150.0,
+              minHeight: 150.0
+          ),
+        ),
+      ),
+    );
+```
+
+> 没有子 child，给定了constraint，所以按照maxW、maxH来布局
+> 
+> 如果有子 child，给定了constraint，所以按照minW、minH来布局???
+
+```
+Center(
+      child: Container(
+        color: Colors.blue,
+        alignment: Alignment.center,
+        child: Container(
+          color: Colors.brown,
+          child: Text("hello"),
+          constraints: BoxConstraints(
+              maxHeight: 300.0,
+              maxWidth: 200.0,
+              minWidth: 150.0,
+              minHeight: 150.0
+          ),
+        ),
+      ),
+    );
+```
+
+> *Margin - 给 Container 设置外边距*
+> 
+> 一般使用 EdgeInsets
+> 
+> 先看下默认情况：
+
+```
+Center(
+      child: Container(
+        color: Colors.blue,
+        alignment: Alignment.centerRight,
+        child: Container(
+          color: Colors.brown,
+          child: Text("HELLO"),
+          constraints: BoxConstraints(
+              maxHeight: 300.0,
+              maxWidth: 200.0,
+              minWidth: 150.0,
+              minHeight: 150.0
+          ),
+        ),
+      ),
+    )
+```
+
+> 这里设置了 Alignment.centerRight，所以控件靠右居中。现在加上 EdgeInsets，看看
+
+```
+ Center(
+      child: Container(
+        color: Colors.blue,
+        alignment: Alignment.centerRight,
+        child: Container(
+          margin: EdgeInsets.all(20.6),
+          color: Colors.brown,
+          child: Text("HELLO"),
+          constraints: BoxConstraints(
+              maxHeight: 300.0,
+              maxWidth: 200.0,
+              minWidth: 150.0,
+              minHeight: 150.0
+          ),
+        ),
+      ),
+    );
+```
+
+> 可以看到 Container 距离右边有了一定的边距。需要注意的是 EdgeInsets.all 是距离四周的边距
+> 
+> 设置边距的其他方法：
+> 
+> fromLTRB (设置左上右下边距)
+> 
+> symmetric({ double vertical = 0.0, double horizontal = 0.0 })  设置垂直、水平的外边距
+
+```
+only({
+this.left = 0.0,
+this.top = 0.0,
+this.right = 0.0,
+this.bottom = 0.0
+})
+```
+
+> *Padding - 设置 Container 内边距*
+> 
+> 与 Margin 类似，使用相同的方法
+
+```
+ Center(
+      child: Container(
+        constraints: BoxConstraints(
+            minHeight: 100, minWidth: 200, maxWidth: 400, maxHeight: 200),
+        child: Container(
+          margin: EdgeInsets.all(20.5),
+          padding: EdgeInsets.fromLTRB(30.4, 0, 0, 80),
+        //设置padding内边距后，child居中偏移了位置
+          color: Colors.brown,
+          child: Text("HELLO"),
+          alignment: Alignment.center,//child居中
+        ),
+      ),
+    );
+```
+
+### Stack(层叠控件)
+
++ 参考 
+
+> [Flutter 基础组件之 Stack](https://blog.csdn.net/zgcqflqinhao/article/details/85328665)
+> 
+> [Flutter 布局（八）- Stack、IndexedStack、GridView详解](https://www.jianshu.com/p/71adcf6431ec)
+
++ 如果说 Row 和 Column 相当于 Android 的 LinearLayout 的话，那么 Stack 就有点像 Android 中 FrameLayout，它可以使子组件堆叠起来，但是它比 FrameLayout 要强大，它可以控制子组件的位置，使用起来也是很简单的
+
++ 布局行为
+
+> Stack 的布局行为，根据 child 是 positioned 还是 non-positioned 来区分
+> 
+> 对于 positioned 的子节点，它们的位置会根据所设置的 top、bottom、right 以及 left 属性来确定，这几个值都是相对于 Stack 的左上角
+> 
+> 对于 non-positioned 的子节点，它们会根据 Stack 的 aligment 来设置位置
+> 
+> 对于绘制 child 的顺序，则是第一个 child 被绘制在最底端，后面的依次在前一个 child 的上面，类似于 web 中的 z-index。如果想调整显示的顺序，则可以通过摆放 child 的顺序来进行
+
++ 构造方法
+
+```
+Stack({
+  Key key,
+  this.alignment = AlignmentDirectional.topStart,
+  this.textDirection,
+  this.fit = StackFit.loose,
+  this.overflow = Overflow.clip,
+  List<Widget> children = const <Widget>[],
+})
+```
+
+> Stack 只有这一个构造方法，而且也没有必须指定的属性，但是一般都会设置 children 属性，不然也没有什么意义
+
++ 常用属性
+
+> *alignment*
+> 
+> 子组件对齐方式，同 Container 的 alignment 属性一样的，它指定的是所有子组件的对齐方式，所以建议在只有两个子组件的时候使用，如果有三个及以上的子组件时，建议使用 Positioned 包裹子组件来决定子组件的位置
+> 
+> alignment 的可选值有：
+> 
+> AlignmentDirectional.topCenter：子组件垂直靠顶部水平居中对齐
+> 
+> AlignmentDirectional.topRight：子组件垂直靠顶部水平靠右对齐
+> 
+> AlignmentDirectional.centerLeft：子组件垂直居中水平靠左对齐
+> 
+> AlignmentDirectional.center：子组件垂直和水平居中都对齐
+> 
+> AlignmentDirectional.centerRight：子组件垂直居中水平靠右对齐
+> 
+> AlignmentDirectional.bottomLeft：子组件垂直靠底部水平靠左对齐
+> 
+> AlignmentDirectional.bottomCenter：子组件垂直靠底部水平居中对齐
+> 
+> AlignmentDirectional.bottomRight：子组件垂直靠底部水平靠右对齐
+> 
+> 也可以使用 alignmentDirectional(start,y) 指定具体的偏移量，start 就相当于 x，它是以整个组件的中心为坐标原点，x、y 偏移量取值范围为 [-1,1]，如果 x 的偏移量大于 0，则表示向右偏移，小于 0 则向左偏移；如果 y 轴的偏移量大于 0 则向下偏移，小于 0 则向上偏移
+> 
+> *textDirection*
+> 
+> 子组件排列方向，可选值有：
+> 
+> TextDirection.ltr：从左往右排列
+> 
+> TextDirection.rtl：从右往左排列
+> 
+> *fit*
+> 
+> 如何确定没有使用 Position 包裹的子组件的大小，可选值有：
+> 
+> StackFit.loose：子组件宽松取值，可以从 min 到 max
+> 
+> StackFit.expand：子组件取最大值
+> 
+> StackFit.passthrough：不改变子组件约束条件
+> 
+> *overflow*
+> 
+> 超出部分的处理方式，可选值有 Overflow.clip 和 Overflow.visible，不过我没有看到该属性的效果
+
++ Demo
+
+```
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      //是否显示 debug 标签
+      debugShowCheckedModeBanner: false,
+      title: "Stack",
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text("Stack"),
+        ),
+        body: Container(
+          child: Stack(
+            //子组件对齐方式，同 Container 的 alignment 属性一样的，它指定的是所有子组件的对齐方式，所以建议在只有两个子组件的时候
+            //使用，如果有三个及以上的子组件时，建议使用 Positioned 包裹子组件来决定子组件的位置，alignment 的可选值有：
+            //AlignmentDirectional.topCenter：垂直靠顶部水平居中对齐
+            //AlignmentDirectional.topRight：垂直靠顶部水平靠右对齐
+            //AlignmentDirectional.centerLeft：垂直居中水平靠左对齐
+            //AlignmentDirectional.center：垂直和水平居中都对齐
+            //AlignmentDirectional.centerRight：垂直居中水平靠右对齐
+            //AlignmentDirectional.bottomLeft：垂直靠底部水平靠左对齐
+            //AlignmentDirectional.bottomCenter：垂直靠底部水平居中对齐
+            //AlignmentDirectional.bottomRight：垂直靠底部水平靠右对齐
+            //也可以像我一样指定具体的偏移量，它是以整个组件的中心为坐标原点，x、y 偏移量取值范围为 [-1,1]，如果 x 的偏移量大于 0
+            //则表示向右偏移，小于 0 则向左偏移；如果 y 轴的偏移量大于 0 则向下偏移，小于 0 则向上偏移。
+            alignment: AlignmentDirectional(0.8, -0.8),
+            //子组件排列方向，可选值有：
+            //TextDirection.ltr：从左往右排列
+            //TextDirection.rtl：从右往左排列
+            textDirection: TextDirection.ltr,
+            //如何确定没有使用 Position 包裹的子组件的大小，可选值有：
+            //StackFit.loose：子组件宽松取值，可以从 min 到 max
+            //StackFit.expand：子组件取最大值
+            //StackFit.passthrough：不改变子组件约束条件
+            fit: StackFit.loose,
+            //超出部分的处理方式，可选值有 Overflow.clip 和 Overflow.visible，不过我没有看到该属性的效果
+//            overflow: Overflow.clip,
+            children: <Widget>[
+              CircleAvatar(
+                backgroundImage: AssetImage("assets/images/a.jpg"),
+                radius: 100,
+              ),
+              Text(
+                "Itachi",
+                style: TextStyle(fontSize: 30, color: Color(0xFF000000)),
+              ),
+              Positioned(
+                //距离左边的距离
+                left: 10,
+                //距离顶部的距离
+//                top: 10,
+                //距离右边的距离，设置 left 后该距离失效
+//                right: 10,
+                //距离底部的距离，设置 top 后该距离失效
+                bottom: 10,
+//                //子组件的宽、高，注意，宽高与 top、left、bottom、right
+//                width: 100,
+//                height: 100,
+                child: Text(
+                  "鼬",
+                  style: TextStyle(fontSize: 40, color: Color(0xFF000000)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
++ Positioned
+
+> 用来在 Stack 组件中辅助子组件定位的组件，建议在有三个及以上子组件的复杂布局时使用，它的常用属性有如下 6  个：
+> 
+> left：距离左边的距离
+> 
+> top：距离顶部的距离
+> 
+> right：距离右边的距离，设置 left 后该距离失效
+> 
+> bottom：距离底部的距离，设置 top 后该距离失效
+> 
+> width 和 height：子组件的宽
+> 
+> height：子组件的高
+> 
+> 注意，width、left、right 不能同时设置，height、top、bottom 也不能同时设置
+
+### Align
+
+> 参考 : [Flutter 基础布局Widgets之Align详解](https://www.jianshu.com/p/8782d7eea799)
+
++ 一般来说，Align的使用都是作为其他控件的一个参数，目的是为了设置子 child 的对齐方式，比如居中，左上，右下等多个对齐方向，其本身用法也多灵活
+
++ 构造函数
+
+```
+const Align({
+    Key key,
+    this.alignment = Alignment.center,
+    this.widthFactor,
+    this.heightFactor,
+    Widget child
+  })
+```
+
+> * alignment 设置对齐方向，有多种设置方式：*
+> 
+> 比如：`FractionalOffset(0.5, 0.5) == Alignment(0.0,0.0) == Alignment.center` ，都是将子 child 居中对齐的控制方式
+> 
+> Alignment(0.0,0.0) 表示矩形的中心。从 -1.0 到 +1.0 的距离是矩形的一边到另一边的距离
+> 
+> 而 Alignment 中还可以这样使用对齐方式的控制，也是较为常用的使用方式：
+
+```
+/// The top left corner.
+  static const Alignment topLeft = Alignment(-1.0, -1.0);
+
+  /// The center point along the top edge.
+  static const Alignment topCenter = Alignment(0.0, -1.0);
+
+  /// The top right corner.
+  static const Alignment topRight = Alignment(1.0, -1.0);
+
+  /// The center point along the left edge.
+  static const Alignment centerLeft = Alignment(-1.0, 0.0);
+
+  /// The center point, both horizontally and vertically.
+  static const Alignment center = Alignment(0.0, 0.0);
+
+  /// The center point along the right edge.
+  static const Alignment centerRight = Alignment(1.0, 0.0);
+
+  /// The bottom left corner.
+  static const Alignment bottomLeft = Alignment(-1.0, 1.0);
+
+  /// The center point along the bottom edge.
+  static const Alignment bottomCenter = Alignment(0.0, 1.0);
+
+  /// The bottom right corner.
+  static const Alignment bottomRight = Alignment(1.0, 1.0);
+```
+
+> 即本质就是类似于语法糖将各个方向的对齐方式简单封装了下
+> 
+> FractionalOffset() 类似 Alignment() ，但是坐标起点是左上角，且范围为 0~1。比如：FractionalOffset(0.5, 0.5) 代表中间位置
+> 
+> *widthFactor*
+> 
+> 如果非空，则将其宽度设置为子元素的宽度乘以该因子，可以大于或小于1.0，但必须是正数
+> 
+> *heightFactor*
+> 
+> 如果非空，则将其高度设置为子元素的高度乘以该因子，可以大于或小于1.0，但必须是正数
+
++ 示例代码
+
+```
+// align
+
+import 'package:flutter/material.dart';
+
+class AlignLearn extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: AppBar(
+        title: Text('Align')
+      ),
+      // 对齐小部件
+      body: Align(
+          // Alignment(0.0,0.0)表示矩形的中心。从-1.0到+1.0的距离是矩形的一边到另一边的距离。
+          // alignment: Alignment(1, 0),
+          // FractionalOffset(1, 1) 类似Alignment() 但是坐标起点是左上角，且范围为0~1 比如 FractionalOffset(0.5, 0.5) 代表中间位置
+          alignment: Alignment.bottomRight,
+          child: Container(
+            color: Colors.blueAccent,
+            width: 100,
+            height: 100,
+          ),
+      ),
+    );
+  }
+}
+```
+
+### SafeArea
+
+> 参考 : [Flutter SafeArea](https://www.jianshu.com/p/c6320f61a9b7)
+
++ 先看代码
+
+```
+class FlutterAlign extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment(-1, -1),
+      child: Container(
+        child: Text(
+          "Hello",
+        ),
+      ),
+    );
+  }
+}
+```
+
+> 可以看到，在刘海屏幕中，显示位置不是我们期待的。大部分刘海区域不是我们所触发按钮的区域
+> 
+> 可以使用 SafeArea Widget 来很好的解决这个问题
+
+```
+class FlutterAlign extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment(-1, -1),
+        child: Container(
+          child: Text(
+            "Hello",
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+> 使用这个 Widget 也能很好的处理 iPhone X 类似的底部 bottom 的区域
+
+```
+class FlutterAlign extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment(-1, 1),
+        child: Container(
+          child: Text(
+            "Hello",
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+### InkWell
+
++ 参考
+
+> [Flutter InkWell-水波纹效果](https://www.jianshu.com/p/93e32915bb9e)
+
++ InkWell 有的叫溅墨效果，有的叫水波纹效果。使用场景是给一些无点击事件的部件添加点击事件时使用（也支持长按、双击等事件），同时你也可以去修改它的颜色和形状
+
+```
+InkWell(
+  borderRadius: BorderRadius.circular(8.0), // 圆角
+  splashColor: Colors.transparent, // 溅墨色（波纹色）
+  highlightColor: Colors.transparent, // 点击时的背景色（高亮色）
+  onTap: () {},// 点击事件
+  child: Container(),
+);
+```
+
++ 实现水波纹效果 两种方式
+
+> *包一层 Material，将背景色设置在 Material中的 color 里*
+
+```
+Material(
+  color: Colors.white,
+  child: InkWell(),
+)
+```
+
+> *使用 Stack 布局，将 InkWell 放置在上层。这种适用于给图片添加点击效果，比如 Banner 图的点击*
+
+```
+Stack(
+    children: <Widget>[
+      Positioned.fill(
+        child: Image(),
+      ),
+      Positioned.fill(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            splashColor: Color(0X40FFFFFF),
+            highlightColor: Colors.transparent,
+            onTap: () {},
+          ),
+        ),
+      )
+    ],
+  )
+```
 
 ## extends,mixin,implements,abstract总结
 
