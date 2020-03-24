@@ -220,7 +220,516 @@ Navigator.push(
 
 + [flutter 导航返回拦截WillPopScope(防误触)](https://www.jianshu.com/p/858ea277675f)
 
-## Flutter 基础Widgets
+## Flutter 动画
+
++ 参考
+
+> [Flutter 中的 Animations（一）](https://www.jianshu.com/p/3f2ae714f804)
+> 
+> [Flutter 中的 Animations（二）](https://www.jianshu.com/p/322e85c7fb6f)
+
+### 必要的概念和类
+
++ Animation 对象，是 Flutter 动画库中的核心类，插入用于引导动画的值
++ Animation 对象知道当前动画的状态（如：动画是否开始，停止，前进或者后退），但对屏幕上显示的内容一无所知
++ AnimationController 对象管理着 Animation
++ CurvedAnimation 将动画定义成非线性运动的动画
++ Tween 在被动画对象使用的数据范围之间进行插值。例如，Tween 可能会定义从红色到蓝色或从 0 到 255 的插值
++ 使用 Listeners 和 StatusListeners 来监听动画状态的变化
+
+### 步骤
+
++ 初始化一个 AnimationController 对象
+
+```
+AnimationController controller = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
+```
+
++ 初始化一个 Animation 对象， 并将 AnimationController 作为参数传递进去。这里的 Animation 对象是通过 Tween 对象的 animate 方法创建的
+
+```
+Animation<int> alpha = IntTween(begin: 0, end:255).animate(controller);
+```
+
++ 调用 AnimationController 的 forward() 方法执行动画
+
+```
+controller.forward();
+```
+
++ 在 Widget 的 dispose() 方法中调用释放资源
+
+```
+controller.dispose();
+```
+
+### 案例
+
+下面的案例是在给定的时间内改变 widget 的宽高
+
++ 我们需要实时获取 Animation 的 value 来赋给 widget 的宽高
++ 要改变 widget 的宽高，那么就需要 setState(...) 来让 widget 重绘
+
+首先我们需要一个可以改变状态的 widget，也就是继承自 StatefulWidget ，然后按照我们上述的步骤来，代码如下：
+
+```
+class AnimateApp extends StatefulWidget {
+
+  @override
+  State<StatefulWidget> createState() {
+    return _AnimateAppState();
+  }
+}
+
+class _AnimateAppState extends State<AnimateApp> with SingleTickerProviderStateMixin {
+
+  AnimationController controller;
+  Animation<double> animation;
+  
+  @override
+  void initState() {
+    super.initState();
+    // 创建 AnimationController 对象
+    controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 2000));
+    // 通过 Tween 对象 创建 Animation 对象
+    animation = Tween(begin: 50.0, end: 200.0).animate(controller)
+      ..addListener(() {
+        // 注意：这句不能少，否则 widget 不会重绘，也就看不到动画效果
+        setState(() {});
+      })
+    // 执行动画
+    controller.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+        title: 'AnimateApp',
+        theme: ThemeData(
+            primaryColor: Colors.redAccent
+        ),
+        home: Scaffold(
+            appBar: AppBar(
+              title: Text('AnimateApp'),
+            ),
+            body: Center(
+              child: Container(
+                // 获取动画的值赋给 widget 的宽高
+                width: animation.value,
+                height: animation.value,
+                decoration: BoxDecoration(
+                    color: Colors.redAccent
+                ),
+              ),
+            )
+        )
+    );
+  }
+
+  @override
+  void dispose() {
+    // 资源释放
+    controller.dispose();
+    super.dispose();
+  }
+}
+```
+
+可以看出上面的动画是线性运动的，我们可以通过 CurvedAnimation 来实现非线性运动的动画代码如下：
+
+```
+controller = AnimationController(
+    vsync: this, duration: const Duration(milliseconds: 2000));
+// 非线性动画
+final CurvedAnimation curve = CurvedAnimation(
+    parent: controller, curve: Curves.elasticOut);
+animation = Tween(begin: 50.0, end: 200.0).animate(curve)
+  ..addListener(() {
+    setState(() {});
+  });
+```
+
+然后我们还可以给动画添加状态监听，通过给 Animation 添加 addStatusListener(...) 来监听当前动画的状态，如：动画是否播放完成。我们可以给上面的例子加一个状态监听，让动画无限执行：
+
+```
+animation = Tween(begin: 50.0, end: 200.0).animate(curve)
+      ..addListener(() {
+        setState(() {});
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          controller.reverse();
+        } else if (status == AnimationStatus.dismissed) {
+          controller.forward();
+        }
+      });
+```
+
+AnimationStatus.completed 表示动画在结束时停止的状态，这个时候我们让动画反向执行（从后往前）；AnimationStatus.dismissed 表示动画在开始时就停止的状态，这个时候我们让动画正常执行（从前往后）。这样就可以让动画无限执行了
+
+Tween 还可以接受 Color 类型的参数，实现颜色渐变的效果，下面让 widget 的颜色从 红色 渐变到 蓝色，部分代码如下：
+
+```
+controller = AnimationController(
+        duration: const Duration(milliseconds: 3000), vsync: this);
+    animation = ColorTween(begin: Colors.redAccent, end: Colors.blue).animate(
+        controller)
+      ..addListener(() {
+        setState(() {});
+      });
+    controller.forward();
+    
+...
+
+child: Container(
+        decoration: BoxDecoration(
+            color: animation.value
+        ),
+        margin: EdgeInsets.symmetric(vertical: 10.0),
+        height: 200.0,
+        width: 200.0,
+      ),
+```
+
+### AnimatedWidget
+
+使用 AnimatedWidget 来实现动画，就不需要给动画 addListener(...) 和 setState((){}) 了，AnimatedWidget 自己会使用当前 Animation 的 value 来绘制自己。当然，这里 Animation 我们是以构造参数的方式传递进去的
+
+```
+class AnimatedContainer extends AnimatedWidget {
+
+  AnimatedContainer({Key key, Animation<double> animation})
+      : super (key: key, listenable: animation);
+
+  @override
+  Widget build(BuildContext context) {
+    final Animation<double> animation = listenable;
+    return Center(
+      child: Container(
+        decoration: BoxDecoration(
+            color: Colors.redAccent
+        ),
+        margin: EdgeInsets.symmetric(vertical: 10.0),
+        height: animation.value,
+        width: animation.value,
+      ),
+    );
+  }
+}
+```
+
+上述代码中，我们定义了一个 AnimatedContainer 继承了 AnimatedWidget，然后定义了一个构造方法，注意，构造方法中我们定义了一个 Animation 然后把这个 Animation 传到父类（super）中去了，我们可以看看 listenable: animation 这个参数，是一个 Listenable 类型，如下：
+
+```
+/// The [Listenable] to which this widget is listening.
+///
+/// Commonly an [Animation] or a [ChangeNotifier].
+final Listenable listenable;
+```
+
+然后再看看 Animation 类：
+
+```
+abstract class Animation<T> extends Listenable implements ValueListenable<T> {
+...
+}
+```
+
+可以看到 Animation 是 Listenable 的子类，所以在我们自定义的 AnimatedContainer 类中可以传一个 Animation 类型的的参数作为父类中 listenable 的值
+
+使用我们上面定义的 AnimatedContainer 也很简单，直接作为 widget 使用就好，部分代码如下：
+
+```
+@override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'AnimatedWidgetDemo',
+      theme: ThemeData(
+          primaryColor: Colors.redAccent
+      ),
+      home: Scaffold(
+          appBar: AppBar(
+            title: Text('AnimatedWidgetDemo'),
+          ),
+          body: AnimatedContainer(animation: animation,)
+      ),
+    );``
+  }
+```
+
+可以看出我们在实例化 AnimatedContainer 的时候传入了一个 Animation 对象
+
+### AnimatedBuilder
+
+我们先看看如何使用 AnimatedBuilder 做一个上面一样的效果
+
+部分代码如下：
+
+```
+@override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'AnimatedBuilderExample',
+      theme: ThemeData(primaryColor: Colors.redAccent),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('animatedBuilderExample'),
+        ),
+        body: Center(
+          child: AnimatedBuilder(
+            animation: _animation,
+            child: Container(
+              decoration: BoxDecoration(color: Colors.redAccent),
+            ),
+            builder: (context, child) {
+              return Container(
+                width: _animation.value,
+                height: _animation.value,
+                child: child,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+```
+
+因为 AnimatedBuilder 是继承于 AnimatedWidget 的，所以可以直接把 AnimatedBuilder 当作 widget 使用
+
+```
+class AnimatedBuilder extends AnimatedWidget { ... }
+```
+
+上述代码关键部分如下：
+
+```
+body: Center(
+  child: AnimatedBuilder(
+    animation: _animation,
+    child: Container(
+      decoration: BoxDecoration(color: Colors.redAccent),
+    ),
+    builder: (context, child) {
+      return Container(
+        width: _animation.value,
+        height: _animation.value,
+        child: child,
+      );
+    },
+  ),
+),
+```
+
+> builder 这个匿名类是每次动画值改变的时候就会被调用
+
+AnimatedBuilder 使用简化后的结构如下：
+
+```
+AnimatedBuilder(
+    animateion: ... ,
+    child: ... ,
+    builder: (context, child) {
+        return Container(
+            width: ... ,
+            height: ... ,
+            child: child
+        )
+    }
+)
+```
+
+上述代码看着可能会有迷糊的地方，里面的 child 好像被指定了两次，外面一个，里面一个。其实，外面的 child 是传给 AnimatedBuilder 的，而 AnimatedBuilder 又将这个 child 作为参数传递给了里面的匿名类（builder）
+
+我们可以验证上述说明，就是给外面的 child 指定一个 key，然后在 builder 里面打印出参数 child 的 key
+
+```
+body: Center(
+  child: AnimatedBuilder(
+    animation: _animation,
+    child: Container(
+      decoration: BoxDecoration(color: Colors.redAccent),
+    key: Key("android"),
+    ),
+    builder: (context, child) {
+      print("child.key: ${child.key}");
+      return Container(
+        width: _animation.value,
+        height: _animation.value,
+        child: child,
+      );
+    },
+  ),
+),
+```
+
+我们在外面的 child 里面的添加了一个 key 值，然后在 builder 里面打印出参数 child 的 key 值
+
+输出如下：
+
+```
+flutter: child.key: [<'android'>]
+```
+
+### Flutter API 自带的动画组件
+
+#### AnimatedAlign
+
++ 参考
+
+> [Flutter之AnimatedAlign组件](https://blog.csdn.net/gzx110304/article/details/104567619/)
+
++ AnimatedAlign 可以通过改变子组件件的对齐方式,来控制其子组件的平移动画效果
+
+```
+AnimatedAlign({
+  Key key,
+  @required this.alignment,
+  this.child,
+  Curve curve = Curves.linear,
+  @required Duration duration,
+  VoidCallback onEnd,
+})
+```
+
++ 参数 : alignment
+
+> alignment 的取值是一个实现了 AlignmentGeometry 的对象,如 Alignment 和 AlignmentDirectional
+> 
+> 在 Alignment 中是通过 x 和 y 两个成员变量的取值来表示子组件的对齐方式的
+> 
+> x 和 y 的值从 -1.0 到 1.0 之间取值,并分别表示水平方向和垂直方向的对其方式
+> 
+> 当 x = -1.0 时,表示子组件以父组件的左边缘对齐
+> 
+> 当 x = 0.0 时,表示子组件在水平方向上相对于父组件居中对齐
+> 
+> 当 x = 1.0 时,表示子组件以父组件的右边缘对齐
+> 
+> 当 y = -1.0 时,表示子组件以父组件的上边缘对齐
+> 
+>  当 y = 0.0 时,表示子组件在垂直方向上相对于父组件居中对齐
+> 
+> 当 y = 1.0 时,表示子组件以父组件的下边缘对齐
+> 
+> Alignment 的 9 个常量值与 x,y 取值的对应关系
+
+```
+static const Alignment topLeft = Alignment(-1.0, -1.0);
+static const Alignment topCenter = Alignment(0.0, -1.0);
+static const Alignment topRight = Alignment(1.0, -1.0);
+static const Alignment centerLeft = Alignment(-1.0, 0.0);
+static const Alignment center = Alignment(0.0, 0.0);
+static const Alignment centerRight = Alignment(1.0, 0.0);
+static const Alignment bottomLeft = Alignment(-1.0, 1.0);
+static const Alignment bottomCenter = Alignment(0.0, 1.0);
+static const Alignment bottomRight = Alignment(1.0, 1.0);
+```
+
+> 在 AlignmentDirectional 中是通过 start 和 y 两个成员变量的取值来表示子组件的对齐方式的
+> 
+> start 和 y 的值从 -1.0 到 1.0 之间取值,并分别表示水平方向和垂直方向的对齐方式
+> 
+> 其中在水平方向的对齐方式是由 start 的值和 TextDirection 的值来共同决定的, TextDirection 主要是确定开始位置和结束位置,例如 TextDirection.ltr 表示从左到右; TextDirection.rtl 表示从右到左; start 决定以父组件的哪里对齐
+> 
+> 在垂直方向上的对齐方式和 Alignment 类似
+> 
+> AlignmentDirectional 的 9 个常量值与 start, y 取值的对应关系
+
+```
+static const AlignmentDirectional topStart = AlignmentDirectional(-1.0, -1.0);
+static const AlignmentDirectional topCenter = AlignmentDirectional(0.0, -1.0);
+static const AlignmentDirectional topEnd = AlignmentDirectional(1.0, -1.0);
+static const AlignmentDirectional centerStart = AlignmentDirectional(-1.0, 0.0);
+static const AlignmentDirectional center = AlignmentDirectional(0.0, 0.0);
+static const AlignmentDirectional centerEnd = AlignmentDirectional(1.0, 0.0);
+static const AlignmentDirectional bottomStart = AlignmentDirectional(-1.0, 1.0);
+static const AlignmentDirectional bottomCenter = AlignmentDirectional(0.0, 1.0);
+static const AlignmentDirectional bottomEnd = AlignmentDirectional(1.0, 1.0);
+```
+
++ 参数 : curve
+
+> 控制动画执行的曲线
+
++ 参数 : duration
+
+> 动画执行的时长,为一个 Duration 对象
+
+```
+Duration(milliseconds: 3000);
+```
+
++ 参数 : child
+
+> AnimateAlign 的子组件,动画的作用对象
+
+#### AnimatedContainer
+
+
+#### AnimatedCrossFade
+
+
+#### Hero
+
+
+#### AnimatedBuilder
+
+
+#### DecoratedBoxTransition
+
+
+#### FadeTransition
+
+
+#### PositionedTransition/RelativePositionedTransition
+
+
+#### RotationTransition
+
+
+#### ScaleTransition
+
+
+#### AlignTransition
+
+
+#### SizeTransition
+
+
+#### SlideTransition
+
+
+#### AnimatedDefaultTextStyle
+
+
+#### AnimatedListState
+
+
+#### AnimatedModalBarrier
+
+
+#### AnimatedOpacity
+
+
+#### AnimatedPhysicalModel
+
+
+#### AnimatedPositioned
+
+
+#### AnimatedSize
+
+
+#### AnimatedWidget
+
+
+#### AnimatedWidgetBaseState
+
+
+
+## Flutter 基础 Widgets
 
 ### Container
 
