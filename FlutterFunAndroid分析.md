@@ -7,6 +7,12 @@
 
 + [一个很棒的Flutter学习资源列表](https://blog.csdn.net/sinat_17775997/article/details/82835143?depth_1-utm_source=distribute.pc_relevant.none-task&utm_source=distribute.pc_relevant.none-task)
 
++ [Material icons 全图标一览](https://blog.csdn.net/boywcx/article/details/85051967)
+
+> 因为 https://material.io/resources/icons/?style=baseline 太难打开，所有才访问上述预览页面
+> 
+> 可使用页面上的 icon 名称在 icons.dart 中查找可用图标
+
 ## 项目概述
 
 + [产品级Flutter开源项目，FunAndroid](https://www.wanandroid.com/blog/show/2660)
