@@ -9,6 +9,8 @@
 
 + [Material icons 全图标一览](https://blog.csdn.net/boywcx/article/details/85051967)
 
++ [Flutter实战](https://book.flutterchina.club)
+
 > 因为 https://material.io/resources/icons/?style=baseline 太难打开，所有才访问上述预览页面
 > 
 > 可使用页面上的 icon 名称在 icons.dart 中查找可用图标
@@ -66,8 +68,6 @@ maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
 ## jpush_flutter 极光推送 ???
 
 
-## dio 封装全局请求 拦截登录 打通webview与app交互 ???
-
 ## flutter_webview_plugin 接 webview
 
 ## SQLite flutter plugin
@@ -82,6 +82,17 @@ maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
 
 ---
 # 延伸技术点
+
+## dio
+
++ 参考资料
+
+> [dio/README-ZH.md](https://github.com/flutterchina/dio/blob/master/README-ZH.md)
+
++ dio_cookie_manager
+
+> [dio/plugins/cookie_manager](https://github.com/flutterchina/dio/tree/master/plugins/cookie_manager)
+
 
 ## OKToast
 
@@ -734,7 +745,6 @@ Duration(milliseconds: 3000);
 #### AnimatedWidgetBaseState
 
 
-
 ## Flutter 基础 Widgets
 
 ### Container
@@ -1337,6 +1347,19 @@ Stack(
     ],
   )
 ```
+
+### CustomScrollView
+
++ 参考资料
+
+> [Flutter 实战 - CustomScrollView](https://book.flutterchina.club/chapter6/custom_scrollview.html)
+
++ CustomScrollView是可以使用Sliver来自定义滚动模型（效果）的组件
+
+> 它可以包含多种滚动模型，举个例子，假设有一个页面，顶部需要一个GridView，底部需要一个ListView，而要求整个页面的滑动效果是统一的，即它们看起来是一个整体。如果使用GridView+ListView来实现的话，就不能保证一致的滑动效果，因为它们的滚动效果是分离的，所以这时就需要一个"胶水"，把这些彼此独立的可滚动组件"粘"起来，而CustomScrollView的功能就相当于“胶水”
+> 
+> 在Flutter中，Sliver通常指可滚动组件子元素（就像一个个薄片一样）。但是在CustomScrollView中，需要粘起来的可滚动组件就是CustomScrollView的Sliver了，如果直接将ListView、GridView作为CustomScrollView是不行的，因为它们本身是可滚动组件而并不是Sliver！因此，为了能让可滚动组件能和CustomScrollView配合使用，Flutter提供了一些可滚动组件的Sliver版，如SliverList、SliverGrid等。实际上Sliver版的可滚动组件和非Sliver版的可滚动组件最大的区别就是前者不包含滚动模型（自身不能再滚动），而后者包含滚动模型 ，也正因如此，CustomScrollView才可以将多个Sliver"粘"在一起，这些Sliver共用CustomScrollView的Scrollable，所以最终才实现了统一的滑动效果
+
 
 ## extends,mixin,implements,abstract总结
 
