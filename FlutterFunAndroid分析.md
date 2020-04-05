@@ -1360,6 +1360,32 @@ Stack(
 > 
 > 在Flutter中，Sliver通常指可滚动组件子元素（就像一个个薄片一样）。但是在CustomScrollView中，需要粘起来的可滚动组件就是CustomScrollView的Sliver了，如果直接将ListView、GridView作为CustomScrollView是不行的，因为它们本身是可滚动组件而并不是Sliver！因此，为了能让可滚动组件能和CustomScrollView配合使用，Flutter提供了一些可滚动组件的Sliver版，如SliverList、SliverGrid等。实际上Sliver版的可滚动组件和非Sliver版的可滚动组件最大的区别就是前者不包含滚动模型（自身不能再滚动），而后者包含滚动模型 ，也正因如此，CustomScrollView才可以将多个Sliver"粘"在一起，这些Sliver共用CustomScrollView的Scrollable，所以最终才实现了统一的滑动效果
 
+### Row & Column
+
++ 参考资料
+
+> [Flutter学习之MainAxisAlignment属性详解](https://www.jianshu.com/p/d9b5fd16c098)
+
++ MainAxisAlignment 属性
+
+> MainAxisAlignment 属性就是代表主轴方向的对齐方式
+> 
+> MainAxisAlignment 里面一共有6个值，分别是 start，center，end，spaceBetween，spaceAround，spaceEvenly
+> 
+> `MainAxisAlignment.spaceBetween` : Place the free space evenly between the children
+> 
+> `MainAxisAlignment.spaceAround` : Place the free space evenly between the children as well as half of that space before and after the first and last child
+> 
+> `MainAxisAlignment.spaceEvenly` : Place the free space evenly between the children as well as before and after the first and last child
+
+### BoxDecoration
+
++ 参考资料
+
+> [Flutter之BoxDecoration用法详解](https://www.jianshu.com/p/9012bc9e2feb)
+> 
+> *非常详细，值得参考*
+
 
 ## extends,mixin,implements,abstract总结
 
