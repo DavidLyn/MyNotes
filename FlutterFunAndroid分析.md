@@ -179,12 +179,18 @@ class MyApp extends StatelessWidget {
     )
 ```
 
-
 ## 状态管理 Provider
 
 + 比较好的参考资料：[Flutter 状态管理指南之 Provider](https://zhuanlan.zhihu.com/p/70280813?from_voters_page=true)
 
 + Provider 的目标就是完全替代 StatefulWidget
+
+### ChangeNotifierProxyProvider
+
++ 参考资料
+
+> [Flutter状态管理 ChangeNotifierProxyProvider的使用](https://www.jianshu.com/p/a889333d0c66)
+
 
 ## 国际化插件 Flutter i18n
 
@@ -236,6 +242,14 @@ Navigator.push(
 ## flutter 导航返回拦截WillPopScope(防误触)
 
 + [flutter 导航返回拦截WillPopScope(防误触)](https://www.jianshu.com/p/858ea277675f)
+
+## flare_flutter
+
++ 参考
+
+> [Flutter动画之Flare的制作与使用](https://www.jianshu.com/p/d5643ff3cf5f)
+> 
+> [Flutter使用Flare做动画](https://www.jianshu.com/p/a62fa1866a5f)
 
 ## Flutter 动画
 
