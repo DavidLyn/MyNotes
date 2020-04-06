@@ -603,6 +603,12 @@ body: Center(
 flutter: child.key: [<'android'>]
 ```
 
+### AnimatedSwitcher
+
++ 参考
+
+> [通用“动画切换”组件（AnimatedSwitcher）](https://book.flutterchina.club/chapter9/animated_switcher.html)
+
 ### Flutter API 自带的动画组件
 
 #### AnimatedAlign
