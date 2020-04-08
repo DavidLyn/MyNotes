@@ -15,6 +15,12 @@
 > 
 > 可使用页面上的 icon 名称在 icons.dart 中查找可用图标
 
++ [Flare 动画](https://www.2dimensions.com )
+
+> user name : weiwei.lv@its.cn
+> 
+> password : Pass****
+
 ## 项目概述
 
 + [产品级Flutter开源项目，FunAndroid](https://www.wanandroid.com/blog/show/2660)
@@ -52,6 +58,14 @@ maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
 
 ---
 # 相关技术分析
+
+## flutter 生命周期???
+
++ 参考资料
+
+> [Flutter - 生命周期](https://www.cnblogs.com/shsuper/archive/2019/09/26/11593542.html)
+> 
+> [Flutter 的生命周期](https://blog.csdn.net/sinat_17775997/article/details/94733411)
 
 ## fluro 路由搭建 ???
 
