@@ -1537,3 +1537,11 @@ import 'dart:io';
 import 'package:fun_android/config/storage_manager.dart';
 ```
 
+---
+# 技术总结
+
+## ValueListenableBuilder、ValueNotifier、offstage的搭配使用
+
++ 登录页面密码可见等按钮逻辑的实现
+
+> ValueListenableBuilder、ValueNotifier 组合可以单值状态跟踪，避免了使用 setState()
