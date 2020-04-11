@@ -29,6 +29,10 @@
 
 + `/Users/lvweiwei/demos/fun_android_flutter`
 
+## 玩Android 开放API(https://wanandroid.com/blog/show/2)
+
++ [项目体系](https://www.wanandroid.com/project/tree/json)
+
 ---
 # 问题处理
 
@@ -1545,3 +1549,21 @@ import 'package:fun_android/config/storage_manager.dart';
 + 登录页面密码可见等按钮逻辑的实现
 
 > ValueListenableBuilder、ValueNotifier 组合可以单值状态跟踪，避免了使用 setState()
+
+## 可滚动组件的 physics 属性
+
++ 接受一个 ScrollPhysics 对象，它决定可滚动 Widget 如何响应用户操作，比如用户滑动完抬起手指后，继续执行动画；或者滑动到边界时，如何显示
+
++ 默认情况下，Flutter 会根据具体平台分别使用不同的 ScrollPhysics 对象，应用不同的显示效果，如当滑动到边界时，继续拖动的话，在 iOS 上会出现弹性效果，而在 Android 上会出现微光效果
+
++ 如果想在所有平台下使用同一种效果，可以显式指定，Flutter SDK 中包含了两个 ScrollPhysics 的子类可以直接使用：
+
+> ClampingScrollPhysics ：Android 下微光效果
+> 
+> BouncingScrollPhysics ：iOS 下弹性效果
+> 
+> 如果要设置禁止滑动，则加入
+
+```
+physics: new NeverScrollableScrollPhysics(),
+```
