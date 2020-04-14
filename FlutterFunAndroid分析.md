@@ -1567,3 +1567,37 @@ import 'package:fun_android/config/storage_manager.dart';
 ```
 physics: new NeverScrollableScrollPhysics(),
 ```
+
+## BuildContext
+
++ 参考
+
+> [Flutter | 深入理解BuildContext](https://www.jianshu.com/p/509b77b26b78)
+
++ 源码中的说明
+
+> For example, in the following snippet, the [ScaffoldState.showSnackBar] method is called on the [Scaffold] widget that the build method itself creates. If a [Builder] had not been used, and instead the `context` argument of the build method itself had been used, no [Scaffold] would have been found, and the [Scaffold.of] function would have returned null.
+
+```
+   @override
+   Widget build(BuildContext context) {
+     // here, Scaffold.of(context) returns null
+     return Scaffold(
+       appBar: AppBar(title: Text('Demo')),
+       body: Builder(
+         builder: (BuildContext context) {
+           return FlatButton(
+             child: Text('BUTTON'),
+             onPressed: () {
+               // here, Scaffold.of(context) returns the locally created Scaffold
+               Scaffold.of(context).showSnackBar(SnackBar(
+                 content: Text('Hello.')
+               ));
+             }
+           );
+         }
+       )
+     );
+   }
+```
+
