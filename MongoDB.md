@@ -20,7 +20,7 @@
 > 如果MongoDB运行端口使用默认的27017，可以在端口号为28017访问web用户界面，即地址为：http://localhost:28017
 
 ### 管理
-+ docker container exec -it mongo bash
++ docker container exec -it mymongo bash
 + mongo
 
 ## 安装mongo-express
@@ -31,7 +31,7 @@
 
 
 ### 登录mongo express
-+ http://localhost:8081
++ [mongo express](http://localhost:8081)
 
 ## 启动、关闭脚本
 ### mongoDB
@@ -59,4 +59,62 @@
 
 ### 查询db版本
 + mongod --version
+
+# 4、查询命令
+
+## 并列查询`$and`
+
+```
+# 条件都成立才可以查询到结果
+db.stutent.find({$and:[{name:"小漩涡"},{age:30}]})
+```
+
+## 或查询`$or`
+
+```
+# 有一个条件成立就可以查询到结果
+db.stutent.find({$or:[{name:"绿绿"},{name:"小黑"}]})
+```
+
+## 子查询`$all`
+
+>  all后面列表中的元素部分顺序,只要在 test_list 中存在就可以查询到所有结果
+
+```
+> db.stutent.find({"test_list":{$all:[1,"五"]}})
+
+{ "_id" : ObjectId("5d2eee1314ff51d814e40365"), "name" : "小漩涡", "age" : 30, "test_list" : [ 1, 2, 3, 4, "五", 1000 ], "hobby" : [ "烫头" ] }
+```
+
+## 范围查询`$in`
+
+```
+# 只要符合列表中的名字全部查找出来
+db.stu.find({name:{$in:["绿绿","黑黑","小红","小黑"]}})
+```
+
+## 排序/选取/跳过
+
+```
+排序:sort 
+db.stu.find().sort({ age:1 }) 1正序 -1倒序
+
+选取:limit
+db.stu.find().limit(2) 选取两条数据
+
+跳过:skip
+db.stu.find().skip(2) 跳过前两条数据
+
+选择中间两条 or 跳过前N条
+db.stu.find().skip(0).limit(2).sort({ age:-1 })
+
+优先级:先排序 - 跳过 - 选取
+
+# 分页
+var page = 1
+var num = 2
+var sk = (page-1) * num
+db.stu.find().skip(sk).limit(num).sort({ age:-1 })
+```
+
 

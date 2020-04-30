@@ -110,6 +110,18 @@ maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
 + [Zefyr](https://github.com/memspace/zefyr)
 
 
+## url_launcher 启动第三方app
+
++ [url_launcher](https://pub.dev/packages/url_launcher)
+
+## share 分享
+
++ [share](https://pub.dev/packages/share)
+
+## shimmer
+
++ [shimmer](https://pub.dev/packages/shimmer)
+
 ---
 # 延伸技术点
 
@@ -1565,7 +1577,7 @@ import 'package:fun_android/config/storage_manager.dart';
 
 + 登录页面密码可见等按钮逻辑的实现
 
-> ValueListenableBuilder、ValueNotifier 组合可以单值状态跟踪，避免了使用 setState()
+> ValueListenableBuilder、ValueNotifier 组合可以实现单值状态跟踪，避免了使用 setState()
 
 ## 可滚动组件的 physics 属性
 
@@ -1617,4 +1629,8 @@ physics: new NeverScrollableScrollPhysics(),
      );
    }
 ```
+
+## FutureBuilder
+
++ [flutter FutureBuilder的使用以及防止FutureBuilder不必要重绘的两种方法](https://blog.csdn.net/u011272795/article/details/83010974)
 
