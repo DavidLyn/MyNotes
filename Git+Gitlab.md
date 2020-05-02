@@ -126,6 +126,10 @@
 
 + 查看远程库的信息: git remote -v
 
+### 取消本地目录下关联的远程库
+
++ git remote remove origin
+
 ### 向远程库推送分支
 + 推送master分支到远程库: git push origin master
 + 推送其他分支，比如dev到远程库: git push origin dev
