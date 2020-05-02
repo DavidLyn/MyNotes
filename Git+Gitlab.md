@@ -71,7 +71,7 @@
 
 + git add -u
 
-> 仅监控已经被add的文件（即tracked file），会将被修改的文件提交到暂存区，不会提交新文件（untracked file）
+> 仅监控已经被add的文件（即tracked file），会将被修改的文件提交到暂存区，不会提交新文件（untracked file） 
 
 + git add -A 
 
