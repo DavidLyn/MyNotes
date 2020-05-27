@@ -103,7 +103,7 @@
 
 > 适用于在远程库创建一个空白库，把一个已有的本地库关联到这个远程库上
 
-+ 将当前库关联一个远程库: git remote add origin git@server-name:path/repo-name.git
++ 将当前库关联一个远程库: git remote add origin https://github.com/DavidLyn/repo-name.git
 + 第一次推送master分支的所有内容: git push -u origin master
 + 推送最新修改: git push origin master
 
@@ -113,7 +113,7 @@
 
 > 最好的方式是先创建远程库，然后，从远程库克隆
 
-+ git clone git@server-name:path/repo-name.git
++ git clone https://github.com/DavidLyn/repo-name.git
 
 > 上述命令将在当前目录创建子目录“repo-name”
 > 
