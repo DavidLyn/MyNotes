@@ -4,11 +4,25 @@
 
 + [EMQ X 手册](https://docs.emqx.io/broker/latest/cn/)
 
-### Docker 安装及运行 EMQ X
+### Docker 安装及运行 EMQ X(**经测试，EMQX 开源版本每次重启会重新创建其内置数据库，因此无法保存之前定义的规则等，所以，目前情况下，做不做宿主机的存储映射没有什么太大意义**)
+
++ 本地映射
 
 ```
-docker run -d --name emqx -p 1883:1883 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 emqx/emqx
+docker run -d --name emqx -p 8082:8082 -p 1883:1883 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 -v /Users/lvweiwei/docker/emqx/data:/opt/emqx/data -v /Users/lvweiwei/docker/emqx/log:/opt/emqx/log  -v /Users/lvweiwei/docker/emqx/etc:/opt/emqx/etc emqx/emqx
 ```
+
+**注意：默认的 Http Api 管理端口为 8081，由于与 mongo express冲突，改为 8082**
+
+> 通过 /Users/lvweiwei/docker/emqx/etc/plugins/emqx_management.conf 配置文件修改监听端口
+
++ 非本地映射
+
+```
+docker run -d --name emqx -p 8081:8081 -p 1883:1883 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 emqx/emqx
+```
+
+**注意：为了和访问 http api 需映射 -p 8081:8081**
 
 ### 进入命令行界面
 
@@ -16,6 +30,15 @@ docker run -d --name emqx -p 1883:1883 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p
 docker exec -it emqx /bin/sh
 ```
 
+### 创建本地挂载
+
++ 进入目录：/Users/lvweiwei/docker
+
+> 将 container 中的 /opt/emqx/data 拷贝至宿主机：docker cp emqx:/opt/emqx/data .
+> 
+> 将 container 中的 /opt/emqx/log 拷贝至宿主机：docker cp emqx:/opt/emqx/log .
+> 
+> 将 container 中的 /opt/emqx/etc 拷贝至宿主机：docker cp emqx:/opt/emqx/etc .
 
 ## 创建启停快捷方式
 
