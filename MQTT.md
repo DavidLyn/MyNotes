@@ -158,3 +158,8 @@ docker container rm emqx
 > DISCONNECT：客户端终止连接前优雅地通知 MQTT 代理
 > 
 		
+### [mqtt_client/example/mqtt_browser_client.dart](https://github.com/shamblett/mqtt_client/blob/master/example/mqtt_browser_client.dart)
+
++ The client identifier (short ClientId) is an identifier of each MQTT client connecting to a MQTT broker. As the word identifier already suggests, it should be unique per broker. The broker uses it for identifying the client and the current state of the client
+
++ The client identifier can be a maximum length of 23 characters
